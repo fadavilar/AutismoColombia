@@ -2,22 +2,29 @@
 
 Explorador interactivo sobre el trastorno del espectro autista (TEA) en Colombia: personas atendidas, oferta de neuropediatría e inequidad territorial con datos públicos de SISPRO (RIPS), REPS y DANE, junto con el marco de la Ley 2628 de 2026 y la Política Nacional de Salud Mental 2024-2033.
 
-**Trabajo en construcción** con la Fundación Universitaria Navarra (UNINAVARRA), Neiva, dentro del proyecto *Barreras para el diagnóstico oportuno del Trastorno del Espectro Autista (TEA) en Colombia: una revisión sistemática de la literatura* (Especialización en Medicina Familiar). Las cifras son resultados preliminares y pueden cambiar.
+**Análisis preliminar de datos públicos y del marco normativo**, en construcción con la [Fundación Universitaria Navarra (UNINAVARRA)](https://www.uninavarra.edu.co/), Neiva, dentro del proyecto *Barreras para el diagnóstico oportuno del Trastorno del Espectro Autista (TEA) en Colombia: una revisión sistemática de la literatura* (Especialización en Medicina Familiar). Las cifras son resultados preliminares y pueden cambiar.
 
-**Autor:** Fabián Dávila Ramírez, MD, MBA, PhD ([ORCID](https://orcid.org/0000-0002-1678-7288))
+**Equipo:** Leydi Hernández y Wilmer Esquivel (estudiantes, Especialización en Medicina Familiar), Jhonatan Andrés Portes (tutor del proyecto) y Fabián Dávila Ramírez, MD, MBA, PhD (docente de investigación; análisis de datos y app; [ORCID](https://orcid.org/0000-0002-1678-7288)).
 
 ## Qué contiene
 
-| Sección | Gráficos interactivos |
-| --- | --- |
-| Panorama nacional | Edad y sexo, régimen 2024 vs. 2025 (ruptura de serie) |
-| Mapa por departamento | Mapa coroplético con 7 indicadores, ficha por departamento, ranking filtrable, tabla ordenable y CSV |
-| Tendencia 2019-2025 | Tasa por departamento con resaltado, Gini/Theil/índice de concentración por año |
-| Oferta y acceso | Dispersión sedes vs. tasa (color IPM), destino de las atenciones, saldo neto receptor/emisor |
-| Medidas de inequidad | Curvas de Lorenz, índices con IC95 % bootstrap, Theil por región, modelos cuasi-Poisson, Spearman |
-| Lectura para el Huila | Huila frente al país y destino de sus atenciones |
-| Marco normativo | Ruta tamizaje → inclusión, línea de tiempo de plazos de la Ley 2628, ejes de la PNSM 2024-2033 |
-| Revisión sistemática | Pregunta PCC, diagrama PRISMA preliminar, motivos de exclusión |
+La app abre con un resumen y el resto queda colapsado en preguntas que van de lo descriptivo a los cruces. Cada gráfico tiene un párrafo de lectura que se recalcula al filtrar; los términos técnicos muestran su definición al pasar el cursor y las normas enlazan a su texto.
+
+| # | Pregunta | Gráficos interactivos |
+| --- | --- | --- |
+| 01 | Resumen: ¿qué muestran los datos? | Seis hallazgos con enlace a su análisis |
+| 02 | ¿Cuántas personas se atienden y quiénes son? | Serie 2019-2025, edad y sexo, régimen 2024 vs. 2025 |
+| 03 | ¿Dónde viven las personas atendidas? | Mapa, ranking por región, evolución por departamento, tabla y CSV |
+| 04 | ¿Cuánta atención recibe cada persona atendida? | Ranking de atenciones por persona, cobertura vs. intensidad |
+| 05 | ¿Dónde está la oferta de neuropediatría? | Mapa y ranking de sedes, telemedicina y sedes públicas |
+| 06 | ¿Se atiende más donde hay más oferta? | Dispersión con cuadrantes (color IPM) |
+| 07 | ¿Se atiende menos donde hay más pobreza? | Qué es el IPM, mapa, dispersión IPM vs. 4 indicadores, modelo cuasi-Poisson |
+| 08 | ¿Cuánto se desplazan las personas para atenderse? | Mapa de movilidad, destino de las atenciones, receptores y emisores, oferta vs. movilidad |
+| 09 | ¿Qué tan desigual es la distribución y cómo ha cambiado? | Glosario de índices, Lorenz, IC95 %, Theil por región, tendencia, resumen de cruces |
+| 10 | ¿Cómo está el Huila frente al país? | Comparación con el país y destino de sus atenciones |
+| 11 | ¿Qué dice el marco normativo? | Ruta tamizaje → inclusión, plazos de la Ley 2628 con enlace por artículo, PNSM 2024-2033 |
+| 12 | ¿Qué sigue? La revisión sistemática en curso | Pregunta PCC, PRISMA preliminar |
+| 13-15 | Métodos y equipo, glosario, referencias | Enlaces verificables (DOI o sitio oficial) |
 
 ## Estructura
 

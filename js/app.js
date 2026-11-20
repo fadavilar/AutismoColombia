@@ -28,7 +28,7 @@ function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").rep
 function fmt(n, dec){
   if(n === null || n === undefined || isNaN(n)) return "n.d.";
   const d = dec === undefined ? 0 : dec;
-  return Number(n).toLocaleString("es-CO", { minimumFractionDigits: d, maximumFractionDigits: d });
+  return Number(n).toLocaleString("es-CO", { minimumFractionDigits: d, maximumFractionDigits: d }).replace(/^-/, "−");
 }
 function svgEl(w, h, cls, label){
   const s = document.createElementNS(SVGNS, "svg");
@@ -121,23 +121,33 @@ function toggleTheme(){
   applyTheme(next); try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
 }
 
-/* ---------------------------------------------------------------- secciones */
+/* ---------------------------------------------------------------- secciones: de lo descriptivo a los cruces */
 const SECTIONS = [
-  { id:"panorama", num:"01", title:"Panorama nacional", sub:"Qué es el TEA, cuántas personas se atienden y quiénes son", open:true,
-    subs:[{id:"panorama-hallazgos",label:"Tres hallazgos"},{id:"panorama-edad",label:"Edad y sexo"},{id:"panorama-regimen",label:"Régimen y ruptura de 2025"}] },
-  { id:"mapa", num:"02", title:"Mapa por departamento", sub:"Tasa de atención, oferta de neuropediatría y acceso en los 33 territorios", open:true,
-    subs:[{id:"mapa-coropletico",label:"Mapa interactivo"},{id:"mapa-ranking",label:"Ranking"},{id:"mapa-tabla",label:"Tabla y descarga"}] },
-  { id:"tendencia", num:"03", title:"Tendencia 2019-2025", sub:"Evolución de la tasa de personas atendidas y de la desigualdad", open:false,
-    subs:[{id:"tendencia-tasa",label:"Tasa por departamento"},{id:"tendencia-indices",label:"Índices de inequidad"}] },
-  { id:"oferta", num:"04", title:"Oferta y acceso", sub:"Sedes de neuropediatría, atención fuera del departamento y flujos", open:false,
-    subs:[{id:"oferta-dispersion",label:"Oferta vs. atención"},{id:"oferta-flujos",label:"¿Dónde se atienden?"},{id:"oferta-balance",label:"Departamentos receptores"}] },
-  { id:"inequidad", num:"05", title:"Medidas de inequidad", sub:"Curvas de Lorenz, índices con IC95 %, Theil regional y modelos", open:false,
-    subs:[{id:"inequidad-lorenz",label:"Curvas de Lorenz"},{id:"inequidad-indices",label:"Índices"},{id:"inequidad-theil",label:"Theil por región"},{id:"inequidad-modelos",label:"Modelos y correlaciones"}] },
-  { id:"huila", num:"06", title:"Lectura para el Huila", sub:"El departamento sede de UNINAVARRA frente al país", open:false },
-  { id:"normativa", num:"07", title:"Marco normativo y de política", sub:"Ley 2628 de 2026, Política Nacional de Salud Mental 2024-2033 y MinSalud", open:false,
+  { id:"contexto", num:"01", toc:"Resumen", title:"Resumen: ¿qué muestran los datos?", sub:"Qué es el TEA, qué miden estos datos y seis hallazgos preliminares", open:true,
+    subs:[{id:"contexto-hallazgos",label:"Seis hallazgos preliminares"},{id:"contexto-preguntas",label:"Las preguntas de esta app"}] },
+  { id:"nacional", num:"02", toc:"Cuántos y quiénes", title:"¿Cuántas personas se atienden y quiénes son?", sub:"Total nacional 2019-2025, edad, sexo y régimen de afiliación", open:false,
+    subs:[{id:"nacional-serie",label:"Serie nacional"},{id:"nacional-edad",label:"Edad y sexo"},{id:"nacional-regimen",label:"Régimen y ruptura de 2025"}] },
+  { id:"territorio", num:"03", toc:"Dónde viven", title:"¿Dónde viven las personas atendidas?", sub:"Tasa de personas atendidas por departamento: mapa, ranking y evolución", open:false,
+    subs:[{id:"territorio-mapa",label:"Mapa de la tasa"},{id:"territorio-ranking",label:"Ranking por región"},{id:"territorio-evolucion",label:"Evolución 2019-2025"},{id:"territorio-tabla",label:"Tabla y descarga"}] },
+  { id:"intensidad", num:"04", toc:"Atenciones vs. atendidos", title:"¿Cuánta atención recibe cada persona atendida?", sub:"Atenciones por persona: intensidad de uso frente a cobertura", open:false,
+    subs:[{id:"intensidad-ranking",label:"Atenciones por persona"},{id:"intensidad-cruce",label:"Cobertura vs. intensidad"}] },
+  { id:"oferta", num:"05", toc:"Dónde está la oferta", title:"¿Dónde está la oferta de neuropediatría?", sub:"Sedes habilitadas en el REPS, telemedicina y naturaleza pública", open:false,
+    subs:[{id:"oferta-mapa",label:"Mapa de la oferta"},{id:"oferta-ranking",label:"Ranking de la oferta"}] },
+  { id:"ofertaatencion", num:"06", toc:"Oferta vs. atención", title:"¿Se atiende más donde hay más oferta?", sub:"Cruce entre sedes por habitante, tasa de atención e intensidad", open:false,
+    subs:[{id:"ofertaatencion-cruce",label:"Oferta vs. atención"}] },
+  { id:"pobreza", num:"07", toc:"Pobreza vs. atención", title:"¿Se atiende menos donde hay más pobreza?", sub:"Pobreza multidimensional (IPM) frente a atención, oferta y movilidad", open:false,
+    subs:[{id:"pobreza-ipm",label:"Qué es el IPM"},{id:"pobreza-cruce",label:"Pobreza vs. indicadores"},{id:"pobreza-modelo",label:"Oferta y pobreza a la vez"}] },
+  { id:"movilidad", num:"08", toc:"Movilidad", title:"¿Cuánto se desplazan las personas para atenderse?", sub:"Atención fuera del departamento, municipios sin sede y flujos entre territorios", open:false,
+    subs:[{id:"movilidad-mapa",label:"Mapa de la movilidad"},{id:"movilidad-flujos",label:"¿Dónde se atienden?"},{id:"movilidad-balance",label:"Receptores y emisores"},{id:"movilidad-cruce",label:"Oferta vs. movilidad"}] },
+  { id:"desigualdad", num:"09", toc:"Síntesis de desigualdad", title:"¿Qué tan desigual es la distribución y cómo ha cambiado?", sub:"Glosario de índices, curvas de Lorenz, IC95 %, Theil regional y tendencia", open:false,
+    subs:[{id:"desigualdad-glosario",label:"Glosario de índices"},{id:"desigualdad-lorenz",label:"Curvas de Lorenz"},{id:"desigualdad-indices",label:"Índices con IC95 %"},{id:"desigualdad-theil",label:"Entre y dentro de regiones"},{id:"desigualdad-tiempo",label:"Evolución 2019-2025"},{id:"desigualdad-cruces",label:"Resumen de los cruces"}] },
+  { id:"huila", num:"10", toc:"Huila", title:"¿Cómo está el Huila frente al país?", sub:"El departamento sede de UNINAVARRA", open:false },
+  { id:"normativa", num:"11", toc:"Marco normativo", title:"¿Qué dice el marco normativo?", sub:"Ley 2628 de 2026, Política Nacional de Salud Mental 2024-2033 y MinSalud", open:false,
     subs:[{id:"normativa-ruta",label:"Del tamizaje al diagnóstico"},{id:"normativa-ley",label:"Ley 2628 de 2026"},{id:"normativa-pnsm",label:"Política de Salud Mental"},{id:"normativa-minsalud",label:"Salud mental en MinSalud"}] },
-  { id:"revision", num:"08", title:"Revisión sistemática en curso", sub:"Pregunta PCC, búsqueda y diagrama PRISMA preliminar", open:false },
-  { id:"metodologia", num:"09", title:"Metodología y limitaciones", sub:"Fuentes, medidas, reproducibilidad y advertencias de lectura", open:false }
+  { id:"revision", num:"12", toc:"Revisión en curso", title:"¿Qué sigue? La revisión sistemática en curso", sub:"Pregunta PCC, búsqueda y diagrama PRISMA preliminar", open:false },
+  { id:"metodologia", num:"13", toc:"Métodos y equipo", title:"¿Cómo se hizo y quiénes lo hicieron?", sub:"Fuentes, medidas, advertencias de lectura y equipo de UNINAVARRA", open:false },
+  { id:"glosario", num:"14", toc:"Glosario", title:"Glosario", sub:"Términos, indicadores y medidas de desigualdad, con enlace a su fuente", open:false },
+  { id:"referencias", num:"15", toc:"Referencias", title:"Referencias", sub:"Literatura y normas citadas, con enlaces verificables", open:false }
 ];
 
 function buildAccordion(){
@@ -200,126 +210,74 @@ function deptSelect(id, label, onChange){
 }
 
 /* ---------------------------------------------------------------- hero */
-function renderHero(){
-  const m = C.meta;
-  document.getElementById("hero-title").textContent = m.titulo;
-  document.getElementById("hero-lede").textContent = m.subtitulo + ". Explorador interactivo con datos de SISPRO (RIPS), REPS y DANE, y con el marco normativo vigente.";
-  document.getElementById("hero-period").textContent = m.corte;
-  document.getElementById("byline").innerHTML = "<strong>" + esc(m.autor) + "</strong> · " + esc(m.institucion) + " · " + esc(m.version);
-  document.getElementById("wip-text").textContent = C.aviso;
-  const g = document.getElementById("stat-grid");
-  C.stats.forEach(s=> g.appendChild(el("div",{class:"stat-card"},[
-    el("div",{class:"value"},[s.value]), el("div",{class:"label"},[s.label]), el("div",{class:"detail"},[s.detail])
-  ])));
+/* ---------------------------------------------------------------- estadística básica (para las lecturas) */
+function median(a){ const s = a.slice().sort((x,y)=>x-y), n = s.length; return n ? (n%2 ? s[(n-1)/2] : (s[n/2-1]+s[n/2])/2) : NaN; }
+function ranks(a){
+  const idx = a.map((v,i)=>[v,i]).sort((x,y)=> x[0]-y[0]); const r = new Array(a.length); let i = 0;
+  while(i < idx.length){ let j = i; while(j+1 < idx.length && idx[j+1][0] === idx[i][0]) j++; const avg = (i+j)/2 + 1; for(let k=i;k<=j;k++) r[idx[k][1]] = avg; i = j+1; }
+  return r;
 }
-
-/* ================================================================= 01 PANORAMA */
-function renderPanorama(){
-  const body = document.getElementById("body-panorama");
-  C.panorama.intro.forEach(p=> body.appendChild(el("p",null,[p])));
-  body.appendChild(el("div",{class:"scope-limits"},[ el("p",{class:"scope-text"},[ el("strong",null,["Cómo leer las cifras. "]), C.panorama.lectura ]) ]));
-
-  sub(body, "panorama-hallazgos", "Tres hallazgos del análisis territorial", C.hallazgosNota);
-  const hz = el("div",{class:"finding-grid"});
-  C.hallazgos.forEach((h,i)=> hz.appendChild(el("article",{class:"finding-card"},[
-    el("span",{class:"finding-num"},[String(i+1)]), el("h4",null,[h.t]), el("p",null,[h.d])
-  ])));
-  body.appendChild(hz);
-  body.appendChild(el("div",{class:"tag-row"},[confidenceTag("nota-autor"), confidenceTag("preliminar")]));
-
-  sub(body, "panorama-edad", "Personas atendidas en 2024 por edad y sexo");
-  const box = el("div",{class:"two-col"});
-  // Edad: barras horizontales
-  const ed = C.panorama.edad;
-  const w = 360, rowH = 40, h = ed.length*rowH + 16;
-  const s = svgEl(w, h, "", "Distribución por grupo de edad");
-  const max = 60;
-  ed.forEach((e,i)=>{
-    const y = 8 + i*rowH, bw = (w-170) * e.pct / max;
-    const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g");
-    g.innerHTML = '<text x="0" y="'+(y+22)+'" class="axis-lab">'+esc(e.grupo)+'</text>' +
-      '<rect x="110" y="'+(y+6)+'" width="'+(w-170)+'" height="24" rx="5" class="bar-track"/>' +
-      '<rect x="110" y="'+(y+6)+'" width="'+bw+'" height="24" rx="5" class="bar-fill'+(e.derivado?' bar-derived':'')+'"/>' +
-      '<text x="'+(116+bw)+'" y="'+(y+23)+'" class="bar-val">'+fmt(e.pct,1)+' %</text>';
-    bindTip(g, ()=> "<h5>"+esc(e.grupo)+"</h5><p>"+fmt(e.pct,1)+" % de las personas atendidas"+(e.derivado?" (complemento de los otros grupos)":"")+"</p>");
-    s.appendChild(g);
-  });
-  const sx = C.panorama.sexo;
-  const sexBox = el("div",{class:"chart-box"},[
-    el("h4",{class:"chart-title"},["Sexo"]),
-    el("div",{class:"split-bar", role:"img", "aria-label":"Hombres "+fmt(sx.hombres,1)+" %, mujeres "+fmt(sx.mujeres,1)+" %"},[
-      el("span",{class:"split-a", style:"width:"+sx.hombres+"%"},["Hombres "+fmt(sx.hombres,1)+" %"]),
-      el("span",{class:"split-b", style:"width:"+sx.mujeres+"%"},[fmt(sx.mujeres,1)+" %"])
-    ]),
-    el("p",{class:"muted small"},["Por cada mujer atendida con F84 se atendieron cerca de 3,2 hombres. La literatura internacional describe una razón hombre:mujer de alrededor de 4 a 1 en la prevalencia."]),
-  ]);
-  box.appendChild(el("div",{class:"chart-box"},[ el("h4",{class:"chart-title"},["Grupo de edad"]), s ]));
-  box.appendChild(sexBox);
-  body.appendChild(box);
-  body.appendChild(sourceLine(C.panorama.edadNota));
-
-  sub(body, "panorama-regimen", "Régimen de afiliación y ruptura de la serie en 2025",
-    "Personas atendidas por régimen, 2024 frente a 2025. El salto del contributivo es un efecto del nuevo esquema de reporte.");
-  const rg = C.panorama.regimen;
-  const w2 = 560, h2 = 230, pad = { l:56, r:16, t:16, b:40 };
-  const s2 = svgEl(w2, h2, "", "Personas por régimen 2024 y 2025");
-  const mx = niceMax(Math.max(...rg.map(r=>r.y2025)));
-  const ih = h2 - pad.t - pad.b, iw = w2 - pad.l - pad.r;
-  let svg = "";
-  ticks(mx,4).forEach(t=>{ const y = pad.t + ih - ih*t/mx; svg += '<line x1="'+pad.l+'" x2="'+(w2-pad.r)+'" y1="'+y+'" y2="'+y+'" class="grid"/><text x="'+(pad.l-8)+'" y="'+(y+4)+'" class="axis-lab" text-anchor="end">'+fmt(t)+'</text>'; });
-  s2.innerHTML = svg;
-  const gw = iw / rg.length;
-  rg.forEach((r,i)=>{
-    [["2024", r.y2024, "bar-fill"],["2025", r.y2025, "bar-fill bar-alt"]].forEach((b,j)=>{
-      const bh = ih * b[1]/mx, x = pad.l + i*gw + gw*0.18 + j*gw*0.33, y = pad.t + ih - bh;
-      const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g");
-      g.innerHTML = '<rect x="'+x+'" y="'+y+'" width="'+(gw*0.3)+'" height="'+bh+'" rx="4" class="'+b[2]+'"/><text x="'+(x+gw*0.15)+'" y="'+(y-6)+'" class="bar-val" text-anchor="middle">'+fmt(b[1])+'</text>';
-      bindTip(g, ()=> "<h5>"+esc(r.nombre)+" · "+b[0]+"</h5><p>"+fmt(b[1])+" registros persona-régimen</p>");
-      s2.appendChild(g);
-    });
-    const t = document.createElementNS(SVGNS,"text"); t.setAttribute("x", pad.l + i*gw + gw/2); t.setAttribute("y", h2-14); t.setAttribute("class","axis-lab strong"); t.setAttribute("text-anchor","middle"); t.textContent = r.nombre; s2.appendChild(t);
-  });
-  body.appendChild(el("div",{class:"chart-box"},[ legend([["bar-fill","2024 (año de referencia)"],["bar-fill bar-alt","2025 (FEV-RIPS)"]]), s2 ]));
-  body.appendChild(sourceLine(C.panorama.regimenNota));
+function pearson(x, y){
+  const n = x.length, mx = x.reduce((a,b)=>a+b,0)/n, my = y.reduce((a,b)=>a+b,0)/n; let sxy=0, sxx=0, syy=0;
+  for(let i=0;i<n;i++){ sxy += (x[i]-mx)*(y[i]-my); sxx += (x[i]-mx)*(x[i]-mx); syy += (y[i]-my)*(y[i]-my); }
+  return sxx && syy ? sxy/Math.sqrt(sxx*syy) : NaN;
 }
-function legend(items){
-  return el("div",{class:"legend"}, items.map(i=> el("span",{class:"legend-item"},[ el("span",{class:"legend-sw " + i[0]}), i[1] ])));
-}
+function spearman(x, y){ return pearson(ranks(x), ranks(y)); }
+function strength(r){ const a = Math.abs(r); return a >= 0.6 ? "fuerte" : a >= 0.4 ? "moderada" : a >= 0.2 ? "débil" : "prácticamente nula"; }
+function joinNames(arr){ if(arr.length <= 1) return arr.join(""); return arr.slice(0,-1).join(", ") + " y " + arr[arr.length-1]; }
+function reading(){ return el("div",{class:"reading", "aria-live":"polite"}); }
+function setReading(node, html){ node.innerHTML = '<span class="reading-k">Lectura del gráfico</span><p>' + html + '</p>'; }
+function howTo(text){ return el("p",{class:"howto"},[ el("strong",null,["Cómo leerlo. "]), text ]); }
+function legend(items){ return el("div",{class:"legend"}, items.map(i=> el("span",{class:"legend-item"},[ el("span",{class:"legend-sw " + i[0]}), i[1] ]))); }
+function regionChips(onPick, label){ return chips([{id:"todas",label:"Todas las regiones"}].concat(REGION_ORDER.map(r=>({id:r,label:r}))), "todas", onPick, label || "Filtrar por región"); }
+function scopeName(reg){ return reg === "todas" ? "el país" : "la región " + reg; }
 
-/* ================================================================= 02 MAPA */
+/* ---------------------------------------------------------------- indicadores */
 const INDICATORS = [
-  { id:"tasa24", label:"Personas atendidas /100.000 (2024)", short:"Tasa 2024", dec:1, unit:" por 100.000", nac:97.8 },
-  { id:"sedes100k", label:"Sedes de neuropediatría /100.000", short:"Sedes /100.000", dec:2, unit:" por 100.000", nac:1.12 },
-  { id:"pctFuera", label:"% de atenciones fuera del departamento", short:"% fuera", dec:1, unit:" %", nac:11.4, worse:true },
-  { id:"pctSinSede", label:"% de personas en municipios sin sede", short:"% sin sede", dec:1, unit:" %", nac:19.9, worse:true },
-  { id:"atenPorPersona", label:"Atenciones por persona (2024)", short:"Atenciones/persona", dec:1, unit:"", nac:12.1 },
-  { id:"ipm", label:"Pobreza multidimensional, IPM 2024 (%)", short:"IPM", dec:1, unit:" %", worse:true },
-  { id:"tasa25", label:"Personas atendidas /100.000 (2025, sensibilidad)", short:"Tasa 2025", dec:1, unit:" por 100.000", nac:194.0 }
+  { id:"tasa24", label:"Personas atendidas por 100.000 hab. (2024)", short:"tasa de atención", dec:1, unit:" por 100.000", nac:97.8 },
+  { id:"tasa25", label:"Personas atendidas por 100.000 hab. (2025, sensibilidad)", short:"tasa de atención 2025", dec:1, unit:" por 100.000", nac:194.0 },
+  { id:"atenPorPersona", label:"Atenciones por persona atendida (2024)", short:"atenciones por persona", dec:1, unit:"", nac:12.1 },
+  { id:"sedes100k", label:"Sedes con neuropediatría por 100.000 hab.", short:"oferta de neuropediatría", dec:2, unit:" por 100.000", nac:1.12 },
+  { id:"pctTele", label:"% de sedes con telemedicina", short:"% de sedes con telemedicina", dec:1, unit:" %", nac:15.9 },
+  { id:"pctPub", label:"% de sedes de naturaleza pública", short:"% de sedes públicas", dec:1, unit:" %", nac:5.6 },
+  { id:"pctSinSede", label:"% de personas atendidas que viven en municipios sin sede", short:"% en municipios sin sede", dec:1, unit:" %", nac:19.9 },
+  { id:"pctFuera", label:"% de atenciones recibidas fuera del departamento", short:"atención fuera del departamento", dec:1, unit:" %", nac:11.4 },
+  { id:"ipm", label:"Pobreza multidimensional (IPM 2024, % de personas pobres)", short:"pobreza (IPM)", dec:1, unit:" %" }
 ];
 const IND = {}; INDICATORS.forEach(i=> IND[i.id] = i);
+function vfmt(d, k){ return fmt(d[k], IND[k].dec) + IND[k].unit; }
 function quantileBreaks(vals, k){
-  const v = vals.filter(x=> x !== null && !isNaN(x)).sort((a,b)=>a-b);
-  const out = [];
-  for(let i=1;i<k;i++){ out.push(v[Math.min(v.length-1, Math.floor(i*v.length/k))]); }
+  const v = vals.filter(x=> x !== null && !isNaN(x)).sort((a,b)=>a-b); const out = [];
+  for(let i=1;i<k;i++) out.push(v[Math.min(v.length-1, Math.floor(i*v.length/k))]);
   return out;
 }
 function classOf(v, br){ if(v === null || v === undefined) return -1; let c = 0; while(c < br.length && v >= br[c]) c++; return c; }
+function deptCardHTML(d, extra){
+  return "<h5>"+esc(d.nombre)+"</h5><p class='tip-region'>"+esc(d.region)+" · IPM "+fmt(d.ipm,1)+" %</p>" +
+    "<p>Tasa 2024: <b>"+fmt(d.tasa24,1)+"</b> por 100.000 ("+fmt(d.pers24)+" personas)</p>" +
+    "<p>Atenciones por persona: <b>"+fmt(d.atenPorPersona,1)+"</b></p>" +
+    "<p>Sedes con neuropediatría: <b>"+fmt(d.sedes)+"</b> ("+fmt(d.sedes100k,2)+" por 100.000)</p>" +
+    "<p>Atenciones fuera del dpto.: <b>"+fmt(d.pctFuera,1)+" %</b></p>" + (extra || "");
+}
+function rankOf(cod, key){ return DEP.filter(d=> d[key] !== null).slice().sort((a,b)=> b[key]-a[key]).findIndex(x=> x.cod === cod) + 1; }
 
-function deptCardHTML(d){
-  return "<h5>"+esc(d.nombre)+"</h5><p class='tip-region'>"+esc(d.region)+"</p>" +
-    "<p>Tasa 2024: <b>"+fmt(d.tasa24,1)+"</b> por 100.000 · "+fmt(d.pers24)+" personas</p>" +
-    "<p>Sedes con neuropediatría: <b>"+fmt(d.sedes)+"</b> ("+fmt(d.sedes100k,2)+" /100.000)</p>" +
-    "<p>Atenciones fuera del dpto.: <b>"+fmt(d.pctFuera,1)+" %</b> · IPM "+fmt(d.ipm,1)+" %</p>";
+/* ---------------------------------------------------------------- hero */
+function renderHero(){
+  const m = C.meta;
+  document.getElementById("hero-framework").textContent = "Análisis preliminar · datos públicos y marco normativo";
+  document.getElementById("hero-title").textContent = m.titulo;
+  document.getElementById("hero-lede").textContent = "Análisis preliminar de datos públicos de SISPRO (RIPS), REPS y DANE y del marco normativo vigente. Las secciones siguen preguntas: primero cuántos, quiénes y dónde; luego los cruces entre atención, oferta, pobreza y movilidad; al final, la síntesis de la desigualdad y lo que dicen las normas.";
+  document.getElementById("hero-period").textContent = m.corte;
+  document.getElementById("byline").innerHTML = "<strong>Equipo UNINAVARRA:</strong> " + C.equipo.map(p=> esc(p.nombre) + " <span class='role'>(" + esc(p.rol) + ")</span>").join(" · ") + "<br>" + esc(m.institucion) + " · " + esc(m.version);
+  document.getElementById("wip-text").textContent = C.aviso;
+  const g = document.getElementById("stat-grid");
+  C.stats.forEach(s=> g.appendChild(el("div",{class:"stat-card"},[ el("div",{class:"value"},[s.value]), el("div",{class:"label"},[s.label]), el("div",{class:"detail"},[s.detail]) ])));
 }
 
-function renderMapa(){
-  const body = document.getElementById("body-mapa");
-  body.appendChild(el("p",null,["Elige un indicador para colorear el mapa. Pasa el cursor (o el foco del teclado) sobre un departamento para ver sus cifras y haz clic para fijarlo: la selección se comparte con la tendencia, los flujos y la dispersión."]));
-  sub(body, "mapa-coropletico", "Mapa interactivo");
-  let ind = "tasa24";
-  const picker = chips(INDICATORS.map(i=>({id:i.id,label:i.short})), ind, id=>{ ind = id; paint(); drawRanking(); }, "Indicador del mapa");
-  body.appendChild(picker);
-
+/* ---------------------------------------------------------------- widget: mapa coroplético */
+function mapWidget(body, opts){
+  let ind = opts.def;
+  if(opts.inds.length > 1) body.appendChild(chips(opts.inds.map(i=>({id:i, label:IND[i].short.charAt(0).toUpperCase()+IND[i].short.slice(1)})), ind, id=>{ ind = id; paint(); }, "Indicador del mapa"));
   const wrap = el("div",{class:"map-layout"});
   const mapBox = el("div",{class:"chart-box map-box"});
   const M = D.mapa;
@@ -331,110 +289,475 @@ function renderMapa(){
     const p = document.createElementNS(SVGNS,"path");
     p.setAttribute("d", M.paths[d.cod]); p.setAttribute("class","dpto"); p.setAttribute("tabindex","0");
     p.setAttribute("role","button"); p.setAttribute("aria-label", d.nombre);
-    bindTip(p, ()=> deptCardHTML(d) + "<p class='tip-ind'>"+esc(IND[ind].label)+": <b>"+fmt(d[ind], IND[ind].dec)+IND[ind].unit+"</b></p>");
+    bindTip(p, ()=> deptCardHTML(d, "<p class='tip-ind'>"+esc(IND[ind].label)+": <b>"+vfmt(d,ind)+"</b> · puesto "+rankOf(d.cod,ind)+" de "+DEP.filter(x=>x[ind]!==null).length+"</p>"));
     p.addEventListener("click", ()=> selectDept(d.cod));
     p.addEventListener("keydown", e=>{ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); selectDept(d.cod); } });
     svg.appendChild(p); shapes[d.cod] = p;
   });
   mapBox.appendChild(svg);
-  const leg = el("div",{class:"map-legend"});
-  mapBox.appendChild(leg);
+  const leg = el("div",{class:"map-legend"}); mapBox.appendChild(leg);
   wrap.appendChild(mapBox);
-  const card = el("aside",{class:"dept-card", "aria-live":"polite"});
-  wrap.appendChild(card);
+  const card = el("aside",{class:"dept-card", "aria-live":"polite"}); wrap.appendChild(card);
   body.appendChild(wrap);
-  body.appendChild(sourceLine("Fuente: SISPRO-RIPS (personas y atenciones con F84 como diagnóstico principal), REPS (sedes con servicio 388, corte 13/11/2026) y DANE (población e IPM 2024). Límites departamentales: Marco Geoestadístico Nacional del DANE, simplificados. Colores por sextiles: más oscuro = valor más alto."));
-
+  const rd = reading(); body.appendChild(rd);
   function paint(){
-    const I = IND[ind];
-    const vals = DEP.map(d=>d[ind]);
-    const br = quantileBreaks(vals, 6);
-    DEP.forEach(d=>{
-      const c = classOf(d[ind], br);
-      shapes[d.cod].setAttribute("class", "dpto " + (c < 0 ? "q-na" : "q"+c) + (STATE.sel === d.cod ? " sel":""));
-    });
+    const I = IND[ind], list = DEP.filter(d=> d[ind] !== null);
+    const br = quantileBreaks(list.map(d=>d[ind]), 6);
+    DEP.forEach(d=>{ const c = classOf(d[ind], br); shapes[d.cod].setAttribute("class", "dpto " + (c < 0 ? "q-na" : "q"+c) + (STATE.sel === d.cod ? " sel":"")); });
     leg.innerHTML = "";
     leg.appendChild(el("span",{class:"legend-title"},[I.label]));
-    const sorted = vals.filter(v=>v!==null).sort((a,b)=>a-b);
+    const sorted = list.map(d=>d[ind]).sort((a,b)=>a-b);
     const edges = [sorted[0]].concat(br).concat([sorted[sorted.length-1]]);
     const row = el("div",{class:"legend-scale"});
-    for(let i=0;i<6;i++){
-      row.appendChild(el("span",{class:"legend-step"},[ el("span",{class:"legend-sw q"+i}), fmt(edges[i], I.dec) + "–" + fmt(edges[i+1], I.dec) ]));
-    }
+    for(let i=0;i<6;i++) row.appendChild(el("span",{class:"legend-step"},[ el("span",{class:"legend-sw q"+i}), fmt(edges[i], I.dec) + "–" + fmt(edges[i+1], I.dec) ]));
     leg.appendChild(row);
-    if(I.nac !== undefined) leg.appendChild(el("span",{class:"legend-nac"},["Nacional: " + fmt(I.nac, I.dec) + I.unit]));
+    leg.appendChild(el("span",{class:"legend-nac"},["Colores por sextiles: 6 grupos con igual número de departamentos; la escala va de valores bajos (izquierda) a altos (derecha)." + (I.nac !== undefined ? " Nacional: " + fmt(I.nac, I.dec) + I.unit + "." : "")]));
+    // lectura
+    const hi = list.reduce((a,b)=> b[ind] > a[ind] ? b : a), lo = list.reduce((a,b)=> b[ind] < a[ind] ? b : a);
+    const top = list.filter(d=> classOf(d[ind], br) === 5).sort((a,b)=> b[ind]-a[ind]);
+    const regs = {}; top.forEach(d=> regs[d.region] = (regs[d.region]||0) + 1);
+    const regTxt = Object.keys(regs).sort((a,b)=> regs[b]-regs[a]).map(r=> r + " (" + regs[r] + ")");
+    let t = "<b>" + esc(I.label) + ".</b> El valor más alto es el de " + esc(hi.nombre) + " (" + vfmt(hi,ind) + ") y el más bajo el de " + esc(lo.nombre) + " (" + vfmt(lo,ind) + ")";
+    if(lo[ind] > 0) t += ", una razón de " + fmt(hi[ind]/lo[ind],1) + " veces";
+    t += ". La mediana de los departamentos es " + fmt(median(list.map(d=>d[ind])), I.dec) + I.unit;
+    if(I.nac !== undefined){ const n = list.filter(d=> d[ind] > I.nac).length; t += " y " + n + " de " + list.length + " superan el valor nacional (" + fmt(I.nac, I.dec) + I.unit + ")"; }
+    t += ". El grupo de valores más altos reúne a " + joinNames(top.map(d=>esc(d.nombre))) + ", sobre todo de " + joinNames(regTxt) + ".";
+    const s = BY[STATE.sel];
+    if(s[ind] !== null) t += " " + esc(s.nombre) + " (seleccionado): " + vfmt(s,ind) + ", puesto " + rankOf(s.cod,ind) + " de " + list.length + ".";
+    if(opts.extra) t += " " + opts.extra(ind);
+    setReading(rd, t);
   }
   function drawCard(cod){
-    const d = BY[cod];
-    card.innerHTML = "";
+    const d = BY[cod]; card.innerHTML = "";
     card.appendChild(el("span",{class:"eyebrow-sm"},[d.region]));
     card.appendChild(el("h4",null,[d.nombre]));
     const rows = [
-      ["Población 2024", fmt(d.pob)],
-      ["Personas atendidas 2024", fmt(d.pers24)],
-      ["Tasa por 100.000", fmt(d.tasa24,1) + "  (nacional 97,8)"],
-      ["Atenciones por persona", fmt(d.atenPorPersona,1)],
-      ["Sedes con neuropediatría", fmt(d.sedes) + (d.sedes ? " · " + fmt(d.sedesTele) + " con telemedicina" : "")],
-      ["Sedes por 100.000", fmt(d.sedes100k,2)],
-      ["% atenciones fuera del dpto.", fmt(d.pctFuera,1) + " %"],
-      ["% personas en municipios sin sede", fmt(d.pctSinSede,1) + " %"],
-      ["IPM 2024", fmt(d.ipm,1) + " %"],
-      ["Personas atendidas 2025", fmt(d.pers25) + " (" + fmt(d.tasa25,1) + " /100.000)"]
+      ["Población 2024", fmt(d.pob)], ["Personas atendidas 2024", fmt(d.pers24)], ["Tasa por 100.000", fmt(d.tasa24,1) + " (nac. 97,8)"],
+      ["Atenciones por persona", fmt(d.atenPorPersona,1) + " (nac. 12,1)"], ["Sedes con neuropediatría", fmt(d.sedes) + (d.sedes ? " · " + fmt(d.sedesTele) + " con telemedicina" : "")],
+      ["Sedes por 100.000", fmt(d.sedes100k,2) + " (nac. 1,12)"], ["% atenciones fuera del dpto.", fmt(d.pctFuera,1) + " %"],
+      ["% en municipios sin sede", fmt(d.pctSinSede,1) + " %"], ["IPM 2024", fmt(d.ipm,1) + " %"]
     ];
     const dl = el("dl",{class:"kv"});
     rows.forEach(r=>{ dl.appendChild(el("dt",null,[r[0]])); dl.appendChild(el("dd",null,[r[1]])); });
     card.appendChild(dl);
-    const rank = DEP.slice().sort((a,b)=> b.tasa24 - a.tasa24).findIndex(x=>x.cod===cod) + 1;
-    card.appendChild(el("p",{class:"muted small"},["Puesto " + rank + " de 33 por tasa de personas atendidas en 2024."]));
     if(d.sedes === 0) card.appendChild(callout("Sin sedes con neuropediatría habilitadas en el REPS.", "callout-warn"));
-    if(d.pers24 < 30) card.appendChild(el("p",{class:"muted small"},["Conteo pequeño: interpretar la tasa con cautela."]));
+    if(d.pers24 < 30) card.appendChild(el("p",{class:"muted small"},["Conteo pequeño: interpretar las tasas con cautela."]));
+    card.appendChild(el("p",{class:"muted small"},["Haz clic en otro departamento para cambiar la selección."]));
   }
-  onSelect(cod=>{ paint(); drawCard(cod); highlightRanking(); });
+  onSelect(cod=>{ paint(); drawCard(cod); });
+  paint(); drawCard(STATE.sel);
+}
 
-  sub(body, "mapa-ranking", "Ranking de departamentos", "Ordenado por el indicador elegido arriba. Filtra por región; la línea punteada marca el valor nacional.");
-  let reg = "todas";
-  body.appendChild(chips([{id:"todas",label:"Todas"}].concat(REGION_ORDER.map(r=>({id:r,label:r}))), reg, id=>{ reg = id; drawRanking(); }, "Región"));
-  const rankBox = el("div",{class:"chart-box"});
-  body.appendChild(rankBox);
-  body.appendChild(legend(REGION_ORDER.map(r=>["rg-sw "+REGION_CLASS[r], r])));
-  let rankBars = {};
-  function drawRanking(){
+/* ---------------------------------------------------------------- widget: ranking filtrable */
+function rankingWidget(body, opts){
+  let ind = opts.def, reg = "todas";
+  if(opts.inds && opts.inds.length > 1) body.appendChild(chips(opts.inds.map(i=>({id:i,label:IND[i].short.charAt(0).toUpperCase()+IND[i].short.slice(1)})), ind, id=>{ ind = id; draw(); }, "Indicador"));
+  body.appendChild(regionChips(id=>{ reg = id; draw(); }));
+  const box = el("div",{class:"chart-box"}); body.appendChild(box);
+  body.appendChild(legend(REGION_ORDER.map(r=>["rg-sw "+REGION_CLASS[r], r]).concat([["ref-sw","Valor nacional"]])));
+  const rd = reading(); body.appendChild(rd);
+  let bars = {};
+  function draw(){
     const I = IND[ind];
-    const list = DEP.filter(d=> reg === "todas" || d.region === reg).filter(d=> d[ind] !== null).sort((a,b)=> b[ind]-a[ind]);
+    const list = DEP.filter(d=> (reg === "todas" || d.region === reg) && d[ind] !== null).sort((a,b)=> b[ind]-a[ind]);
     const w = 640, rowH = 22, pad = { l:150, r:58, t:22, b:8 }, h = pad.t + list.length*rowH + pad.b;
-    const mx = niceMax(Math.max(...list.map(d=>d[ind]), I.nac || 0));
-    const iw = w - pad.l - pad.r;
+    const mx = niceMax(Math.max(...list.map(d=>d[ind]), I.nac || 0)), iw = w - pad.l - pad.r;
     const s = svgEl(w, h, "rank-svg", "Ranking por " + I.label);
     let bg = "";
-    ticks(mx,4).forEach(t=>{ const x = pad.l + iw*t/mx; bg += '<line x1="'+x+'" x2="'+x+'" y1="'+(pad.t-6)+'" y2="'+(h-pad.b)+'" class="grid"/><text x="'+x+'" y="'+(pad.t-10)+'" class="axis-lab" text-anchor="middle">'+fmt(t, mx<10?1:0)+'</text>'; });
-    s.innerHTML = bg;
-    rankBars = {};
+    ticks(mx).forEach(t=>{ const x = pad.l + iw*t/mx; bg += '<line x1="'+x+'" x2="'+x+'" y1="'+(pad.t-6)+'" y2="'+(h-pad.b)+'" class="grid"/><text x="'+x+'" y="'+(pad.t-10)+'" class="axis-lab" text-anchor="middle">'+fmt(t, mx<10?1:0)+'</text>'; });
+    s.innerHTML = bg; bars = {};
     list.forEach((d,i)=>{
       const y = pad.t + i*rowH, bw = iw * d[ind]/mx;
-      const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g rank-row" + (STATE.sel===d.cod?" sel":"")); g.setAttribute("role","button"); g.setAttribute("aria-label", d.nombre + ": " + fmt(d[ind],I.dec) + I.unit);
-      g.innerHTML = '<rect x="0" y="'+y+'" width="'+w+'" height="'+rowH+'" class="row-hit"/>' +
-        '<text x="'+(pad.l-8)+'" y="'+(y+15)+'" class="axis-lab" text-anchor="end">'+esc(d.nombre)+'</text>' +
-        '<rect x="'+pad.l+'" y="'+(y+4)+'" width="'+Math.max(bw,1)+'" height="'+(rowH-8)+'" rx="3" class="rg-bar '+REGION_CLASS[d.region]+'"/>' +
-        '<text x="'+(pad.l+bw+5)+'" y="'+(y+15)+'" class="bar-val">'+fmt(d[ind], I.dec)+'</text>';
+      const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g rank-row" + (STATE.sel===d.cod?" sel":"")); g.setAttribute("role","button"); g.setAttribute("aria-label", d.nombre + ": " + vfmt(d,ind));
+      g.innerHTML = '<rect x="0" y="'+y+'" width="'+w+'" height="'+rowH+'" class="row-hit"/><text x="'+(pad.l-8)+'" y="'+(y+15)+'" class="axis-lab" text-anchor="end">'+esc(d.nombre)+'</text>' +
+        '<rect x="'+pad.l+'" y="'+(y+4)+'" width="'+Math.max(bw,1)+'" height="'+(rowH-8)+'" rx="3" class="rg-bar '+REGION_CLASS[d.region]+'"/><text x="'+(pad.l+bw+5)+'" y="'+(y+15)+'" class="bar-val">'+fmt(d[ind], I.dec)+'</text>';
       bindTip(g, ()=> deptCardHTML(d));
       g.addEventListener("click", ()=> selectDept(d.cod));
       g.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); selectDept(d.cod); } });
-      s.appendChild(g); rankBars[d.cod] = g;
+      s.appendChild(g); bars[d.cod] = g;
     });
-    if(I.nac !== undefined && I.nac <= mx){
-      const x = pad.l + iw*I.nac/mx;
-      const ln = document.createElementNS(SVGNS,"g");
-      ln.innerHTML = '<line x1="'+x+'" x2="'+x+'" y1="'+(pad.t-4)+'" y2="'+(h-pad.b)+'" class="ref-line"/>';
-      s.appendChild(ln);
+    if(I.nac !== undefined && I.nac <= mx){ const x = pad.l + iw*I.nac/mx; const ln = document.createElementNS(SVGNS,"line"); ln.setAttribute("x1",x); ln.setAttribute("x2",x); ln.setAttribute("y1",pad.t-4); ln.setAttribute("y2",h-pad.b); ln.setAttribute("class","ref-line"); s.appendChild(ln); }
+    box.innerHTML = ""; box.appendChild(s);
+    // lectura
+    const vals = list.map(d=>d[ind]);
+    let t = "En " + scopeName(reg) + " (" + list.length + (list.length === 1 ? " territorio" : " territorios") + ") la " + esc(I.short) + " va de " + vfmt(list[list.length-1],ind) + " en " + esc(list[list.length-1].nombre) + " a " + vfmt(list[0],ind) + " en " + esc(list[0].nombre) + "; la mediana es " + fmt(median(vals), I.dec) + I.unit + ".";
+    if(I.nac !== undefined){ const n = list.filter(d=> d[ind] > I.nac).length; t += " " + n + " de " + list.length + " están por encima del valor nacional (" + fmt(I.nac, I.dec) + I.unit + ")."; }
+    if(reg !== "todas"){
+      const allMed = median(DEP.filter(d=>d[ind]!==null).map(d=>d[ind]));
+      t += " La mediana de la región es " + (median(vals) > allMed ? "mayor" : median(vals) < allMed ? "menor" : "igual") + " que la de los 33 territorios (" + fmt(allMed, I.dec) + I.unit + ").";
     }
-    rankBox.innerHTML = ""; rankBox.appendChild(s);
+    if(opts.extra) t += " " + opts.extra(ind, list, reg);
+    setReading(rd, t);
   }
-  function highlightRanking(){ Object.keys(rankBars).forEach(c=> rankBars[c].classList.toggle("sel", c === STATE.sel)); }
+  onSelect(()=> Object.keys(bars).forEach(c=> bars[c].classList.toggle("sel", c === STATE.sel)));
+  draw();
+}
 
-  sub(body, "mapa-tabla", "Tabla por departamento y descarga");
+/* ---------------------------------------------------------------- widget: dispersión con cuadrantes */
+function scatterWidget(body, o){
+  let yk = o.ys[0], reg = "todas";
+  if(o.ys.length > 1) body.appendChild(chips(o.ys.map(k=>({id:k, label:"Eje vertical: " + IND[k].short})), yk, id=>{ yk = id; draw(); }, "Indicador del eje vertical"));
+  body.appendChild(regionChips(id=>{ reg = id; draw(); }, "Resaltar región"));
+  const box = el("div",{class:"chart-box"}); body.appendChild(box);
+  const ipmBr = [10, 15, 20, 30];
+  body.appendChild(o.colorBy === "ipm"
+    ? legend([["bub-sw ipm0","IPM < 10 %"],["bub-sw ipm1","10–15 %"],["bub-sw ipm2","15–20 %"],["bub-sw ipm3","20–30 %"],["bub-sw ipm4","≥ 30 %"],["size-sw","Tamaño = población"]])
+    : legend(REGION_ORDER.map(r=>["rg-sw "+REGION_CLASS[r], r]).concat([["size-sw","Tamaño = población"]])));
+  if(o.colorBy === "ipm") body.appendChild(el("p",{class:"legend-note"},["Color: pobreza multidimensional del departamento (IPM del DANE, % de personas en hogares pobres). Más oscuro = más pobreza."]));
+  const rd = reading(); body.appendChild(rd);
+  function draw(){
+    const X = IND[o.x], Y = IND[yk];
+    const all = DEP.filter(d=> d[o.x] !== null && d[yk] !== null);
+    const inR = d=> reg === "todas" || d.region === reg;
+    const refX = X.nac !== undefined ? X.nac : median(all.map(d=>d[o.x])), refY = Y.nac !== undefined ? Y.nac : median(all.map(d=>d[yk]));
+    const refXLab = X.nac !== undefined ? "nacional " + fmt(refX, X.dec) : "mediana " + fmt(refX, X.dec);
+    const refYLab = Y.nac !== undefined ? "nacional " + fmt(refY, Y.dec) : "mediana " + fmt(refY, Y.dec);
+    const w = 680, h = 420, pad = { l:58, r:24, t:22, b:46 }, iw = w-pad.l-pad.r, ih = h-pad.t-pad.b;
+    const mxX = niceMax(Math.max(...all.map(d=>d[o.x]))), mxY = niceMax(Math.max(...all.map(d=>d[yk])));
+    const PX = v => pad.l + iw*v/mxX, PY = v => pad.t + ih - ih*v/mxY;
+    const s = svgEl(w, h, "scatter-svg", "Dispersión de " + X.short + " y " + Y.short);
+    let g = "";
+    ticks(mxY).forEach(t=>{ g += '<line x1="'+pad.l+'" x2="'+(w-pad.r)+'" y1="'+PY(t)+'" y2="'+PY(t)+'" class="grid"/><text x="'+(pad.l-8)+'" y="'+(PY(t)+4)+'" class="axis-lab" text-anchor="end">'+fmt(t, mxY<10?1:0)+'</text>'; });
+    ticks(mxX).forEach(t=>{ g += '<line x1="'+PX(t)+'" x2="'+PX(t)+'" y1="'+pad.t+'" y2="'+(h-pad.b)+'" class="grid"/><text x="'+PX(t)+'" y="'+(h-pad.b+16)+'" class="axis-lab" text-anchor="middle">'+fmt(t, mxX<10?1:0)+'</text>'; });
+    g += '<text x="'+(pad.l+iw/2)+'" y="'+(h-6)+'" class="axis-title" text-anchor="middle">'+esc(X.label)+'</text>';
+    g += '<text transform="translate(14,'+(pad.t+ih/2)+') rotate(-90)" class="axis-title" text-anchor="middle">'+esc(Y.label)+'</text>';
+    g += '<line x1="'+PX(refX)+'" x2="'+PX(refX)+'" y1="'+pad.t+'" y2="'+(h-pad.b)+'" class="ref-line"/><line x1="'+pad.l+'" x2="'+(w-pad.r)+'" y1="'+PY(refY)+'" y2="'+PY(refY)+'" class="ref-line"/>';
+    g += '<text x="'+(PX(refX)+4)+'" y="'+(pad.t+10)+'" class="axis-lab">'+refXLab+'</text><text x="'+(w-pad.r-4)+'" y="'+(PY(refY)-5)+'" class="axis-lab" text-anchor="end">'+refYLab+'</text>';
+    const q = o.quad;
+    g += '<text x="'+(w-pad.r-6)+'" y="'+(pad.t+26)+'" class="quad-lab" text-anchor="end">'+esc(q.hh)+'</text>';
+    g += '<text x="'+(pad.l+6)+'" y="'+(pad.t+26)+'" class="quad-lab">'+esc(q.lh)+'</text>';
+    g += '<text x="'+(pad.l+6)+'" y="'+(h-pad.b-8)+'" class="quad-lab">'+esc(q.ll)+'</text>';
+    g += '<text x="'+(w-pad.r-6)+'" y="'+(h-pad.b-8)+'" class="quad-lab" text-anchor="end">'+esc(q.hl)+'</text>';
+    s.innerHTML = g;
+    all.slice().sort((a,b)=> b.pob-a.pob).forEach(d=>{
+      const r = 4 + 18*Math.sqrt(d.pob/7918660);
+      const c = document.createElementNS(SVGNS,"circle");
+      c.setAttribute("cx", PX(d[o.x])); c.setAttribute("cy", PY(d[yk])); c.setAttribute("r", r);
+      const col = o.colorBy === "ipm" ? "bub ipm" + classOf(d.ipm, ipmBr) : "bub rgb " + REGION_CLASS[d.region];
+      c.setAttribute("class", col + (inR(d) ? "" : " faded") + (d.cod === STATE.sel ? " sel" : ""));
+      c.setAttribute("tabindex","0"); c.setAttribute("role","button"); c.setAttribute("aria-label", d.nombre + ": " + X.short + " " + vfmt(d,o.x) + ", " + Y.short + " " + vfmt(d,yk));
+      const quadName = (d[o.x] >= refX ? (d[yk] >= refY ? q.hh : q.hl) : (d[yk] >= refY ? q.lh : q.ll));
+      bindTip(c, ()=> "<h5>"+esc(d.nombre)+"</h5><p class='tip-region'>"+esc(d.region)+" · IPM "+fmt(d.ipm,1)+" %</p><p>"+esc(X.label)+": <b>"+vfmt(d,o.x)+"</b><br>"+esc(Y.label)+": <b>"+vfmt(d,yk)+"</b></p><p class='tip-ind'>Cuadrante: "+esc(quadName.toLowerCase())+"</p>");
+      c.addEventListener("click", ()=> selectDept(d.cod));
+      c.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); selectDept(d.cod); } });
+      s.appendChild(c);
+    });
+    all.filter(d=> inR(d) && (reg !== "todas" || (o.labels||[]).includes(d.cod) || d.cod === STATE.sel)).forEach(d=>{
+      const r = 4 + 18*Math.sqrt(d.pob/7918660);
+      const t = document.createElementNS(SVGNS,"text"); t.setAttribute("x", PX(d[o.x]) + r + 3); t.setAttribute("y", PY(d[yk]) + 4);
+      t.setAttribute("class","pt-lab" + (d.cod === STATE.sel ? " sel-pt-lab" : "")); t.textContent = d.nombre.replace(" D.C.",""); s.appendChild(t);
+    });
+    box.innerHTML = ""; box.appendChild(s);
+    // lectura dinámica
+    const sub = all.filter(inR);
+    const cnt = { hh:0, hl:0, lh:0, ll:0 };
+    sub.forEach(d=>{ const k = (d[o.x] >= refX ? "h" : "l") + (d[yk] >= refY ? "h" : "l"); cnt[k]++; });
+    let t = "En " + scopeName(reg) + " (" + sub.length + " territorios): ";
+    if(sub.length >= 5){
+      const rho = spearman(sub.map(d=>d[o.x]), sub.map(d=>d[yk]));
+      t += "la correlación de Spearman entre " + esc(X.short) + " y " + esc(Y.short) + " es <b>ρ = " + fmt(rho,2) + "</b>, una asociación " + strength(rho) + (Math.abs(rho) >= 0.2 ? (rho > 0 ? " y positiva (cuando una sube, la otra tiende a subir)" : " y negativa (cuando una sube, la otra tiende a bajar)") : "") + ". ";
+    } else t += "con menos de 5 territorios no se calcula la correlación. ";
+    t += "Por cuadrantes: " + cnt.hh + " en «" + esc(q.hh.toLowerCase()) + "», " + cnt.ll + " en «" + esc(q.ll.toLowerCase()) + "», " + cnt.lh + " en «" + esc(q.lh.toLowerCase()) + "» y " + cnt.hl + " en «" + esc(q.hl.toLowerCase()) + "».";
+    const sd = BY[STATE.sel];
+    if(sd[o.x] !== null && sd[yk] !== null){
+      const qn = (sd[o.x] >= refX ? (sd[yk] >= refY ? q.hh : q.hl) : (sd[yk] >= refY ? q.lh : q.ll));
+      t += " " + esc(sd.nombre) + " (seleccionado) está en «" + esc(qn.toLowerCase()) + "»: " + esc(X.short) + " " + vfmt(sd,o.x) + " y " + esc(Y.short) + " " + vfmt(sd,yk) + ".";
+    }
+    if(o.extra) t += " " + o.extra(yk, reg);
+    setReading(rd, t);
+  }
+  onSelect(draw);
+  draw();
+}
+
+/* ================================================================= 01 CONTEXTO */
+function renderContexto(){
+  const body = document.getElementById("body-contexto");
+  C.panorama.intro.forEach(p=> body.appendChild(el("p",null,[p])));
+  body.appendChild(el("div",{class:"scope-limits"},[ el("p",{class:"scope-text"},[ el("strong",null,["Cómo leer las cifras. "]), C.panorama.lectura ]) ]));
+  sub(body, "contexto-hallazgos", "Hallazgos preliminares en breve", C.hallazgosNota);
+  const hz = el("div",{class:"finding-grid"});
+  C.hallazgos.forEach((h,i)=>{
+    const a = el("button",{class:"finding-link", type:"button"},["Ver el análisis →"]);
+    a.addEventListener("click", ()=>{ openSection(h.sec); setTimeout(()=> scrollToId("sec-"+h.sec), 60); });
+    hz.appendChild(el("article",{class:"finding-card"},[ el("span",{class:"finding-num"},[String(i+1)]), el("h4",null,[h.t]), el("p",null,[h.d]), a ]));
+  });
+  body.appendChild(hz);
+  body.appendChild(el("div",{class:"tag-row"},[confidenceTag("nota-autor"), confidenceTag("preliminar")]));
+  sub(body, "contexto-preguntas", "Las preguntas de esta app", "Cada sección responde una pregunta; ábrelas en orden para ir de lo general a los cruces.");
+  const ol = el("ol",{class:"question-list"});
+  SECTIONS.slice(1).forEach(s=>{
+    const b = el("button",{type:"button", class:"q-link"},[ el("span",{class:"q-num"},[s.num]), s.title ]);
+    b.addEventListener("click", ()=>{ openSection(s.id); setTimeout(()=> scrollToId("sec-"+s.id), 60); });
+    ol.appendChild(el("li",null,[b, el("span",{class:"q-sub"},[s.sub])]));
+  });
+  body.appendChild(ol);
+  body.appendChild(el("p",{class:"muted small"},["Los términos subrayados con puntos muestran su definición al pasar el cursor o el foco; las normas citadas enlazan a su texto. Glosario completo en la sección 14 y referencias en la 15."]));
+}
+
+/* ================================================================= 02 NACIONAL */
+const YEARS = [2019,2020,2021,2022,2023,2024,2025];
+function renderNacional(){
+  const body = document.getElementById("body-nacional");
+  body.appendChild(el("p",null,["Empezamos por el total del país: cuántas personas con diagnóstico principal F84 registra el RIPS cada año, qué edad y sexo tienen y en qué régimen están afiliadas."]));
+  sub(body, "nacional-serie", "Personas atendidas por año, 2019-2025");
+  let metric = "personas";
+  body.appendChild(chips([{id:"personas",label:"Número de personas"},{id:"tasa",label:"Tasa por 100.000"}], metric, id=>{ metric = id; draw(); }, "Medida"));
+  const box = el("div",{class:"chart-box"}); body.appendChild(box);
+  const rd = reading(); body.appendChild(rd);
+  body.appendChild(sourceLine(C.serieNota + " Fuente: SISPRO-RIPS; DANE."));
+  function draw(){
+    const ser = C.serieNacional, w = 640, h = 280, pad = { l:62, r:16, t:22, b:30 }, iw = w-pad.l-pad.r, ih = h-pad.t-pad.b;
+    const mx = niceMax(Math.max(...ser.map(s=> s[metric]))), bw = iw/ser.length;
+    const s = svgEl(w, h, "", "Serie nacional");
+    let g = "";
+    ticks(mx).forEach(t=>{ const y = pad.t + ih - ih*t/mx; g += '<line x1="'+pad.l+'" x2="'+(w-pad.r)+'" y1="'+y+'" y2="'+y+'" class="grid"/><text x="'+(pad.l-8)+'" y="'+(y+4)+'" class="axis-lab" text-anchor="end">'+fmt(t)+'</text>'; });
+    s.innerHTML = g;
+    ser.forEach((v,i)=>{
+      const bh = ih*v[metric]/mx, x = pad.l + i*bw + bw*0.18, y = pad.t + ih - bh;
+      const gg = document.createElementNS(SVGNS,"g"); gg.setAttribute("tabindex","0"); gg.setAttribute("class","bar-g");
+      gg.innerHTML = '<rect x="'+x+'" y="'+y+'" width="'+(bw*0.64)+'" height="'+bh+'" rx="4" class="bar-fill'+(i===6?' bar-alt':'')+'"/><text x="'+(x+bw*0.32)+'" y="'+(y-6)+'" class="bar-val" text-anchor="middle">'+fmt(v[metric], metric==="tasa"?1:0)+'</text><text x="'+(x+bw*0.32)+'" y="'+(h-10)+'" class="axis-lab" text-anchor="middle">'+v.anio+'</text>';
+      bindTip(gg, ()=> "<h5>"+v.anio+"</h5><p>"+fmt(v.personas)+" personas · "+fmt(v.tasa,1)+" por 100.000</p>"+(i===6?"<p class='muted'>Cambio de reporte (FEV-RIPS): no comparable.</p>":""));
+      s.appendChild(gg);
+    });
+    box.innerHTML = ""; box.appendChild(s);
+    const a = ser[0], b = ser[5], c20 = ser[1];
+    setReading(rd, "Entre 2019 y 2024 las personas atendidas pasaron de " + fmt(a.personas) + " a " + fmt(b.personas) + " (" + fmt(100*(b.personas/a.personas-1),0) + " % más) y la tasa de " + fmt(a.tasa,1) + " a " + fmt(b.tasa,1) + " por 100.000. El único descenso fue en 2020 (" + fmt(c20.personas) + ", " + fmt(100*(c20.personas/a.personas-1),0) + " % frente a 2019). La barra naranja de 2025 (" + fmt(ser[6].personas) + ") casi duplica a 2024, pero refleja el cambio al RIPS como soporte de la factura electrónica y no un aumento de casos: por eso 2024 es el año de referencia en toda la app. El aumento sostenido puede reflejar más diagnóstico y registro, no necesariamente más TEA.");
+  }
+  draw();
+
+  sub(body, "nacional-edad", "Edad y sexo de las personas atendidas en 2024");
+  const two = el("div",{class:"two-col"});
+  const ed = C.panorama.edad, w = 360, rowH = 40, h = ed.length*rowH + 16;
+  const s = svgEl(w, h, "", "Distribución por grupo de edad");
+  ed.forEach((e,i)=>{
+    const y = 8 + i*rowH, bw = (w-170) * e.pct / 60;
+    const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g");
+    g.innerHTML = '<text x="0" y="'+(y+22)+'" class="axis-lab">'+esc(e.grupo)+'</text><rect x="110" y="'+(y+6)+'" width="'+(w-170)+'" height="24" rx="5" class="bar-track"/><rect x="110" y="'+(y+6)+'" width="'+bw+'" height="24" rx="5" class="bar-fill'+(e.derivado?' bar-derived':'')+'"/><text x="'+(116+bw)+'" y="'+(y+23)+'" class="bar-val">'+fmt(e.pct,1)+' %</text>';
+    bindTip(g, ()=> "<h5>"+esc(e.grupo)+"</h5><p>"+fmt(e.pct,1)+" % de las personas atendidas"+(e.derivado?" (complemento de los otros grupos)":"")+"</p>");
+    s.appendChild(g);
+  });
+  two.appendChild(el("div",{class:"chart-box"},[ el("h4",{class:"chart-title"},["Grupo de edad"]), s ]));
+  const sx = C.panorama.sexo;
+  two.appendChild(el("div",{class:"chart-box"},[ el("h4",{class:"chart-title"},["Sexo"]),
+    el("div",{class:"split-bar", role:"img", "aria-label":"Hombres "+fmt(sx.hombres,1)+" %, mujeres "+fmt(sx.mujeres,1)+" %"},[
+      el("span",{class:"split-a", style:"width:"+sx.hombres+"%"},["Hombres "+fmt(sx.hombres,1)+" %"]), el("span",{class:"split-b", style:"width:"+sx.mujeres+"%"},[fmt(sx.mujeres,1)+" %"]) ]) ]));
+  body.appendChild(two);
+  const rd2 = reading(); body.appendChild(rd2);
+  setReading(rd2, "Más de la mitad de las personas atendidas (55,2 %) tiene entre 6 y 11 años y solo el 16,7 % tiene 5 años o menos, la etapa en la que el diagnóstico oportuno tiene más impacto. Como la edad es la de la atención y no la del diagnóstico, esto no mide directamente el retraso diagnóstico, pero es coherente con una atención que se concentra en la edad escolar. Por cada mujer se atendieron cerca de " + fmt(sx.hombres/sx.mujeres,1) + " hombres; la literatura internacional describe una razón cercana a 4 a 1 en la prevalencia.");
+  body.appendChild(sourceLine(C.panorama.edadNota));
+
+  sub(body, "nacional-regimen", "Régimen de afiliación y ruptura de la serie en 2025");
+  const rg = C.panorama.regimen, w2 = 560, h2 = 230, pad = { l:56, r:16, t:16, b:40 };
+  const s2 = svgEl(w2, h2, "", "Personas por régimen 2024 y 2025");
+  const mx = niceMax(Math.max(...rg.map(r=>r.y2025))), ih = h2 - pad.t - pad.b, iw = w2 - pad.l - pad.r;
+  let gs = "";
+  ticks(mx).forEach(t=>{ const y = pad.t + ih - ih*t/mx; gs += '<line x1="'+pad.l+'" x2="'+(w2-pad.r)+'" y1="'+y+'" y2="'+y+'" class="grid"/><text x="'+(pad.l-8)+'" y="'+(y+4)+'" class="axis-lab" text-anchor="end">'+fmt(t)+'</text>'; });
+  s2.innerHTML = gs;
+  const gw = iw / rg.length;
+  rg.forEach((r,i)=>{
+    [["2024", r.y2024, "bar-fill"],["2025", r.y2025, "bar-fill bar-alt"]].forEach((b,j)=>{
+      const bh = ih*b[1]/mx, x = pad.l + i*gw + gw*0.18 + j*gw*0.33, y = pad.t + ih - bh;
+      const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g");
+      g.innerHTML = '<rect x="'+x+'" y="'+y+'" width="'+(gw*0.3)+'" height="'+bh+'" rx="4" class="'+b[2]+'"/><text x="'+(x+gw*0.15)+'" y="'+(y-6)+'" class="bar-val" text-anchor="middle">'+fmt(b[1])+'</text>';
+      bindTip(g, ()=> "<h5>"+esc(r.nombre)+" · "+b[0]+"</h5><p>"+fmt(b[1])+" registros persona-régimen</p>");
+      s2.appendChild(g);
+    });
+    const t = document.createElementNS(SVGNS,"text"); t.setAttribute("x", pad.l + i*gw + gw/2); t.setAttribute("y", h2-14); t.setAttribute("class","axis-lab strong"); t.setAttribute("text-anchor","middle"); t.textContent = r.nombre; s2.appendChild(t);
+  });
+  body.appendChild(el("div",{class:"chart-box"},[ legend([["bar-fill","2024 (año de referencia)"],["bar-alt","2025 (FEV-RIPS)"]]), s2 ]));
+  const rd3 = reading(); body.appendChild(rd3);
+  setReading(rd3, "En 2024 el contributivo registró " + fmt(rg[0].y2024) + " personas y el subsidiado " + fmt(rg[1].y2024) + ". En 2025 el subsidiado casi no cambió (" + fmt(rg[1].y2025) + ") mientras que el contributivo se multiplicó por " + fmt(rg[0].y2025/rg[0].y2024,1) + ": un salto concentrado en un solo régimen apunta a un cambio en el reporte y no en la frecuencia del TEA. No se calculan tasas por régimen porque faltan denominadores de afiliados verificados.");
+  body.appendChild(sourceLine(C.panorama.regimenNota));
+}
+
+/* ================================================================= 03 TERRITORIO */
+function renderTerritorio(){
+  const body = document.getElementById("body-territorio");
+  body.appendChild(el("p",null,["Pasamos del total nacional a los 33 territorios. La tasa de personas atendidas por 100.000 habitantes permite comparar departamentos de distinto tamaño."]));
+  sub(body, "territorio-mapa", "Mapa de la tasa de personas atendidas");
+  body.appendChild(howTo("cada departamento se colorea según el grupo (sextil) en que cae su valor. Pasa el cursor o el foco del teclado para ver sus cifras y haz clic para seleccionarlo: la selección se comparte con todos los gráficos de la app."));
+  mapWidget(body, { inds:["tasa24","tasa25"], def:"tasa24", extra: ind=> ind === "tasa25" ? "En 2025 casi todos los departamentos suben por el cambio de reporte; compárese el orden más que los valores." : "" });
+  body.appendChild(sourceLine("Fuente: SISPRO-RIPS (F84 como diagnóstico principal); DANE (población 2024). Límites: Marco Geoestadístico Nacional del DANE, simplificados."));
+  sub(body, "territorio-ranking", "Ranking por región", "Filtra por región para comparar departamentos vecinos.");
+  rankingWidget(body, { def:"tasa24", extra:(ind, list, reg)=> reg === "todas" ? "Cinco de los seis departamentos con mayor tasa son del Caribe u Oriente (Atlántico, Bolívar, San Andrés, Santander, Norte de Santander), mientras que las tasas más bajas están en la Amazonía-Orinoquía y la Pacífica." : "" });
+  sub(body, "territorio-evolucion", "Evolución 2019-2025 por departamento", "Cada línea fina es un departamento; la gruesa, el total nacional; la naranja, el departamento seleccionado.");
+  trendWidget(body);
+  sub(body, "territorio-tabla", "Tabla por departamento y descarga");
   body.appendChild(dataTable());
+}
+function trendWidget(body){
+  let reg = "todas", show25 = true;
+  const ctr = el("div",{class:"control-row"});
+  ctr.appendChild(deptSelect("sel-tendencia", "Resaltar", cod=> selectDept(cod)));
+  const t25 = el("label",{class:"check"},[ el("input",{type:"checkbox", checked:"", id:"chk-2025"}), " Incluir 2025 (ruptura de serie)" ]);
+  t25.querySelector("input").addEventListener("change", e=>{ show25 = e.target.checked; draw(); });
+  ctr.appendChild(t25); body.appendChild(ctr);
+  body.appendChild(regionChips(id=>{ reg = id; draw(); }));
+  const box = el("div",{class:"chart-box"}); body.appendChild(box);
+  const rd = reading(); body.appendChild(rd);
+  body.appendChild(sourceLine(C.serieNota));
+  const rate = (d,i)=> d.serie[i] / d.pob * 1e5;
+  function draw(){
+    const yrs = show25 ? YEARS : YEARS.slice(0,6), n = yrs.length;
+    const list = DEP.filter(d=> reg === "todas" || d.region === reg || d.cod === STATE.sel);
+    const mx = niceMax(Math.max(...list.map(d=> Math.max(...d.serie.slice(0,n).map((v,i)=> rate(d,i)))), ...C.serieNacional.slice(0,n).map(s=>s.tasa)));
+    const w = 680, h = 340, pad = { l:52, r:110, t:14, b:32 }, iw = w-pad.l-pad.r, ih = h-pad.t-pad.b;
+    const X = i => pad.l + iw * i/(n-1), Y = v => pad.t + ih - ih*v/mx;
+    const s = svgEl(w, h, "line-svg", "Serie de tasas por departamento");
+    let g = "";
+    if(show25) g += '<rect x="'+((X(5)+X(6))/2)+'" y="'+pad.t+'" width="'+((X(6)-X(5))/2+4)+'" height="'+ih+'" class="break-band"/><text x="'+(X(6)-4)+'" y="'+(pad.t+12)+'" class="axis-lab" text-anchor="end">FEV-RIPS</text>';
+    ticks(mx).forEach(t=>{ g += '<line x1="'+pad.l+'" x2="'+(w-pad.r)+'" y1="'+Y(t)+'" y2="'+Y(t)+'" class="grid"/><text x="'+(pad.l-8)+'" y="'+(Y(t)+4)+'" class="axis-lab" text-anchor="end">'+fmt(t)+'</text>'; });
+    yrs.forEach((y,i)=>{ g += '<text x="'+X(i)+'" y="'+(h-10)+'" class="axis-lab" text-anchor="middle">'+y+'</text>'; });
+    s.innerHTML = g;
+    const sel = BY[STATE.sel];
+    yrs.forEach((y,i)=>{
+      const hit = document.createElementNS(SVGNS,"rect"); hit.setAttribute("x", X(i) - iw/(n-1)/2); hit.setAttribute("y", pad.t); hit.setAttribute("width", iw/(n-1)); hit.setAttribute("height", ih); hit.setAttribute("class","col-hit");
+      bindTip(hit, ()=> "<h5>"+y+"</h5><p>Nacional: <b>"+fmt(C.serieNacional[i].tasa,1)+"</b><br>"+esc(sel.nombre)+": <b>"+fmt(rate(sel,i),1)+"</b> ("+fmt(sel.serie[i])+" personas)</p>");
+      s.appendChild(hit);
+    });
+    list.forEach(d=>{
+      if(d.cod === STATE.sel) return;
+      const p = document.createElementNS(SVGNS,"path");
+      p.setAttribute("d", d.serie.slice(0,n).map((v,i)=> (i?"L":"M") + X(i).toFixed(1) + "," + Y(rate(d,i)).toFixed(1)).join(""));
+      p.setAttribute("class","spag " + REGION_CLASS[d.region]); p.setAttribute("tabindex","0");
+      bindTip(p, ()=> "<h5>"+esc(d.nombre)+"</h5><p>"+yrs.map((y,i)=> y+": "+fmt(rate(d,i),1)).join("<br>")+"</p><p class='muted'>Clic para resaltar</p>");
+      p.addEventListener("click", ()=> selectDept(d.cod));
+      s.appendChild(p);
+    });
+    const nat = document.createElementNS(SVGNS,"g");
+    nat.innerHTML = '<path d="'+C.serieNacional.slice(0,n).map((v,i)=> (i?"L":"M")+X(i)+","+Y(v.tasa)).join("")+'" class="nat-line"/><text x="'+(X(n-1)+6)+'" y="'+(Y(C.serieNacional[n-1].tasa)+4)+'" class="line-lab strong">Nacional</text>';
+    s.appendChild(nat);
+    const hl = document.createElementNS(SVGNS,"g"); let pts = "";
+    sel.serie.slice(0,n).forEach((v,i)=>{ pts += '<circle cx="'+X(i)+'" cy="'+Y(rate(sel,i))+'" r="3.6" class="sel-dot"/>'; });
+    hl.innerHTML = '<path d="'+sel.serie.slice(0,n).map((v,i)=> (i?"L":"M")+X(i)+","+Y(rate(sel,i))).join("")+'" class="sel-line"/>' + pts + '<text x="'+(X(n-1)+6)+'" y="'+(Y(rate(sel,n-1))+14)+'" class="line-lab sel-lab">'+esc(sel.nombre)+'</text>';
+    s.appendChild(hl);
+    box.innerHTML = ""; box.appendChild(s);
+    const grp = DEP.filter(d=> reg === "todas" || d.region === reg);
+    const P = grp.reduce((a,d)=>a+d.pob,0), r19 = grp.reduce((a,d)=>a+d.serie[0],0)/P*1e5, r24 = grp.reduce((a,d)=>a+d.serie[5],0)/P*1e5;
+    const grow = grp.map(d=>({ d:d, g: d.serie[0] ? d.serie[5]/d.serie[0] : null })).filter(x=> x.g !== null && x.d.serie[0] >= 20).sort((a,b)=> b.g-a.g);
+    let t = "En " + scopeName(reg) + " la tasa conjunta pasó de " + fmt(r19,1) + " por 100.000 en 2019 a " + fmt(r24,1) + " en 2024 (×" + fmt(r24/r19,1) + "). ";
+    if(grow.length >= 2) t += "Entre los departamentos con al menos 20 personas en 2019, el mayor crecimiento fue el de " + esc(grow[0].d.nombre) + " (×" + fmt(grow[0].g,1) + ") y el menor el de " + esc(grow[grow.length-1].d.nombre) + " (×" + fmt(grow[grow.length-1].g,1) + "). ";
+    t += esc(sel.nombre) + ": " + fmt(sel.serie[0]) + " personas en 2019 y " + fmt(sel.serie[5]) + " en 2024 (" + fmt(rate(sel,0),1) + " → " + fmt(rate(sel,5),1) + " por 100.000).";
+    setReading(rd, t);
+  }
+  onSelect(draw); draw();
+}
 
-  paint(); drawCard(STATE.sel); drawRanking();
+/* ================================================================= 04 INTENSIDAD */
+function renderIntensidad(){
+  const body = document.getElementById("body-intensidad");
+  body.appendChild(el("p",null,["Una persona atendida puede tener una o muchas atenciones en el año (consultas, terapias, procedimientos). La tasa de personas atendidas mide cobertura; las atenciones por persona miden intensidad de uso. No son lo mismo: un departamento puede atender a pocas personas con muchas atenciones cada una, o al revés."]));
+  sub(body, "intensidad-ranking", "Atenciones por persona atendida, 2024");
+  rankingWidget(body, { def:"atenPorPersona", extra:(ind, list, reg)=> reg === "todas" ? "La intensidad varía más que la cobertura: las atenciones están más concentradas entre departamentos (Gini 0,486) que las personas atendidas (Gini 0,240)." : "" });
+  sub(body, "intensidad-cruce", "¿Donde se atiende a más personas también se les atiende más?", "Cruce entre cobertura (eje horizontal) e intensidad (eje vertical).");
+  body.appendChild(howTo("las líneas punteadas marcan los valores nacionales y dividen el gráfico en cuatro cuadrantes. Arriba a la derecha están los departamentos que atienden a más personas y con más atenciones por persona; abajo a la izquierda, los que están por debajo en ambos. El color indica la región."));
+  scatterWidget(body, { x:"tasa24", ys:["atenPorPersona"], colorBy:"region", labels:["08","13","70","44","05","17","11"],
+    quad:{ hh:"Más cobertura y más intensidad", lh:"Menos cobertura, más intensidad", ll:"Menos cobertura y menos intensidad", hl:"Más cobertura, menos intensidad" } });
+  body.appendChild(sourceLine("Fuente: SISPRO-RIPS 2024. Correlación calculada en el navegador para los departamentos filtrados; con los 33 territorios coincide con el cálculo del proyecto."));
+}
+
+/* ================================================================= 05 OFERTA */
+function renderOferta(){
+  const body = document.getElementById("body-oferta");
+  body.appendChild(el("p",null,["La oferta se aproxima con las sedes que tienen habilitado el servicio de neuropediatría (código 388) en el REPS. Es un indicador de habilitación: no dice cuántos especialistas hay, cuántas horas atienden ni cuánto se espera por una cita."]));
+  const kp = el("div",{class:"stat-grid compact"});
+  [["590","sedes con neuropediatría","1,12 por 100.000 habitantes"],["15,9 %","ofrecen telemedicina","94 sedes"],["5,6 %","son públicas","33 sedes"],["4","departamentos sin ninguna sede","Amazonas, Guainía, Vaupés y Vichada"],["115 de 966","municipios con sede","de los municipios con personas atendidas"]].forEach(k=> kp.appendChild(el("div",{class:"stat-card"},[ el("div",{class:"value"},[k[0]]), el("div",{class:"label"},[k[1]]), el("div",{class:"detail"},[k[2]]) ])));
+  body.appendChild(kp);
+  sub(body, "oferta-mapa", "Mapa de la oferta");
+  mapWidget(body, { inds:["sedes100k"], def:"sedes100k", extra: ()=> "Los cuatro departamentos sin sede comparten el grupo más bajo del mapa." });
+  body.appendChild(sourceLine("Fuente: REPS, corte 13/11/2026; DANE (población 2024)."));
+  sub(body, "oferta-ranking", "Ranking de la oferta", "Cambia el indicador para ver qué parte de la oferta es telemedicina o pública.");
+  rankingWidget(body, { def:"sedes100k", inds:["sedes100k","pctTele","pctPub"], extra:(ind)=> ind === "sedes100k" ? "Sucre (5,39), Guaviare (3,55) y La Guajira (2,58) tienen más sedes por habitante que Bogotá (1,01): una sede habilitada no equivale a capacidad, y en departamentos con pocas personas atendidas cada sede pesa mucho en la tasa." : "Los porcentajes se calculan solo para los departamentos con al menos una sede; con pocas sedes un solo caso cambia mucho el porcentaje (por ejemplo, Putumayo tiene una sede y es de telemedicina)." });
+}
+
+/* ================================================================= 06 OFERTA VS ATENCIÓN */
+function renderOfertaAtencion(){
+  const body = document.getElementById("body-ofertaatencion");
+  body.appendChild(el("p",null,["Primer cruce: si la oferta importa, los departamentos con más sedes por habitante deberían atender a más personas. El modelo del proyecto estima que cada sede adicional por 100.000 habitantes se asocia con una tasa 1,32 veces mayor (IC95 % 1,14 a 1,53), aun considerando la pobreza."]));
+  sub(body, "ofertaatencion-cruce", "Oferta de neuropediatría frente a la tasa de atención");
+  body.appendChild(howTo("cada burbuja es un departamento. Eje horizontal: sedes con neuropediatría por 100.000 habitantes; eje vertical: el indicador elegido. Las líneas punteadas son los valores nacionales y forman cuatro cuadrantes. El tamaño es la población y el color, la pobreza (IPM): así se ve si los departamentos con poca oferta y poca atención son también los más pobres. Usa los filtros de región para recalcular la lectura."));
+  scatterWidget(body, { x:"sedes100k", ys:["tasa24","atenPorPersona"], colorBy:"ipm", labels:["08","13","11","70","95","99","94","44"],
+    quad:{ hh:"Más oferta y más atención", lh:"Menos oferta, más atención", ll:"Menos oferta y menos atención", hl:"Más oferta, menos atención" },
+    extra:(yk, reg)=> reg === "todas" ? (yk === "tasa24" ? "Con los 33 territorios, el proyecto obtuvo ρ = 0,65 (p < 0,001)." : "Con los 33 territorios, el proyecto obtuvo ρ = 0,55 (p = 0,001): donde hay más oferta, cada persona tiene también más atenciones.") : "" });
+  body.appendChild(sourceLine("Fuente: SISPRO-RIPS 2024; REPS 13/11/2026; DANE. Asociación ecológica entre departamentos: no implica que la oferta cause la atención ni se aplica a personas."));
+}
+
+/* ================================================================= 07 POBREZA */
+function renderPobreza(){
+  const body = document.getElementById("body-pobreza");
+  body.appendChild(el("p",null,["Segundo cruce: la pobreza del territorio. En los estudios sobre detección, un mayor nivel socioeconómico se asocia con un diagnóstico más frecuente y más temprano, lo que sugiere que en los hogares de menos recursos el problema es el acceso al diagnóstico y no la ocurrencia del trastorno."]));
+  sub(body, "pobreza-ipm", "¿Qué es el IPM?");
+  body.appendChild(el("div",{class:"card ipm-card"},[ el("p",null,[C.ipmDef]) ]));
+  mapWidget(body, { inds:["ipm"], def:"ipm" });
+  body.appendChild(sourceLine("Fuente: DANE, IPM 2024 por departamento (valor digitado en el proyecto; pendiente de verificación contra la tabla oficial)."));
+  sub(body, "pobreza-cruce", "Pobreza frente a atención, oferta y movilidad", "Elige el indicador del eje vertical.");
+  body.appendChild(howTo("el eje horizontal es el IPM (más a la derecha, más pobreza). Como no hay un IPM nacional en los datos del proyecto, la línea vertical es la mediana de los departamentos. El color indica la región."));
+  scatterWidget(body, { x:"ipm", ys:["tasa24","sedes100k","atenPorPersona","pctFuera"], colorBy:"region", labels:["99","94","97","27","44","11","08"],
+    quad:{ hh:"Más pobreza y valor alto", lh:"Menos pobreza, valor alto", ll:"Menos pobreza, valor bajo", hl:"Más pobreza y valor bajo" },
+    extra:(yk, reg)=>{
+      if(reg !== "todas") return "";
+      return { tasa24:"Con los 33 territorios, el proyecto obtuvo ρ = −0,42 (p = 0,016): se atiende relativamente menos en los departamentos más pobres.",
+        sedes100k:"Con los 33 territorios ρ = 0,03 (p = 0,87): la oferta de sedes no sigue la pobreza; los departamentos pobres del Caribe tienen muchas sedes y los de la Amazonía-Orinoquía, pocas o ninguna.",
+        atenPorPersona:"Con los 33 territorios ρ = 0,08 (p = 0,66): la intensidad de uso no se relaciona con la pobreza.",
+        pctFuera:"Los cuatro departamentos con más atención fuera (Guainía, Vichada, Vaupés y Cundinamarca) incluyen tres de los más pobres, pero también uno de los menos pobres, vecino de Bogotá." }[yk];
+    } });
+  sub(body, "pobreza-modelo", "Oferta y pobreza a la vez", "Regresión cuasi-Poisson de las personas atendidas en 2024 (offset: población; n = 33). RR > 1: más atención; RR < 1: menos.");
+  forestChart(body);
+  const rd = reading(); body.appendChild(rd);
+  setReading(rd, "Al considerar oferta y pobreza juntas, cada 10 puntos más de IPM se asocian con una tasa de atención 0,71 veces la de referencia (29 % menos; IC95 % 0,55 a 0,92), aun a igual oferta, y cada sede adicional por 100.000 habitantes con una tasa 1,32 veces mayor. Los resultados casi no cambian al ajustar por Bogotá (modelo B) ni al excluir a Atlántico (RR 0,79 y 1,21). Contar con sedes parece necesario pero no suficiente: la pobreza se asocia con menos atención por vías que las sedes no capturan (aseguramiento, autorizaciones, distancia, conocimiento de las familias y del primer nivel).");
+  body.appendChild(sourceLine(C.modelosNota));
+}
+function forestChart(body){
+  const ms = C.modelos;
+  const fw = 640, fH = 34, fpad = { l:250, r:110, t:24, b:10 }, fh = fpad.t + ms.length*fH + fpad.b, fiw = fw - fpad.l - fpad.r;
+  const lmin = Math.log(0.4), lmax = Math.log(2), FX = v => fpad.l + fiw*(Math.log(v)-lmin)/(lmax-lmin);
+  const fs = svgEl(fw, fh, "", "Razones de tasas del modelo cuasi-Poisson");
+  let fg = "";
+  [0.5,0.75,1,1.5,2].forEach(t=>{ fg += '<line x1="'+FX(t)+'" x2="'+FX(t)+'" y1="'+(fpad.t-6)+'" y2="'+(fh-fpad.b)+'" class="grid'+(t===1?' zero':'')+'"/><text x="'+FX(t)+'" y="'+(fpad.t-10)+'" class="axis-lab" text-anchor="middle">'+fmt(t,2)+'</text>'; });
+  fs.innerHTML = fg;
+  ms.forEach((m,i)=>{
+    const y = fpad.t + i*fH + fH/2;
+    const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g");
+    g.innerHTML = '<text x="'+(fpad.l-10)+'" y="'+(y+4)+'" class="axis-lab" text-anchor="end">'+esc(m.modelo+". "+m.var)+'</text><line x1="'+FX(m.lo)+'" x2="'+FX(m.hi)+'" y1="'+y+'" y2="'+y+'" class="ci-line"/><rect x="'+(FX(m.rr)-5)+'" y="'+(y-5)+'" width="10" height="10" class="pt-sq"/><text x="'+(fw-fpad.r+8)+'" y="'+(y+4)+'" class="bar-val">'+fmt(m.rr,2)+' ('+fmt(m.lo,2)+'–'+fmt(m.hi,2)+')</text>';
+    bindTip(g, ()=> "<h5>"+esc(m.var)+"</h5><p>RR "+fmt(m.rr,2)+" · IC95 % "+fmt(m.lo,2)+" a "+fmt(m.hi,2)+" · p "+m.p+"</p>"+(m.hi<1||m.lo>1?"<p>El IC no incluye 1: asociación compatible con los datos.</p>":"<p>El IC incluye 1: sin evidencia de asociación.</p>"));
+    fs.appendChild(g);
+  });
+  body.appendChild(el("div",{class:"chart-box"},[ legend([["pt-sw","Razón de tasas (RR)"],["ci-sw","IC95 %"]]), fs ]));
+}
+
+/* ================================================================= 08 MOVILIDAD */
+function renderMovilidad(){
+  const body = document.getElementById("body-movilidad");
+  body.appendChild(el("p",null,["Tercer cruce: cuando no hay oferta cerca, las personas se desplazan. Dos indicadores lo aproximan: el porcentaje de atenciones que los residentes reciben en IPS de otro departamento y el porcentaje de personas atendidas que viven en municipios sin ninguna sede de neuropediatría."]));
+  sub(body, "movilidad-mapa", "Mapa de la movilidad");
+  mapWidget(body, { inds:["pctFuera","pctSinSede"], def:"pctFuera", extra: ind=> ind === "pctFuera" ? "Incluye las atenciones cuyo prestador no tiene departamento registrado." : "En el país, 10.245 de 51.474 personas atendidas (19,9 %) viven en municipios sin sede." });
+  body.appendChild(sourceLine("Fuente: SISPRO-RIPS 2024 (matriz residencia × IPS y cruce municipal con el REPS)."));
+  sub(body, "movilidad-flujos", "¿Dónde se atienden los residentes de cada departamento?", "Elige un departamento de residencia.");
+  const ctr = el("div",{class:"control-row"}); ctr.appendChild(deptSelect("sel-flujos", "Residentes de", cod=> selectDept(cod))); body.appendChild(ctr);
+  const fbox = el("div",{class:"chart-box"}); body.appendChild(fbox);
+  body.appendChild(legend([["fl-local","Propio departamento"],["fl-out","Otro departamento"],["fl-na","Sin dato del prestador"]]));
+  const frd = reading(); body.appendChild(frd);
+  function drawFlows(){
+    fbox.innerHTML = ""; fbox.appendChild(flowChart(STATE.sel));
+    const d = BY[STATE.sel], row = D.flujos[d.cod], tot = d.aten24;
+    const dest = Object.keys(row).filter(k=> k!==d.cod && k!=="-1").sort((a,b)=> row[b]-row[a]);
+    const local = row[d.cod] || 0;
+    let t = esc(d.nombre) + ": de " + fmt(tot) + " atenciones de sus residentes, " + fmt(100*local/tot,1) + " % se prestó en el propio departamento y " + fmt(d.pctFuera,1) + " % fuera o sin prestador registrado.";
+    if(dest.length){ t += " El principal destino fue " + esc(BY[dest[0]].nombre) + " (" + fmt(row[dest[0]]) + "; " + fmt(100*row[dest[0]]/tot,1) + " %)"; t += dest.length > 1 ? ", seguido de " + esc(BY[dest[1]].nombre) + " (" + fmt(row[dest[1]]) + ")." : "."; }
+    t += d.sedes === 0 ? " El departamento no tiene sedes con neuropediatría." : " Tiene " + fmt(d.sedes) + " sedes con neuropediatría (" + fmt(d.sedes100k,2) + " por 100.000).";
+    setReading(frd, t);
+  }
+  onSelect(drawFlows); drawFlows();
+  sub(body, "movilidad-balance", "Departamentos receptores y emisores", "Saldo neto = atenciones prestadas por las IPS del departamento menos atenciones recibidas por sus residentes.");
+  body.appendChild(balanceChart());
+  const brd = reading(); body.appendChild(brd);
+  setReading(brd, "Bogotá D.C. es el gran receptor: sus IPS prestaron 20.703 atenciones más que las recibidas por sus residentes y el 29 % de lo que prestaron fue para personas de otros departamentos o con residencia desconocida. Atlántico y Valle del Cauca también reciben más de lo que envían. Entre los emisores netos están departamentos vecinos de esos polos (Cundinamarca y Boyacá cerca de Bogotá; Magdalena y Bolívar cerca de Atlántico; Risaralda cerca de Valle del Cauca), lo que sugiere que la cercanía geográfica pesa además de la falta de oferta.");
+  sub(body, "movilidad-cruce", "¿Hay menos desplazamiento donde hay más oferta?");
+  body.appendChild(howTo("eje horizontal: sedes por 100.000 habitantes; eje vertical: el indicador de movilidad elegido. Si la oferta local evita desplazamientos, los puntos deberían bajar hacia la derecha. El color indica la pobreza (IPM)."));
+  scatterWidget(body, { x:"sedes100k", ys:["pctFuera","pctSinSede"], colorBy:"ipm", labels:["94","99","97","25","15","70","11"],
+    quad:{ hh:"Más oferta y más desplazamiento", lh:"Menos oferta y más desplazamiento", ll:"Menos oferta y menos desplazamiento", hl:"Más oferta y menos desplazamiento" },
+    extra:(yk, reg)=> reg === "todas" && yk === "pctFuera" ? "Con los 33 territorios, el proyecto obtuvo ρ = −0,53 (p = 0,002) entre la oferta y la atención fuera del departamento, y ρ = −0,50 entre la atención fuera y la tasa de personas atendidas: donde la gente debe salir, se atiende a menos personas." : "" });
 }
 
 function dataTable(){
@@ -486,165 +809,6 @@ function dataTable(){
   return wrap;
 }
 
-/* ================================================================= 03 TENDENCIA */
-const YEARS = [2019,2020,2021,2022,2023,2024,2025];
-function renderTendencia(){
-  const body = document.getElementById("body-tendencia");
-  body.appendChild(el("p",null,["Entre 2019 y 2024 el número de personas atendidas con F84 pasó de 23.030 a 51.474 y la tasa nacional de 43,8 a 97,8 por 100.000 habitantes. El salto de 2025 (194,0) coincide con el cambio de reporte a la factura electrónica y no se interpreta como un aumento de la prevalencia."]));
-  sub(body, "tendencia-tasa", "Tasa de personas atendidas por departamento, 2019-2025", "Cada línea fina es un departamento; la línea gruesa es el total nacional. Elige un departamento para resaltarlo.");
-  let reg = "todas", show25 = true;
-  const ctr = el("div",{class:"control-row"});
-  ctr.appendChild(deptSelect("sel-tendencia", "Resaltar", cod=> selectDept(cod)));
-  const t25 = el("label",{class:"check"},[ el("input",{type:"checkbox", checked:"", id:"chk-2025"}), " Incluir 2025 (ruptura de serie)" ]);
-  t25.querySelector("input").addEventListener("change", e=>{ show25 = e.target.checked; draw(); });
-  ctr.appendChild(t25);
-  body.appendChild(ctr);
-  body.appendChild(chips([{id:"todas",label:"Todas las regiones"}].concat(REGION_ORDER.map(r=>({id:r,label:r}))), reg, id=>{ reg = id; draw(); }, "Región"));
-  const box = el("div",{class:"chart-box"});
-  body.appendChild(box);
-  const note = el("p",{class:"chart-readout", "aria-live":"polite"});
-  body.appendChild(note);
-  body.appendChild(sourceLine(C.serieNota + " Fuente: SISPRO-RIPS; DANE."));
-
-  function rate(d,i){ return d.serie[i] / d.pob * 1e5; }
-  function draw(){
-    const yrs = show25 ? YEARS : YEARS.slice(0,6);
-    const n = yrs.length;
-    const list = DEP.filter(d=> reg === "todas" || d.region === reg || d.cod === STATE.sel);
-    const mxv = Math.max(...list.map(d=> Math.max(...d.serie.slice(0,n).map((v,i)=> rate(d,i)))), ...C.serieNacional.slice(0,n).map(s=>s.tasa));
-    const mx = niceMax(mxv);
-    const w = 680, h = 340, pad = { l:52, r:110, t:14, b:32 }, iw = w-pad.l-pad.r, ih = h-pad.t-pad.b;
-    const X = i => pad.l + iw * i/(n-1), Y = v => pad.t + ih - ih*v/mx;
-    const s = svgEl(w, h, "line-svg", "Serie de tasas por departamento");
-    let g = "";
-    if(show25){ g += '<rect x="'+((X(4.999)+X(5))/2 + (X(6)-X(5))/2)+'" y="'+pad.t+'" width="'+((X(6)-X(5))/2+4)+'" height="'+ih+'" class="break-band"/><text x="'+(X(6)-4)+'" y="'+(pad.t+12)+'" class="axis-lab" text-anchor="end">FEV-RIPS</text>'; }
-    ticks(mx,5).forEach(t=>{ g += '<line x1="'+pad.l+'" x2="'+(w-pad.r)+'" y1="'+Y(t)+'" y2="'+Y(t)+'" class="grid"/><text x="'+(pad.l-8)+'" y="'+(Y(t)+4)+'" class="axis-lab" text-anchor="end">'+fmt(t)+'</text>'; });
-    yrs.forEach((y,i)=>{ g += '<text x="'+X(i)+'" y="'+(h-10)+'" class="axis-lab" text-anchor="middle">'+y+'</text>'; });
-    s.innerHTML = g;
-    const sel = BY[STATE.sel];
-    list.forEach(d=>{
-      if(d.cod === STATE.sel) return;
-      const p = document.createElementNS(SVGNS,"path");
-      p.setAttribute("d", d.serie.slice(0,n).map((v,i)=> (i?"L":"M") + X(i).toFixed(1) + "," + Y(rate(d,i)).toFixed(1)).join(""));
-      p.setAttribute("class","spag " + REGION_CLASS[d.region]);
-      p.setAttribute("tabindex","0");
-      bindTip(p, ()=> "<h5>"+esc(d.nombre)+"</h5><p>"+yrs.map((y,i)=> y+": "+fmt(rate(d,i),1)).join("<br>")+"</p><p class='muted'>Clic para resaltar</p>");
-      p.addEventListener("click", ()=> selectDept(d.cod));
-      s.appendChild(p);
-    });
-    const nat = document.createElementNS(SVGNS,"g");
-    nat.innerHTML = '<path d="'+C.serieNacional.slice(0,n).map((v,i)=> (i?"L":"M")+X(i)+","+Y(v.tasa)).join("")+'" class="nat-line"/>' +
-      '<text x="'+(X(n-1)+6)+'" y="'+(Y(C.serieNacional[n-1].tasa)+4)+'" class="line-lab strong">Nacional</text>';
-    s.appendChild(nat);
-    const hl = document.createElementNS(SVGNS,"g");
-    let pts = "";
-    sel.serie.slice(0,n).forEach((v,i)=>{ pts += '<circle cx="'+X(i)+'" cy="'+Y(rate(sel,i))+'" r="3.6" class="sel-dot"/>'; });
-    hl.innerHTML = '<path d="'+sel.serie.slice(0,n).map((v,i)=> (i?"L":"M")+X(i)+","+Y(rate(sel,i))).join("")+'" class="sel-line"/>' + pts +
-      '<text x="'+(X(n-1)+6)+'" y="'+(Y(rate(sel,n-1))+4)+'" class="line-lab sel-lab">'+esc(sel.nombre)+'</text>';
-    s.appendChild(hl);
-    // eje de lectura por año
-    yrs.forEach((y,i)=>{
-      const hit = document.createElementNS(SVGNS,"rect");
-      hit.setAttribute("x", X(i) - iw/(n-1)/2); hit.setAttribute("y", pad.t); hit.setAttribute("width", iw/(n-1)); hit.setAttribute("height", ih); hit.setAttribute("class","col-hit");
-      bindTip(hit, ()=> "<h5>"+y+"</h5><p>Nacional: <b>"+fmt(C.serieNacional[i].tasa,1)+"</b> ("+fmt(C.serieNacional[i].personas)+" personas)</p><p>"+esc(sel.nombre)+": <b>"+fmt(rate(sel,i),1)+"</b> ("+fmt(sel.serie[i])+" personas)</p>");
-      s.insertBefore(hit, s.firstChild.nextSibling);
-    });
-    box.innerHTML = ""; box.appendChild(s);
-    const a = sel.serie[0], b = sel.serie[5];
-    note.textContent = sel.nombre + ": " + fmt(a) + " personas atendidas en 2019 y " + fmt(b) + " en 2024 (" + fmt(rate(sel,0),1) + " → " + fmt(rate(sel,5),1) + " por 100.000)" + (show25 ? "; " + fmt(sel.serie[6]) + " en 2025." : ".");
-  }
-  onSelect(draw);
-  draw();
-
-  sub(body, "tendencia-indices", "Evolución de la desigualdad entre departamentos", "Gini y Theil de las personas atendidas e índice de concentración según el IPM (positivo = más tasa en los departamentos menos pobres).");
-  const idxBox = el("div",{class:"small-multiples"});
-  [["gini","Gini",0.35],["theil","Theil T",0.2],["ci","Índice de concentración (IPM)",0.12]].forEach(m=>{
-    const w = 300, h = 170, pad = { l:40, r:12, t:12, b:26 }, iw = w-pad.l-pad.r, ih = h-pad.t-pad.b;
-    const ser = C.serieNacional;
-    const X = i => pad.l + iw*i/6, Y = v => pad.t + ih - ih*v/m[2];
-    const s = svgEl(w, h, "", m[1] + " 2019-2025");
-    let g = '<rect x="'+(X(5.5))+'" y="'+pad.t+'" width="'+(X(6)-X(5.5)+6)+'" height="'+ih+'" class="break-band"/>';
-    ticks(m[2],4).forEach(t=>{ g += '<line x1="'+pad.l+'" x2="'+(w-pad.r)+'" y1="'+Y(t)+'" y2="'+Y(t)+'" class="grid"/><text x="'+(pad.l-6)+'" y="'+(Y(t)+4)+'" class="axis-lab" text-anchor="end">'+fmt(t,2)+'</text>'; });
-    [0,2,4,6].forEach(i=>{ g += '<text x="'+X(i)+'" y="'+(h-8)+'" class="axis-lab" text-anchor="middle">'+YEARS[i]+'</text>'; });
-    g += '<path d="'+ser.map((v,i)=>(i?"L":"M")+X(i)+","+Y(v[m[0]])).join("")+'" class="nat-line thin"/>';
-    s.innerHTML = g;
-    ser.forEach((v,i)=>{
-      const c = document.createElementNS(SVGNS,"circle"); c.setAttribute("cx",X(i)); c.setAttribute("cy",Y(v[m[0]])); c.setAttribute("r","4.5"); c.setAttribute("class","pt" + (i===6?" pt-alt":"")); c.setAttribute("tabindex","0");
-      bindTip(c, ()=> "<h5>"+m[1]+" · "+v.anio+"</h5><p><b>"+fmt(v[m[0]],3)+"</b></p>"+(i===6?"<p class='muted'>Leer con cautela: cambio de reporte.</p>":""));
-      s.appendChild(c);
-    });
-    idxBox.appendChild(el("div",{class:"chart-box"},[ el("h4",{class:"chart-title"},[m[1]]), s ]));
-  });
-  body.appendChild(idxBox);
-  body.appendChild(el("p",null,["El Gini se mantuvo entre 0,240 y 0,290 sin una tendencia clara (mínimo en 2024), mientras que el índice de concentración bajó de +0,092 (2019) y +0,101 (2020) a +0,032-0,044 en 2022-2024: la mayor concentración inicial de la atención en los departamentos menos pobres se atenuó."]));
-}
-
-/* ================================================================= 04 OFERTA */
-function renderOferta(){
-  const body = document.getElementById("body-oferta");
-  body.appendChild(el("p",null,["Según el REPS (corte 13/11/2026) hay 590 sedes con neuropediatría habilitada en el país (1,12 por 100.000 habitantes): el 15,9 % ofrece telemedicina y el 5,6 % es de naturaleza pública. Amazonas, Guainía, Vaupés y Vichada no tienen ninguna. Hay 966 municipios con personas atendidas y solo 115 con alguna sede."]));
-
-  sub(body, "oferta-dispersion", "Oferta de neuropediatría frente a la tasa de atención", "Cada burbuja es un departamento (tamaño = población; color = IPM). Correlación de Spearman ρ = 0,65 (p < 0,001).");
-  const w = 680, h = 400, pad = { l:56, r:20, t:16, b:44 }, iw = w-pad.l-pad.r, ih = h-pad.t-pad.b;
-  const mxX = 6, mxY = 250;
-  const X = v => pad.l + iw*v/mxX, Y = v => pad.t + ih - ih*v/mxY;
-  const s = svgEl(w, h, "scatter-svg", "Dispersión de sedes por 100.000 y tasa de personas atendidas");
-  let g = "";
-  ticks(mxY,5).forEach(t=>{ g += '<line x1="'+pad.l+'" x2="'+(w-pad.r)+'" y1="'+Y(t)+'" y2="'+Y(t)+'" class="grid"/><text x="'+(pad.l-8)+'" y="'+(Y(t)+4)+'" class="axis-lab" text-anchor="end">'+fmt(t)+'</text>'; });
-  ticks(mxX,6).forEach(t=>{ g += '<line x1="'+X(t)+'" x2="'+X(t)+'" y1="'+pad.t+'" y2="'+(h-pad.b)+'" class="grid"/><text x="'+X(t)+'" y="'+(h-pad.b+16)+'" class="axis-lab" text-anchor="middle">'+fmt(t)+'</text>'; });
-  g += '<text x="'+(pad.l+iw/2)+'" y="'+(h-6)+'" class="axis-title" text-anchor="middle">Sedes con neuropediatría por 100.000 habitantes</text>';
-  g += '<text transform="translate(14,'+(pad.t+ih/2)+') rotate(-90)" class="axis-title" text-anchor="middle">Personas atendidas por 100.000 (2024)</text>';
-  g += '<line x1="'+pad.l+'" x2="'+(w-pad.r)+'" y1="'+Y(97.8)+'" y2="'+Y(97.8)+'" class="ref-line"/><text x="'+(w-pad.r-4)+'" y="'+(Y(97.8)-5)+'" class="axis-lab" text-anchor="end">Nacional 97,8</text>';
-  s.innerHTML = g;
-  const ipmBr = [10, 15, 20, 30];
-  const dots = {};
-  DEP.slice().sort((a,b)=> b.pob-a.pob).forEach(d=>{
-    const r = 4 + 18*Math.sqrt(d.pob/7918660);
-    const c = document.createElementNS(SVGNS,"circle");
-    c.setAttribute("cx", X(d.sedes100k)); c.setAttribute("cy", Y(d.tasa24)); c.setAttribute("r", r);
-    c.setAttribute("class","bub ipm" + classOf(d.ipm, ipmBr)); c.setAttribute("tabindex","0"); c.setAttribute("role","button"); c.setAttribute("aria-label", d.nombre);
-    bindTip(c, ()=> deptCardHTML(d));
-    c.addEventListener("click", ()=> selectDept(d.cod));
-    c.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); selectDept(d.cod); } });
-    s.appendChild(c); dots[d.cod] = c;
-    if(["08","13","11","70","95","99","94"].includes(d.cod)){
-      const t = document.createElementNS(SVGNS,"text"); t.setAttribute("x", X(d.sedes100k)+r+3); t.setAttribute("y", Y(d.tasa24)+4); t.setAttribute("class","pt-lab"); t.textContent = d.nombre.replace(" D.C.",""); s.appendChild(t);
-    }
-  });
-  const selLab = document.createElementNS(SVGNS,"text"); selLab.setAttribute("class","pt-lab sel-pt-lab");
-  s.appendChild(selLab);
-  function hl(){
-    Object.keys(dots).forEach(k=> dots[k].classList.toggle("sel", k===STATE.sel));
-    const d = BY[STATE.sel], c = dots[STATE.sel];
-    selLab.setAttribute("x", +c.getAttribute("cx") + +c.getAttribute("r") + 4); selLab.setAttribute("y", +c.getAttribute("cy") - 6);
-    selLab.textContent = ["08","13","11","70","95","99","94"].includes(d.cod) ? "" : d.nombre;
-  }
-  onSelect(hl); hl();
-  body.appendChild(el("div",{class:"chart-box"},[
-    legend([["bub-sw ipm0","IPM < 10 %"],["bub-sw ipm1","10–15 %"],["bub-sw ipm2","15–20 %"],["bub-sw ipm3","20–30 %"],["bub-sw ipm4","≥ 30 %"]]), s ]));
-  body.appendChild(sourceLine("Fuente: SISPRO-RIPS 2024; REPS 13/11/2026; DANE. Sedes REPS = habilitación, no capacidad ni tiempos de espera."));
-
-  sub(body, "oferta-flujos", "¿Dónde se atienden los residentes de cada departamento?", "Atenciones de 2024 según el departamento de la IPS. Elige un departamento de residencia.");
-  const ctr = el("div",{class:"control-row"});
-  ctr.appendChild(deptSelect("sel-flujos", "Residentes de", cod=> selectDept(cod)));
-  body.appendChild(ctr);
-  const fbox = el("div",{class:"chart-box"});
-  body.appendChild(fbox);
-  const fnote = el("p",{class:"chart-readout", "aria-live":"polite"});
-  body.appendChild(fnote);
-  function drawFlows(){
-    fbox.innerHTML = ""; fbox.appendChild(flowChart(STATE.sel));
-    const d = BY[STATE.sel], row = D.flujos[d.cod], tot = d.aten24;
-    const dest = Object.keys(row).filter(k=> k!==d.cod && k!=="-1").sort((a,b)=> row[b]-row[a]);
-    fnote.textContent = d.nombre + ": " + fmt(d.pctFuera,1) + " % de " + fmt(tot) + " atenciones se prestó fuera del departamento" + (dest.length ? "; el principal destino fue " + BY[dest[0]].nombre + " (" + fmt(row[dest[0]]) + ")." : ".");
-  }
-  onSelect(drawFlows); drawFlows();
-  body.appendChild(sourceLine("Fuente: SISPRO-RIPS 2024, matriz residencia × departamento de la IPS. \"Sin dato del prestador\" corresponde a la columna -1 del cubo. La atención fuera del departamento puede reflejar falta de oferta local, remisión a mayor complejidad o cercanía geográfica; los datos no permiten distinguirlo."));
-
-  sub(body, "oferta-balance", "Departamentos receptores y emisores", "Saldo neto = atenciones prestadas por las IPS del departamento (a residentes de cualquier lugar) menos atenciones recibidas por sus residentes (en cualquier lugar).");
-  body.appendChild(balanceChart());
-  body.appendChild(el("p",null,["Las IPS de Bogotá D.C. prestaron 20.703 atenciones más que las recibidas por sus residentes, y el 29 % de las atenciones que prestaron fue para personas de otros departamentos o con residencia desconocida."]));
-}
 function flowChart(cod){
   const d = BY[cod], row = D.flujos[cod], tot = d.aten24;
   const items = Object.keys(row).map(k=>({ k:k, n:row[k] })).sort((a,b)=> b.n-a.n);
@@ -668,6 +832,7 @@ function flowChart(cod){
   });
   return s;
 }
+
 function balanceChart(){
   const colSum = {};
   Object.keys(D.flujos).forEach(r=> Object.keys(D.flujos[r]).forEach(c=>{ colSum[c] = (colSum[c]||0) + D.flujos[r][c]; }));
@@ -691,7 +856,6 @@ function balanceChart(){
   return el("div",{class:"chart-box"},[ legend([["net-pos","Receptor neto (6 mayores)"],["net-neg","Emisor neto (6 mayores)"]]), s ]);
 }
 
-/* ================================================================= 05 INEQUIDAD */
 function lorenz(key){
   const arr = DEP.map(d=>({ h:d[key], w:d.pob })).sort((a,b)=> (a.h/a.w)-(b.h/b.w));
   const H = arr.reduce((s,x)=>s+x.h,0), W = arr.reduce((s,x)=>s+x.w,0);
@@ -700,11 +864,19 @@ function lorenz(key){
   let area = 0; for(let i=1;i<pts.length;i++) area += (pts[i][0]-pts[i-1][0])*(pts[i][1]+pts[i-1][1]);
   return { pts:pts, gini: 1-area };
 }
-function renderInequidad(){
-  const body = document.getElementById("body-inequidad");
-  body.appendChild(el("p",null,["La distribución de las personas atendidas fue moderadamente desigual respecto de la población (Gini 0,240), la de las atenciones fue más desigual (Gini 0,486) y la de las sedes, intermedia (Gini 0,381). Todas las medidas se ponderan por población."]));
 
-  sub(body, "inequidad-lorenz", "Curvas de Lorenz", "Población acumulada (departamentos ordenados de menor a mayor tasa) frente al porcentaje acumulado de cada indicador. Cuanto más se aleja de la diagonal, más desigual. Activa o desactiva cada curva.");
+/* ================================================================= 09 DESIGUALDAD */
+const GLOS_IDX = ["razon","lorenz","gini","theil","mld","ci","sii","disim","rho","rr","ic"];
+function renderDesigualdad(){
+  const body = document.getElementById("body-desigualdad");
+  body.appendChild(el("p",null,["Las secciones anteriores compararon departamentos de a dos indicadores. Aquí se resume cuánta desigualdad hay en conjunto, con medidas estándar de equidad en salud, y si ha cambiado en el tiempo. Todas se ponderan por la población de cada departamento."]));
+  sub(body, "desigualdad-glosario", "Glosario de los índices de desigualdad", "Qué mide cada uno y cómo interpretar su valor.");
+  const gg = el("div",{class:"concept-grid"});
+  GLOS_IDX.forEach(id=>{ const g = C.glosario.find(x=>x.id===id); if(!g) return;
+    gg.appendChild(el("div",{class:"concept-card", id:"idx-"+id},[ el("h4",null,[g.t]), el("p",null,[g.d]), g.url ? el("p",{class:"link-row small"},[ el("a",{href:g.url, target:"_blank", rel:"noopener"},["Fuente: " + g.fuente]) ]) : null ])); });
+  body.appendChild(gg);
+
+  sub(body, "desigualdad-lorenz", "Curvas de Lorenz", "Población acumulada (departamentos ordenados de menor a mayor tasa) frente al porcentaje acumulado de cada indicador. Activa o desactiva cada curva.");
   const series = [ { key:"pers24", lab:"Personas atendidas", cls:"lz-a", on:true }, { key:"aten24", lab:"Atenciones", cls:"lz-b", on:true }, { key:"sedes", lab:"Sedes de neuropediatría", cls:"lz-c", on:true } ];
   series.forEach(sr=> sr.L = lorenz(sr.key));
   const toggles = el("div",{class:"filter-row"});
@@ -714,146 +886,234 @@ function renderInequidad(){
     toggles.appendChild(b);
   });
   body.appendChild(toggles);
-  const lbox = el("div",{class:"chart-box lorenz-box"});
-  body.appendChild(lbox);
+  const lwrap = el("div",{class:"lorenz-layout"});
+  const lbox = el("div",{class:"chart-box lorenz-box"}); lwrap.appendChild(lbox);
+  const lrd = reading(); lwrap.appendChild(lrd);
+  body.appendChild(lwrap);
+  function at(L, x){ const p = L.pts; for(let i=1;i<p.length;i++){ if(p[i][0] >= x){ const t = (x-p[i-1][0])/(p[i][0]-p[i-1][0]); return p[i-1][1] + t*(p[i][1]-p[i-1][1]); } } return 1; }
   function drawL(){
-    const S = 380, pad = 44, iw = S - pad - 14;
-    const X = v => pad + iw*v, Y = v => 14 + iw - iw*v;
+    const S = 380, pad = 44, iw = S - pad - 14, X = v => pad + iw*v, Y = v => 14 + iw - iw*v;
     const s = svgEl(S, S, "lorenz-svg", "Curvas de Lorenz");
     let g = '';
     [0,.25,.5,.75,1].forEach(t=>{ g += '<line x1="'+X(t)+'" x2="'+X(t)+'" y1="14" y2="'+Y(0)+'" class="grid"/><line x1="'+X(0)+'" x2="'+X(1)+'" y1="'+Y(t)+'" y2="'+Y(t)+'" class="grid"/><text x="'+X(t)+'" y="'+(Y(0)+16)+'" class="axis-lab" text-anchor="middle">'+(t*100)+'%</text><text x="'+(pad-6)+'" y="'+(Y(t)+4)+'" class="axis-lab" text-anchor="end">'+(t*100)+'%</text>'; });
-    g += '<line x1="'+X(0)+'" y1="'+Y(0)+'" x2="'+X(1)+'" y2="'+Y(1)+'" class="eq-line"/>';
-    g += '<text x="'+(X(.5))+'" y="'+(S-4)+'" class="axis-title" text-anchor="middle">Población acumulada</text>';
+    g += '<line x1="'+X(0)+'" y1="'+Y(0)+'" x2="'+X(1)+'" y2="'+Y(1)+'" class="eq-line"/><text x="'+X(.62)+'" y="'+(Y(.66)-4)+'" class="axis-lab" transform="rotate(-45 '+X(.62)+' '+(Y(.66)-4)+')">igualdad perfecta</text>';
+    g += '<text x="'+X(.5)+'" y="'+(S-4)+'" class="axis-title" text-anchor="middle">Población acumulada</text>';
     s.innerHTML = g;
-    series.filter(sr=>sr.on).forEach(sr=>{
+    const on = series.filter(sr=>sr.on);
+    on.forEach(sr=>{
       const p = document.createElementNS(SVGNS,"path");
       p.setAttribute("d", sr.L.pts.map((q,i)=> (i?"L":"M")+X(q[0]).toFixed(1)+","+Y(q[1]).toFixed(1)).join(""));
       p.setAttribute("class","lz " + sr.cls); p.setAttribute("tabindex","0");
-      bindTip(p, ()=> "<h5>"+esc(sr.lab)+"</h5><p>Gini (curva) "+fmt(sr.L.gini,3)+"</p>");
+      bindTip(p, ()=> "<h5>"+esc(sr.lab)+"</h5><p>Gini "+fmt(sr.L.gini,3)+". El 50 % de la población con menor tasa concentra el "+fmt(100*at(sr.L,.5),1)+" % del indicador.</p>");
       s.appendChild(p);
     });
     lbox.innerHTML = ""; lbox.appendChild(s);
+    if(!on.length){ setReading(lrd, "Activa al menos una curva para ver la lectura."); return; }
+    const srt = on.slice().sort((a,b)=> b.L.gini - a.L.gini);
+    let t = srt.map(sr=> "El 50 % de la población que vive en los departamentos con menor " + (sr.key==="sedes"?"oferta":"tasa") + " concentra solo el <b>" + fmt(100*at(sr.L,.5),1) + " %</b> de las " + esc(sr.lab.toLowerCase()) + " (Gini " + fmt(sr.L.gini,3) + ").").join(" ");
+    if(srt.length > 1) t += " La curva más alejada de la diagonal es la de " + esc(srt[0].lab.toLowerCase()) + ": es el indicador más desigual de los que están activos.";
+    t += " Si todos los departamentos tuvieran la misma tasa, ese 50 % concentraría el 50 %.";
+    setReading(lrd, t);
   }
   drawL();
-  body.appendChild(sourceLine("Curvas calculadas en el navegador a partir de la tabla por departamento; reproducen los Gini del libro de cálculo (0,240; 0,486; 0,381)."));
+  body.appendChild(sourceLine("Curvas calculadas en el navegador a partir de la tabla por departamento; reproducen los Gini del libro de cálculo del proyecto (0,240; 0,486; 0,381)."));
 
-  sub(body, "inequidad-indices", "Índices de inequidad con intervalos de confianza", "Elige la medida. Los bigotes son IC95 % por bootstrap de departamentos (4.000 réplicas).");
+  sub(body, "desigualdad-indices", "Índices de desigualdad con intervalos de confianza", "Elige la medida. Los bigotes son IC95 % por bootstrap de departamentos (4.000 réplicas).");
   let mm = "gini";
   body.appendChild(chips([{id:"gini",label:"Gini"},{id:"theil",label:"Theil T"},{id:"ci",label:"Índice de concentración (IPM)"}], mm, id=>{ mm = id; drawIdx(); }, "Medida"));
-  const ibox = el("div",{class:"chart-box"});
-  body.appendChild(ibox);
+  const ibox = el("div",{class:"chart-box"}); body.appendChild(ibox);
+  const ird = reading(); body.appendChild(ird);
+  const NAMES = { gini:"Gini", theil:"Theil T", ci:"índice de concentración" };
   function drawIdx(){
-    const rows = C.indices;
-    const lo = mm === "ci" ? -0.4 : 0, hi = mm === "ci" ? 0.3 : (mm === "gini" ? 0.7 : 0.7);
+    const rows = C.indices, lo = mm === "ci" ? -0.4 : 0, hi = mm === "ci" ? 0.3 : 0.7;
     const w = 640, rowH = 40, pad = { l:190, r:30, t:26, b:10 }, h = pad.t + rows.length*rowH + pad.b, iw = w-pad.l-pad.r;
     const X = v => pad.l + iw*(v-lo)/(hi-lo);
-    const s = svgEl(w, h, "", "Índices de inequidad");
+    const s = svgEl(w, h, "", "Índices de desigualdad");
     let g = "";
-    const step = mm === "ci" ? 0.1 : 0.1;
-    for(let t=lo; t<=hi+1e-9; t+=step){ g += '<line x1="'+X(t)+'" x2="'+X(t)+'" y1="'+(pad.t-6)+'" y2="'+(h-pad.b)+'" class="grid'+(Math.abs(t)<1e-9?' zero':'')+'"/><text x="'+X(t)+'" y="'+(pad.t-10)+'" class="axis-lab" text-anchor="middle">'+fmt(t,1)+'</text>'; }
+    for(let t=lo; t<=hi+1e-9; t+=0.1){ g += '<line x1="'+X(t)+'" x2="'+X(t)+'" y1="'+(pad.t-6)+'" y2="'+(h-pad.b)+'" class="grid'+(Math.abs(t)<1e-9?' zero':'')+'"/><text x="'+X(t)+'" y="'+(pad.t-10)+'" class="axis-lab" text-anchor="middle">'+fmt(t,1)+'</text>'; }
+    if(mm === "ci") g += '<text x="'+(X(lo)+4)+'" y="'+(h-2)+'" class="quad-lab">← en los más pobres</text><text x="'+(X(hi)-4)+'" y="'+(h-2)+'" class="quad-lab" text-anchor="end">en los menos pobres →</text>';
     s.innerHTML = g;
     rows.forEach((r,i)=>{
       const v = r[mm], ic = r[mm+"IC"], y = pad.t + i*rowH + rowH/2;
       const gg = document.createElementNS(SVGNS,"g"); gg.setAttribute("tabindex","0"); gg.setAttribute("class","bar-g");
-      gg.innerHTML = '<text x="'+(pad.l-10)+'" y="'+(y+4)+'" class="axis-lab" text-anchor="end">'+esc(r.indicador)+'</text>' +
-        '<line x1="'+X(ic[0])+'" x2="'+X(ic[1])+'" y1="'+y+'" y2="'+y+'" class="ci-line"/>' +
-        '<line x1="'+X(ic[0])+'" x2="'+X(ic[0])+'" y1="'+(y-6)+'" y2="'+(y+6)+'" class="ci-line"/><line x1="'+X(ic[1])+'" x2="'+X(ic[1])+'" y1="'+(y-6)+'" y2="'+(y+6)+'" class="ci-line"/>' +
-        '<circle cx="'+X(v)+'" cy="'+y+'" r="6" class="pt'+(i===3?' pt-alt':'')+'"/>';
-      bindTip(gg, ()=> "<h5>"+esc(r.indicador)+"</h5><p>Gini "+fmt(r.gini,3)+" ("+fmt(r.giniIC[0],3)+" a "+fmt(r.giniIC[1],3)+")<br>Theil "+fmt(r.theil,3)+" ("+fmt(r.theilIC[0],3)+" a "+fmt(r.theilIC[1],3)+")<br>MLD "+(r.mld===null?"n.d.":fmt(r.mld,3))+"<br>CI (IPM) "+fmt(r.ci,3)+" ("+fmt(r.ciIC[0],3)+" a "+fmt(r.ciIC[1],3)+")</p>");
+      gg.innerHTML = '<text x="'+(pad.l-10)+'" y="'+(y+4)+'" class="axis-lab" text-anchor="end">'+esc(r.indicador)+'</text><line x1="'+X(ic[0])+'" x2="'+X(ic[1])+'" y1="'+y+'" y2="'+y+'" class="ci-line"/><line x1="'+X(ic[0])+'" x2="'+X(ic[0])+'" y1="'+(y-6)+'" y2="'+(y+6)+'" class="ci-line"/><line x1="'+X(ic[1])+'" x2="'+X(ic[1])+'" y1="'+(y-6)+'" y2="'+(y+6)+'" class="ci-line"/><circle cx="'+X(v)+'" cy="'+y+'" r="6" class="pt'+(i===3?' pt-alt':'')+'"/>';
+      bindTip(gg, ()=> "<h5>"+esc(r.indicador)+"</h5><p>Gini "+fmt(r.gini,3)+" ("+fmt(r.giniIC[0],3)+" a "+fmt(r.giniIC[1],3)+")<br>Theil "+fmt(r.theil,3)+" ("+fmt(r.theilIC[0],3)+" a "+fmt(r.theilIC[1],3)+")<br>MLD "+(r.mld===null?"n.d.":fmt(r.mld,3))+"<br>Índice de concentración "+fmt(r.ci,3)+" ("+fmt(r.ciIC[0],3)+" a "+fmt(r.ciIC[1],3)+")</p>");
       s.appendChild(gg);
     });
     ibox.innerHTML = ""; ibox.appendChild(s);
+    const r24 = rows.slice(0,3);
+    let t;
+    if(mm === "ci"){
+      const ex = r24.filter(r=> r.ciIC[0] > 0 || r.ciIC[1] < 0);
+      t = "Con el " + NAMES[mm] + ", solo " + (ex.length ? joinNames(ex.map(r=> esc(r.indicador.toLowerCase()) + " (" + fmt(r.ci,3) + ")")) : "ningún indicador") + " tiene un IC95 % que excluye el cero. Las sedes se concentran relativamente en departamentos más pobres, coherente con la oferta del Caribe. Para personas y atenciones el índice es positivo pero su IC incluye el cero: no hay evidencia clara de concentración por pobreza con este índice, aunque el modelo de la sección 07 sí muestra menos atención a mayor pobreza al considerar la oferta.";
+    } else {
+      const srt = r24.slice().sort((a,b)=> b[mm]-a[mm]);
+      const ov = srt[0][mm+"IC"][0] <= srt[srt.length-1][mm+"IC"][1];
+      t = "Con el " + NAMES[mm] + ", el indicador más desigual es " + esc(srt[0].indicador.toLowerCase()) + " (" + fmt(srt[0][mm],3) + ") y el menos desigual " + esc(srt[srt.length-1].indicador.toLowerCase()) + " (" + fmt(srt[srt.length-1][mm],3) + "). " + (ov ? "Sus IC95 % se superponen, así que la diferencia entre ambos es incierta con 33 departamentos." : "Sus IC95 % no se superponen.") + " Los intervalos anchos reflejan que hay solo 33 unidades y valores extremos como Atlántico (sin Atlántico, el Gini de personas baja a 0,197).";
+    }
+    setReading(ird, t);
   }
   drawIdx();
   body.appendChild(sourceLine(C.indicesNota));
-  body.appendChild(el("p",null,["El único índice de concentración con IC que excluye el cero es el de las sedes (−0,190): hay relativamente más sedes por habitante en departamentos más pobres, coherente con la mayor oferta por habitante que se observa en departamentos del Caribe."]));
   const om = el("dl",{class:"kv kv-wide"});
   C.otrasMedidas.forEach(o=>{ om.appendChild(el("dt",null,[o.k])); om.appendChild(el("dd",null,[o.v])); });
   body.appendChild(el("div",{class:"card"},[ el("h4",null,["Otras medidas de distribución (personas atendidas 2024)"]), om ]));
 
-  sub(body, "inequidad-theil", "Descomposición del Theil por región", "El 37,4 % de la desigualdad se explica por diferencias entre regiones y el 62,6 % por diferencias entre departamentos de una misma región.");
+  sub(body, "desigualdad-theil", "¿La desigualdad está entre regiones o dentro de ellas?", "Descomposición del Theil T de las personas atendidas en 2024.");
   const T = C.theilRegional;
   const tb = el("div",{class:"chart-box"});
-  tb.appendChild(el("div",{class:"split-bar", role:"img", "aria-label":"Theil entre regiones 37,4 %, dentro de regiones 62,6 %"},[
-    el("span",{class:"split-a", style:"width:"+T.pctEntre+"%"},["Entre regiones " + fmt(T.pctEntre,1) + " %"]),
-    el("span",{class:"split-b", style:"width:"+(100-T.pctEntre)+"%"},["Dentro de las regiones " + fmt(100-T.pctEntre,1) + " %"])
-  ]));
-  const rw = 640, rr = T.regiones, rH = 30, rpad = { l:160, r:120, t:10 }, rh = rpad.t + rr.length*rH + 6, riw = rw - rpad.l - rpad.r;
+  tb.appendChild(el("div",{class:"split-bar", role:"img", "aria-label":"Entre regiones 37,4 %, dentro de regiones 62,6 %"},[
+    el("span",{class:"split-a", style:"width:"+T.pctEntre+"%"},["Entre regiones " + fmt(T.pctEntre,1) + " %"]), el("span",{class:"split-b", style:"width:"+(100-T.pctEntre)+"%"},["Dentro de las regiones " + fmt(100-T.pctEntre,1) + " %"]) ]));
+  const rw = 640, rr = T.regiones, rH = 30, rpad = { l:160, r:150, t:10 }, rh = rpad.t + rr.length*rH + 6, riw = rw - rpad.l - rpad.r;
   const rs = svgEl(rw, rh, "", "Tasa y sedes por región");
   rr.forEach((x,i)=>{
     const y = rpad.t + i*rH, bw = riw * x.tasa/150;
     const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g");
     g.innerHTML = '<text x="'+(rpad.l-8)+'" y="'+(y+19)+'" class="axis-lab" text-anchor="end">'+esc(x.region)+'</text><rect x="'+rpad.l+'" y="'+(y+5)+'" width="'+bw+'" height="'+(rH-10)+'" rx="4" class="rg-bar '+REGION_CLASS[x.region]+'"/><text x="'+(rpad.l+bw+6)+'" y="'+(y+19)+'" class="bar-val">'+fmt(x.tasa,1)+' /100.000 · '+fmt(x.sedes100k,2)+' sedes</text>';
-    bindTip(g, ()=> "<h5>"+esc(x.region)+"</h5><p>Población "+fmt(x.pob)+"<br>Personas atendidas "+fmt(x.personas)+" ("+fmt(x.tasa,1)+" /100.000)<br>Sedes "+fmt(x.sedes)+" ("+fmt(x.sedes100k,2)+" /100.000)</p>");
+    bindTip(g, ()=> "<h5>"+esc(x.region)+"</h5><p>Población "+fmt(x.pob)+"<br>Personas atendidas "+fmt(x.personas)+" ("+fmt(x.tasa,1)+" por 100.000)<br>Sedes "+fmt(x.sedes)+" ("+fmt(x.sedes100k,2)+" por 100.000)</p>");
     rs.appendChild(g);
   });
-  tb.appendChild(rs);
-  body.appendChild(tb);
-  body.appendChild(sourceLine("Theil T total 0,100 = 0,038 entre regiones + 0,063 dentro de regiones. Un análisis solo regional ocultaría la mayor parte de la heterogeneidad."));
+  tb.appendChild(rs); body.appendChild(tb);
+  const trd = reading(); body.appendChild(trd);
+  setReading(trd, "El Caribe tiene la tasa regional más alta (140,0 por 100.000) y la Amazonía-Orinoquía (58,7) y la Pacífica (63,9) las más bajas. Aun así, solo el 37,4 % de la desigualdad total (Theil 0,100) se explica por diferencias entre regiones; el 62,6 % restante ocurre entre departamentos de una misma región, como Atlántico (240,1) frente a Cesar (73,1) en el Caribe. Por eso las políticas deben mirar el nivel departamental y no solo el regional.");
 
-  sub(body, "inequidad-modelos", "Modelos ecológicos y correlaciones", "Regresión cuasi-Poisson de las personas atendidas en 2024 con offset del logaritmo de la población (n = 33). RR > 1: más atención.");
-  const ms = C.modelos;
-  const fw = 640, fH = 34, fpad = { l:250, r:110, t:24, b:10 }, fh = fpad.t + ms.length*fH + fpad.b, fiw = fw - fpad.l - fpad.r;
-  const lmin = Math.log(0.4), lmax = Math.log(2);
-  const FX = v => fpad.l + fiw*(Math.log(v)-lmin)/(lmax-lmin);
-  const fs = svgEl(fw, fh, "", "Razones de tasas del modelo cuasi-Poisson");
-  let fg = "";
-  [0.5,0.75,1,1.5,2].forEach(t=>{ fg += '<line x1="'+FX(t)+'" x2="'+FX(t)+'" y1="'+(fpad.t-6)+'" y2="'+(fh-fpad.b)+'" class="grid'+(t===1?' zero':'')+'"/><text x="'+FX(t)+'" y="'+(fpad.t-10)+'" class="axis-lab" text-anchor="middle">'+fmt(t,2)+'</text>'; });
-  fs.innerHTML = fg;
-  ms.forEach((m,i)=>{
-    const y = fpad.t + i*fH + fH/2;
-    const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g");
-    g.innerHTML = '<text x="'+(fpad.l-10)+'" y="'+(y+4)+'" class="axis-lab" text-anchor="end">'+esc(m.modelo+". "+m.var)+'</text><line x1="'+FX(m.lo)+'" x2="'+FX(m.hi)+'" y1="'+y+'" y2="'+y+'" class="ci-line"/><rect x="'+(FX(m.rr)-5)+'" y="'+(y-5)+'" width="10" height="10" class="pt-sq"/><text x="'+(fw-fpad.r+8)+'" y="'+(y+4)+'" class="bar-val">'+fmt(m.rr,2)+' ('+fmt(m.lo,2)+'–'+fmt(m.hi,2)+')</text>';
-    bindTip(g, ()=> "<h5>"+esc(m.var)+"</h5><p>RR "+fmt(m.rr,2)+" · IC95 % "+fmt(m.lo,2)+" a "+fmt(m.hi,2)+" · p "+m.p+"</p>");
-    fs.appendChild(g);
+  sub(body, "desigualdad-tiempo", "¿Ha cambiado la desigualdad entre 2019 y 2025?");
+  const idxBox = el("div",{class:"small-multiples"});
+  [["gini","Gini",0.35],["theil","Theil T",0.2],["ci","Índice de concentración (IPM)",0.12]].forEach(m=>{
+    const w = 300, h = 170, pad = { l:40, r:12, t:12, b:26 }, iw = w-pad.l-pad.r, ih = h-pad.t-pad.b, ser = C.serieNacional;
+    const X = i => pad.l + iw*i/6, Y = v => pad.t + ih - ih*v/m[2];
+    const s = svgEl(w, h, "", m[1] + " 2019-2025");
+    let g = '<rect x="'+(X(5.5))+'" y="'+pad.t+'" width="'+(X(6)-X(5.5)+6)+'" height="'+ih+'" class="break-band"/>';
+    [0, m[2]/2, m[2]].forEach(t=>{ g += '<line x1="'+pad.l+'" x2="'+(w-pad.r)+'" y1="'+Y(t)+'" y2="'+Y(t)+'" class="grid"/><text x="'+(pad.l-6)+'" y="'+(Y(t)+4)+'" class="axis-lab" text-anchor="end">'+fmt(t,2)+'</text>'; });
+    [0,2,4,6].forEach(i=>{ g += '<text x="'+X(i)+'" y="'+(h-8)+'" class="axis-lab" text-anchor="middle">'+YEARS[i]+'</text>'; });
+    g += '<path d="'+ser.map((v,i)=>(i?"L":"M")+X(i)+","+Y(v[m[0]])).join("")+'" class="nat-line thin"/>';
+    s.innerHTML = g;
+    ser.forEach((v,i)=>{
+      const c = document.createElementNS(SVGNS,"circle"); c.setAttribute("cx",X(i)); c.setAttribute("cy",Y(v[m[0]])); c.setAttribute("r","4.5"); c.setAttribute("class","pt" + (i===6?" pt-alt":"")); c.setAttribute("tabindex","0");
+      bindTip(c, ()=> "<h5>"+m[1]+" · "+v.anio+"</h5><p><b>"+fmt(v[m[0]],3)+"</b></p>"+(i===6?"<p class='muted'>Leer con cautela: cambio de reporte.</p>":""));
+      s.appendChild(c);
+    });
+    idxBox.appendChild(el("div",{class:"chart-box"},[ el("h4",{class:"chart-title"},[m[1]]), s ]));
   });
-  body.appendChild(el("div",{class:"chart-box"},[fs]));
-  body.appendChild(sourceLine("Modelo A: IPM y sedes. Modelo B: además una indicadora de Bogotá D.C. " + C.modelosNota));
+  body.appendChild(idxBox);
+  const erd = reading(); body.appendChild(erd);
+  setReading(erd, "El Gini de las personas atendidas osciló entre 0,240 y 0,290 sin una tendencia clara y su valor más bajo fue el de 2024. El índice de concentración bajó de +0,092 (2019) y +0,101 (2020) a valores entre +0,032 y +0,044 en 2022-2024: la ventaja inicial de los departamentos menos pobres se redujo a medida que creció la atención en todo el país. Los valores de 2025 (punto naranja) no son comparables por el cambio de reporte.");
 
-  const cw = 640, cr = C.correlaciones, cH = 28, cpad = { l:330, r:60, t:8 }, ch = cpad.t + cr.length*cH + 6, ciw = cw - cpad.l - cpad.r, cx0 = cpad.l + ciw/2;
+  sub(body, "desigualdad-cruces", "Resumen de los cruces", "Correlaciones de Spearman entre departamentos (n = 33) de las secciones 04 a 08. Haz clic en una barra para ir a su análisis.");
+  const cr = C.correlaciones.map((c,i)=> Object.assign({ sec: ["ofertaatencion","intensidad","pobreza","pobreza","pobreza","movilidad","movilidad"][i] }, c));
+  const cw = 640, cH = 28, cpad = { l:330, r:60, t:8 }, ch = cpad.t + cr.length*cH + 6, ciw = cw - cpad.l - cpad.r, cx0 = cpad.l + ciw/2;
   const cs = svgEl(cw, ch, "", "Correlaciones de Spearman");
   cs.innerHTML = '<line x1="'+cx0+'" x2="'+cx0+'" y1="'+cpad.t+'" y2="'+ch+'" class="axis"/>';
   cr.forEach((c,i)=>{
     const y = cpad.t + i*cH, bw = (ciw/2) * Math.abs(c.rho), pos = c.rho >= 0;
-    const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g");
-    g.innerHTML = '<text x="'+(cpad.l-10)+'" y="'+(y+18)+'" class="axis-lab" text-anchor="end">'+esc(c.par)+'</text><rect x="'+(pos?cx0:cx0-bw)+'" y="'+(y+6)+'" width="'+Math.max(bw,1)+'" height="'+(cH-12)+'" rx="3" class="'+(pos?"net-pos":"net-neg")+'"/><text x="'+(pos?cx0+bw+5:cx0-bw-5)+'" y="'+(y+18)+'" class="bar-val" text-anchor="'+(pos?"start":"end")+'">'+fmt(c.rho,2)+'</text>';
-    bindTip(g, ()=> "<h5>"+esc(c.par)+"</h5><p>ρ de Spearman "+fmt(c.rho,3)+" · p "+c.p+"</p>");
+    const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g rank-row"); g.setAttribute("role","button");
+    g.innerHTML = '<rect x="0" y="'+y+'" width="'+cw+'" height="'+cH+'" class="row-hit"/><text x="'+(cpad.l-10)+'" y="'+(y+18)+'" class="axis-lab" text-anchor="end">'+esc(c.par)+'</text><rect x="'+(pos?cx0:cx0-bw)+'" y="'+(y+6)+'" width="'+Math.max(bw,1)+'" height="'+(cH-12)+'" rx="3" class="'+(pos?"net-pos":"net-neg")+'"/><text x="'+(pos?cx0+bw+5:cx0-bw-5)+'" y="'+(y+18)+'" class="bar-val" text-anchor="'+(pos?"start":"end")+'">'+fmt(c.rho,2)+'</text>';
+    bindTip(g, ()=> "<h5>"+esc(c.par)+"</h5><p>ρ de Spearman "+fmt(c.rho,3)+" · p "+c.p+" · asociación "+strength(c.rho)+"</p><p class='muted'>Clic para ir al análisis</p>");
+    const go = ()=>{ openSection(c.sec); setTimeout(()=> scrollToId("sec-"+c.sec), 60); };
+    g.addEventListener("click", go); g.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } });
     cs.appendChild(g);
   });
-  body.appendChild(el("div",{class:"chart-box"},[ el("h4",{class:"chart-title"},["Correlaciones de Spearman entre departamentos (n = 33)"]), cs ]));
+  body.appendChild(el("div",{class:"chart-box"},[ legend([["net-pos","Asociación positiva"],["net-neg","Asociación negativa"]]), cs ]));
+  const crd = reading(); body.appendChild(crd);
+  setReading(crd, "Las asociaciones más fuertes son las de la oferta: más sedes por habitante van con más personas atendidas (0,65), más atenciones por persona (0,55) y menos atención fuera del departamento (−0,53). La pobreza se asocia con menos atención (−0,42), pero no con la oferta (0,03) ni con la intensidad (0,08). Son asociaciones ecológicas: describen departamentos, no personas, y no prueban causalidad.");
   body.appendChild(el("div",{class:"tag-row"},[confidenceTag("preliminar")]));
 }
 
-/* ================================================================= 06 HUILA */
+/* ================================================================= 10 HUILA */
 function renderHuila(){
   const body = document.getElementById("body-huila");
   const h = BY["41"];
   C.huila.texto.forEach(p=> body.appendChild(el("p",null,[p])));
   const comp = [
-    ["Personas atendidas /100.000", h.tasa24, NAC.tasa24, 1],
-    ["Sedes de neuropediatría /100.000", h.sedes100k, NAC.sedes100k, 2],
-    ["Atenciones por persona", h.atenPorPersona, NAC.atenPorPersona, 1],
-    ["% atenciones fuera del dpto.", h.pctFuera, NAC.pctFuera, 1],
-    ["% personas en municipios sin sede", h.pctSinSede, 19.9, 1]
+    ["Personas atendidas por 100.000", h.tasa24, NAC.tasa24, 1, "tasa24"], ["Sedes de neuropediatría por 100.000", h.sedes100k, NAC.sedes100k, 2, "sedes100k"],
+    ["Atenciones por persona", h.atenPorPersona, NAC.atenPorPersona, 1, "atenPorPersona"], ["% atenciones fuera del dpto.", h.pctFuera, NAC.pctFuera, 1, "pctFuera"],
+    ["% personas en municipios sin sede", h.pctSinSede, 19.9, 1, "pctSinSede"]
   ];
   const w = 640, rowH = 48, pad = { l:230, r:70, t:8 }, hh = pad.t + comp.length*rowH, iw = w-pad.l-pad.r;
   const s = svgEl(w, hh, "", "Huila frente al total nacional");
   comp.forEach((c,i)=>{
     const mx = Math.max(c[1], c[2]) * 1.15, y = pad.t + i*rowH;
     const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g");
-    g.innerHTML = '<text x="'+(pad.l-10)+'" y="'+(y+22)+'" class="axis-lab" text-anchor="end">'+esc(c[0])+'</text>' +
-      '<rect x="'+pad.l+'" y="'+(y+4)+'" width="'+(iw*c[1]/mx)+'" height="15" rx="3" class="bar-fill"/><text x="'+(pad.l+iw*c[1]/mx+5)+'" y="'+(y+16)+'" class="bar-val">Huila '+fmt(c[1],c[3])+'</text>' +
-      '<rect x="'+pad.l+'" y="'+(y+22)+'" width="'+(iw*c[2]/mx)+'" height="15" rx="3" class="bar-nat"/><text x="'+(pad.l+iw*c[2]/mx+5)+'" y="'+(y+34)+'" class="bar-val muted">Nacional '+fmt(c[2],c[3])+'</text>';
-    bindTip(g, ()=> "<h5>"+esc(c[0])+"</h5><p>Huila: <b>"+fmt(c[1],c[3])+"</b><br>Colombia: "+fmt(c[2],c[3])+"</p>");
+    g.innerHTML = '<text x="'+(pad.l-10)+'" y="'+(y+22)+'" class="axis-lab" text-anchor="end">'+esc(c[0])+'</text><rect x="'+pad.l+'" y="'+(y+4)+'" width="'+(iw*c[1]/mx)+'" height="15" rx="3" class="bar-fill"/><text x="'+(pad.l+iw*c[1]/mx+5)+'" y="'+(y+16)+'" class="bar-val">Huila '+fmt(c[1],c[3])+'</text><rect x="'+pad.l+'" y="'+(y+22)+'" width="'+(iw*c[2]/mx)+'" height="15" rx="3" class="bar-nat"/><text x="'+(pad.l+iw*c[2]/mx+5)+'" y="'+(y+34)+'" class="bar-val muted">Nacional '+fmt(c[2],c[3])+'</text>';
+    bindTip(g, ()=> "<h5>"+esc(c[0])+"</h5><p>Huila: <b>"+fmt(c[1],c[3])+"</b> (puesto "+rankOf("41",c[4])+" de 33)<br>Colombia: "+fmt(c[2],c[3])+"</p>");
     s.appendChild(g);
   });
   body.appendChild(el("div",{class:"chart-box"},[ legend([["bar-fill","Huila"],["bar-nat","Colombia"]]), s ]));
+  const rd = reading(); body.appendChild(rd);
+  setReading(rd, "El Huila está por debajo del país en tasa de atención (79,0 frente a 97,8; puesto " + rankOf("41","tasa24") + " de 33) y en sedes por habitante (0,75 frente a 1,12), pero cerca en intensidad (11,4 atenciones por persona frente a 12,1). Su movilidad es algo mayor que la nacional (15,8 % de atenciones fuera frente a 11,4 %) y su porcentaje de personas en municipios sin sede (18,8 %) es similar al del país (19,9 %).");
   body.appendChild(el("h4",{class:"chart-title"},["Destino de las atenciones de los residentes del Huila (2024)"]));
   body.appendChild(el("div",{class:"chart-box"},[flowChart("41")]));
+  const rd2 = reading(); body.appendChild(rd2);
+  setReading(rd2, "El 84,2 % de las atenciones de los residentes del Huila se prestó en el propio departamento. De las que salieron, casi la mitad (832 de 1.695) fue a Bogotá D.C. y 375 a Atlántico. El número de personas atendidas pasó de 333 en 2019 a 944 en 2024.");
   const btn = el("button",{class:"btn", type:"button"},["Ver el Huila en el mapa"]);
-  btn.addEventListener("click", ()=>{ selectDept("41"); openSection("mapa"); setTimeout(()=> scrollToId("mapa-coropletico"), 60); });
+  btn.addEventListener("click", ()=>{ selectDept("41"); openSection("territorio"); setTimeout(()=> scrollToId("territorio-mapa"), 60); });
   body.appendChild(el("p",null,[btn]));
-  body.appendChild(sourceLine("Fuente: SISPRO-RIPS 2024; REPS 13/11/2026; DANE. Cruce RIPS-REPS por municipio de residencia."));
+  body.appendChild(sourceLine("Fuente: SISPRO-RIPS 2024; REPS 13/11/2026; DANE."));
+}
+
+/* ================================================================= 14 GLOSARIO y 15 REFERENCIAS */
+function renderGlosario(){
+  const body = document.getElementById("body-glosario");
+  body.appendChild(el("p",null,["Definiciones breves de los términos que aparecen en la app. En el texto, los términos subrayados con puntos muestran esta definición al pasar el cursor o el foco del teclado."]));
+  const dl = el("dl",{class:"glossary"});
+  C.glosario.slice().sort((a,b)=> a.t.localeCompare(b.t,"es")).forEach(g=>{
+    dl.appendChild(el("dt",{id:"glos-"+g.id},[g.t]));
+    dl.appendChild(el("dd",null,[ g.d + " ", g.url ? el("a",{href:g.url, target:"_blank", rel:"noopener"},["Fuente: " + g.fuente]) : null ]));
+  });
+  body.appendChild(dl);
+}
+function renderReferencias(){
+  const body = document.getElementById("body-referencias");
+  body.appendChild(el("p",null,["Literatura y normas citadas (formato Vancouver). Cada enlace lleva al DOI o al sitio oficial; se verificó que respondieran el 20/11/2026."]));
+  const ol = el("ol",{class:"ref-list"});
+  C.referencias.forEach(r=> ol.appendChild(el("li",null,[ r.c + " ", el("a",{href:r.url, target:"_blank", rel:"noopener"},[r.url.replace(/^https?:\/\//,"")]) ])));
+  body.appendChild(ol);
+}
+
+/* ---------------------------------------------------------------- tooltips de términos y enlaces a normas */
+const GLOS = {}; C.glosario.forEach(g=> GLOS[g.id] = g);
+const TERM_RE = C.glosario.map(g=> ({ id:g.id, re:new RegExp(g.re, "i") }));
+const NORM_RE = C.normas.map(n=> ({ url:n.url, re:new RegExp(n.re) }));
+function decorate(root){
+  const nodes = root.querySelectorAll("p, li, dd, blockquote, .finding-card p, .reading p");
+  nodes.forEach(n=>{
+    if(n.closest(".glossary, .ref-list, .chart-tip, svg, .stat-card, .legend, .search-panel, .sources-panel") || n.dataset.dec) return;
+    n.dataset.dec = "1";
+    const scope = n.closest(".reading") || n.closest(".acc-body") || root;
+    const used = scope.__terms || (scope.__terms = new Set());
+    const walker = document.createTreeWalker(n, NodeFilter.SHOW_TEXT, { acceptNode: t=> t.parentNode.closest("a, button, .term, code, strong.no-term") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+    const texts = []; while(walker.nextNode()) texts.push(walker.currentNode);
+    texts.forEach(tn=>{
+      let node = tn;
+      let guard = 0;
+      while(node && guard++ < 12){
+        const txt = node.nodeValue; let best = null;
+        NORM_RE.forEach(nr=>{ const m = nr.re.exec(txt); if(m && (!best || m.index < best.m.index)) best = { m:m, kind:"norm", url:nr.url }; });
+        TERM_RE.forEach(tr=>{ if(used.has(tr.id)) return; const m = tr.re.exec(txt); if(m && (!best || m.index < best.m.index)) best = { m:m, kind:"term", id:tr.id }; });
+        if(!best) break;
+        const after = node.splitText(best.m.index); const rest = after.splitText(best.m[0].length);
+        let w;
+        if(best.kind === "norm") w = el("a",{ href:best.url, target:"_blank", rel:"noopener", class:"norm-link", title:"Abrir el texto de la norma" },[after.nodeValue]);
+        else { used.add(best.id); w = el("span",{ class:"term", tabindex:"0", "data-term":best.id, role:"button", "aria-label": after.nodeValue + ": ver definición" },[after.nodeValue]); }
+        after.parentNode.replaceChild(w, after);
+        node = rest;
+      }
+    });
+  });
+}
+function initTerms(){
+  const html = id=>{ const g = GLOS[id]; return "<h5>"+esc(g.t)+"</h5><p>"+esc(g.d)+"</p>"+(g.url?"<p class='muted'>Fuente: "+esc(g.fuente)+"</p>":"")+"<p class='muted'>Clic: ver en el glosario</p>"; };
+  document.addEventListener("mouseover", e=>{ const t = e.target.closest && e.target.closest(".term"); if(t) showTip(html(t.dataset.term), e); });
+  document.addEventListener("mousemove", e=>{ const t = e.target.closest && e.target.closest(".term"); if(t) showTip(html(t.dataset.term), e); });
+  document.addEventListener("mouseout", e=>{ if(e.target.closest && e.target.closest(".term")) hideTip(); });
+  document.addEventListener("focusin", e=>{ const t = e.target.closest && e.target.closest(".term"); if(t) showTip(html(t.dataset.term), e, t); });
+  document.addEventListener("focusout", e=>{ if(e.target.closest && e.target.closest(".term")) hideTip(); });
+  const go = t=>{ hideTip(); openSection("glosario"); setTimeout(()=>{ scrollToId("glos-"+t.dataset.term); const d = document.getElementById("glos-"+t.dataset.term); if(d){ d.classList.add("flash"); setTimeout(()=> d.classList.remove("flash"), 1600); } }, 60); };
+  document.addEventListener("click", e=>{ const t = e.target.closest && e.target.closest(".term"); if(t) go(t); });
+  document.addEventListener("keydown", e=>{ const t = e.target.closest && e.target.closest(".term"); if(t && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); go(t); } });
+  // las lecturas se regeneran al filtrar: se decoran de nuevo
+  const mo = new MutationObserver(muts=> muts.forEach(m=> m.target.closest && m.target.closest(".reading") && decorate(m.target.closest(".reading"))));
+  document.querySelectorAll(".reading").forEach(r=> mo.observe(r, { childList:true }));
 }
 
 /* ================================================================= 07 NORMATIVA */
@@ -936,7 +1196,7 @@ function renderNormativa(){
     artBox.innerHTML = "";
     L.articulos.filter(a=> eje==="todos" || a.eje===eje).forEach(a=>{
       artBox.appendChild(el("article",{class:"art-item", id:"art-"+a.art.replace(/[^a-z0-9]/gi,"")},[
-        el("div",{class:"art-head"},[ el("span",{class:"art-num"},[a.art]), el("h4",null,[a.tema]),
+        el("div",{class:"art-head"},[ el("a",{class:"art-num", href:L.urlCompilada + "#" + a.ancla, target:"_blank", rel:"noopener", title:"Ver el artículo en el texto compilado de la ley"},[a.art]), el("h4",null,[a.tema]),
           a.plazoMeses ? el("span",{class:"level-pill level-media"},["Plazo: " + a.plazoMeses + " meses"]) : (a.plazoTexto ? el("span",{class:"level-pill level-media"},[a.plazoTexto]) : null) ]),
         el("p",null,[a.d])
       ]));
@@ -1025,13 +1285,19 @@ function renderMetodologia(){
   body.appendChild(el("h4",{class:"chart-title"},["Reproducibilidad"]));
   body.appendChild(el("p",null,["Las cifras por departamento de esta app se generan con scripts/build_data.py directamente desde el libro de cálculo del proyecto, sin digitación. Los índices, modelos e intervalos provienen del código de Python del proyecto (pandas, SciPy, statsmodels; semilla del bootstrap 20261113). El informe sigue la guía RECORD para estudios con datos rutinarios y PRISMA 2020 para la revisión."]));
   body.appendChild(el("p",null,["Uso de los datos: solo datos agregados por departamento, de acceso público, sin variables que identifiquen a personas ni a profesionales (investigación sin riesgo, artículo 11 de la Resolución 8430 de 1993)."]));
+  body.appendChild(el("h4",{class:"chart-title", id:"metodologia-equipo"},["Equipo del proyecto"]));
+  body.appendChild(el("p",null,["Proyecto «" + C.meta.proyecto + "», " + C.meta.institucion + ". Análisis preliminar de datos públicos y del marco normativo; la revisión sistemática está en curso."]));
+  const eq = el("ul",{class:"team-list"});
+  C.equipo.forEach(p=> eq.appendChild(el("li",null,[ el("strong",null,[p.nombre]), " · " + p.rol ])));
+  body.appendChild(eq);
+  body.appendChild(el("p",{class:"link-row"},[ el("a",{href:C.meta.uninavarraUrl, target:"_blank", rel:"noopener"},["Fundación Universitaria Navarra (UNINAVARRA)"]) ]));
 }
 
 /* ---------------------------------------------------------------- TOC, scrollspy, breadcrumb */
 function renderTOC(){
   const toc = document.getElementById("toc");
   SECTIONS.forEach(s=>{
-    const a = el("a",{ href:"#sec-"+s.id, class:"toc-link", "data-target":s.id },[ el("span",{class:"toc-num"},[s.num]), s.title ]);
+    const a = el("a",{ href:"#sec-"+s.id, class:"toc-link", "data-target":s.id },[ el("span",{class:"toc-num"},[s.num]), s.toc || s.title ]);
     a.addEventListener("click", e=>{ e.preventDefault(); openSection(s.id); scrollToId("sec-"+s.id); closeSidebar(); });
     toc.appendChild(a);
     (s.subs||[]).forEach(su=>{
@@ -1057,7 +1323,7 @@ function initScrollspy(){
     });
     bc.innerHTML = "";
     if(cur){
-      bc.appendChild(el("div",{class:"container"},[ el("a",{href:"#main"},["Inicio"]), el("span",{class:"sep"},[" / "]), el("span",{class: curSub?null:"current"},[cur.title]),
+      bc.appendChild(el("div",{class:"container"},[ el("a",{href:"#main"},["Inicio"]), el("span",{class:"sep"},[" / "]), el("span",{class: curSub?null:"current"},[cur.toc || cur.title]),
         curSub ? el("span",{class:"sep"},[" / "]) : null, curSub ? el("span",{class:"current"},[curSub.label]) : null ]));
     }
   }
@@ -1068,16 +1334,17 @@ function initScrollspy(){
 /* ---------------------------------------------------------------- búsqueda */
 function buildSearchIndex(){
   const idx = [];
-  SECTIONS.forEach(s=>{ idx.push({ type:"Sección", label:s.title, detail:s.sub, sec:s.id, anchor:"sec-"+s.id });
+  SECTIONS.forEach(s=>{ idx.push({ type:"Pregunta", label:s.title, detail:s.sub, sec:s.id, anchor:"sec-"+s.id });
     (s.subs||[]).forEach(su=> idx.push({ type:"Subsección", label:su.label, detail:s.title, sec:s.id, anchor:su.id })); });
-  DEP.forEach(d=> idx.push({ type:"Departamento", label:d.nombre, detail:d.region + " · tasa 2024 " + fmt(d.tasa24,1) + " · " + fmt(d.sedes) + " sedes", sec:"mapa", anchor:"mapa-coropletico", dept:d.cod }));
-  INDICATORS.forEach(i=> idx.push({ type:"Indicador", label:i.label, detail:"Mapa por departamento", sec:"mapa", anchor:"mapa-coropletico" }));
-  C.hallazgos.forEach(h=> idx.push({ type:"Hallazgo", label:h.t, detail:h.d, sec:"panorama", anchor:"panorama-hallazgos" }));
+  DEP.forEach(d=> idx.push({ type:"Departamento", label:d.nombre, detail:d.region + " · tasa 2024 " + fmt(d.tasa24,1) + " · " + fmt(d.sedes) + " sedes", sec:"territorio", anchor:"territorio-mapa", dept:d.cod }));
+  INDICATORS.forEach(i=> idx.push({ type:"Indicador", label:i.label, detail:"Indicador por departamento", sec:"territorio", anchor:"territorio-tabla" }));
+  C.hallazgos.forEach(h=> idx.push({ type:"Hallazgo", label:h.t, detail:h.d, sec:h.sec, anchor:"sec-"+h.sec }));
+  C.glosario.forEach(g=> idx.push({ type:"Glosario", label:g.t, detail:g.d, sec:"glosario", anchor:"glos-"+g.id }));
   C.normativa.ley2628.articulos.forEach(a=> idx.push({ type:"Ley 2628", label:a.art + " · " + a.tema, detail:a.d, sec:"normativa", anchor:"normativa-ley" }));
   C.normativa.pnsm.ejes.forEach(e=> idx.push({ type:"Política de Salud Mental", label:"Eje " + e.n + ". " + e.nombre, detail:"PNSM 2024-2033", sec:"normativa", anchor:"normativa-pnsm" }));
   C.metodologia.limitaciones.forEach(l=> idx.push({ type:"Limitación", label:l.slice(0,70) + (l.length>70?"…":""), detail:l, sec:"metodologia", anchor:"sec-metodologia" }));
-  C.revision.prisma.motivos.forEach(m=> idx.push({ type:"Revisión", label:m.m, detail:m.n + " registros excluidos", sec:"revision", anchor:"sec-revision" }));
-  [["M-CHAT","Tamizaje 18-30 meses (Resolución 3280 de 2018)","normativa","normativa-ruta"],["Línea 106","Orientación y apoyo en crisis de salud mental","normativa","normativa-minsalud"],["Certificado Único de Trastorno del Neurodesarrollo","Ley 2628, art. 7","normativa","normativa-ley"],["Telemedicina","15,9 % de las sedes de neuropediatría","oferta","sec-oferta"],["Gini","Curvas de Lorenz e índices","inequidad","inequidad-lorenz"],["Theil","Descomposición entre y dentro de regiones","inequidad","inequidad-theil"],["Cuasi-Poisson","Modelos ecológicos","inequidad","inequidad-modelos"],["PRISMA","Diagrama de flujo preliminar","revision","sec-revision"],["UNINAVARRA","Fundación Universitaria Navarra, Neiva","huila","sec-huila"]].forEach(x=> idx.push({ type:"Tema", label:x[0], detail:x[1], sec:x[2], anchor:x[3] }));
+  C.referencias.forEach(r=> idx.push({ type:"Referencia", label:r.c.slice(0,80) + (r.c.length>80?"…":""), detail:r.url, sec:"referencias", anchor:"sec-referencias" }));
+  C.equipo.forEach(p=> idx.push({ type:"Equipo", label:p.nombre, detail:p.rol, sec:"metodologia", anchor:"sec-metodologia" }));
   return idx;
 }
 function norm(s){ return String(s).normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase(); }
@@ -1182,7 +1449,7 @@ function initScrollTop(){
 function renderFooter(){
   document.getElementById("year").textContent = "2026";
   document.getElementById("footer-disclaimer").textContent = C.aviso + " Esta app describe datos administrativos agregados; no ofrece orientación clínica individual.";
-  document.getElementById("footer-author").innerHTML = "Autor: <strong>" + esc(C.meta.autor) + "</strong> (<a href='" + C.meta.orcid + "' target='_blank' rel='noopener'>ORCID</a>) · Proyecto: " + esc(C.meta.proyecto) + ", " + esc(C.meta.institucion) + ".";
+  document.getElementById("footer-author").innerHTML = "Equipo: " + C.equipo.map(p=> "<strong>" + esc(p.nombre) + "</strong> (" + esc(p.rol) + ")").join(", ") + ". App: " + esc(C.meta.autor) + " (<a href='" + C.meta.orcid + "' target='_blank' rel='noopener'>ORCID</a>). Proyecto: " + esc(C.meta.proyecto) + ", <a href='" + C.meta.uninavarraUrl + "' target='_blank' rel='noopener'>" + esc(C.meta.institucion) + "</a>.";
   const cc = document.getElementById("cc-badge");
   cc.href = "https://creativecommons.org/publicdomain/zero/1.0/deed.es"; cc.textContent = "CC0 1.0";
   document.getElementById("footer-license-text").textContent = "Textos, gráficos y código bajo dedicación al dominio público CC0 1.0 Universal; se agradece citar la fuente. Los datos de origen pertenecen a sus fuentes oficiales (SISPRO, REPS, DANE).";
@@ -1192,18 +1459,27 @@ function renderFooter(){
 function boot(){
   renderHero();
   buildAccordion();
-  renderPanorama();
-  renderMapa();
-  renderTendencia();
+  renderContexto();
+  renderNacional();
+  renderTerritorio();
+  renderIntensidad();
   renderOferta();
-  renderInequidad();
+  renderOfertaAtencion();
+  renderPobreza();
+  renderMovilidad();
+  renderDesigualdad();
   renderHuila();
   renderNormativa();
   renderRevision();
   renderMetodologia();
+  renderGlosario();
+  renderReferencias();
   renderTOC();
   renderSources();
   renderFooter();
+  decorate(document.getElementById("accordion"));
+  decorate(document.querySelector(".hero"));
+  initTerms();
   document.querySelectorAll(".js-export-pdf").forEach(b=> b.addEventListener("click", ()=> window.print()));
   document.getElementById("theme-toggle").addEventListener("click", toggleTheme);
   document.getElementById("expand-all").addEventListener("click", ()=> setAll(true));

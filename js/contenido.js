@@ -8,13 +8,23 @@ window.TEA_CONTENIDO = {
     subtitulo: "Atención, oferta de servicios e inequidad territorial con datos públicos",
     corte: "Datos a noviembre de 2026",
     autor: "Fabián Dávila Ramírez, MD, MBA, PhD",
+    uninavarraUrl: "https://www.uninavarra.edu.co/",
     institucion: "Fundación Universitaria Navarra (UNINAVARRA), Neiva · Especialización en Medicina Familiar",
     proyecto: "Barreras para el diagnóstico oportuno del Trastorno del Espectro Autista (TEA) en Colombia: una revisión sistemática de la literatura",
     version: "v0.1 · 20/11/2026",
     orcid: "https://orcid.org/0000-0002-1678-7288"
   },
 
-  aviso: "Trabajo en construcción con la Fundación Universitaria Navarra (UNINAVARRA). Las cifras son resultados preliminares del componente de datos secundarios del proyecto; la revisión sistemática sigue en curso y los números pueden cambiar cuando se completen la búsqueda, el tamizaje por pares y la verificación de las fuentes oficiales.",
+  aviso: "Análisis preliminar de datos públicos (SISPRO-RIPS, REPS y DANE) y del marco normativo, en construcción con la Fundación Universitaria Navarra (UNINAVARRA). Las cifras provienen del componente de datos secundarios del proyecto; la revisión sistemática sigue en curso y los números pueden cambiar cuando se completen la búsqueda, el tamizaje por pares y la verificación de las fuentes oficiales.",
+
+  equipo: [
+    { nombre: "Leydi Hernández", rol: "estudiante, Especialización en Medicina Familiar" },
+    { nombre: "Wilmer Esquivel", rol: "estudiante, Especialización en Medicina Familiar" },
+    { nombre: "Jhonatan Andrés Portes", rol: "tutor del proyecto" },
+    { nombre: "Fabián Dávila Ramírez", rol: "docente de investigación; análisis de datos y app" }
+  ],
+
+  ipmDef: "El Índice de Pobreza Multidimensional (IPM) del DANE mide el porcentaje de personas que viven en hogares con privaciones simultáneas en cinco dimensiones: condiciones educativas del hogar, condiciones de la niñez y la juventud, trabajo, salud, y acceso a servicios públicos y condiciones de la vivienda (15 indicadores). Un hogar se considera pobre si tiene privaciones en al menos el 33 % de los indicadores ponderados. Un IPM de 70 % (Vichada) significa que 7 de cada 10 personas del departamento viven en hogares pobres; uno de 5 % (Bogotá), que lo es 1 de cada 20.",
 
   stats: [
     { value: "51.474", label: "Personas atendidas con F84 en 2024", detail: "RIPS, diagnóstico principal, 33 territorios" },
@@ -112,9 +122,12 @@ window.TEA_CONTENIDO = {
   ],
 
   hallazgos: [
-    { t: "La atención registrada es desigual, y más dentro de las regiones que entre ellas", d: "La tasa varía 20 veces entre departamentos. El 62,6 % de la desigualdad (Theil) ocurre entre departamentos de una misma región; un análisis solo regional ocultaría la mayor parte." },
-    { t: "La oferta de neuropediatría no sigue la pobreza", d: "Varios departamentos pobres del Caribe tienen más sedes por habitante, mientras que en la Amazonía-Orinoquía la mitad de los departamentos no tiene ninguna sede (Amazonas, Guainía, Vaupés y Vichada)." },
-    { t: "Tener sedes es necesario, pero no suficiente", d: "La tasa de personas atendidas aumenta con la oferta (RR 1,32 por cada sede adicional por 100.000) y disminuye con la pobreza aun a igual oferta (RR 0,71 por cada 10 puntos de IPM)." }
+    { t: "Se atiende 20 veces más en unos departamentos que en otros", d: "La tasa de personas atendidas va de 12,0 por 100.000 en Guainía a 240,1 en Atlántico (nacional 97,8). Las tasas más bajas están en la Amazonía-Orinoquía y la región Pacífica.", sec: "territorio" },
+    { t: "La intensidad de la atención es aún más desigual que la cobertura", d: "Las atenciones por persona van de 3,6 (Antioquia) a 26,4 (Atlántico); las atenciones están más concentradas entre departamentos (Gini 0,486) que las personas atendidas (0,240).", sec: "intensidad" },
+    { t: "La oferta de neuropediatría no sigue la pobreza", d: "Varios departamentos pobres del Caribe tienen muchas sedes por habitante, mientras que cuatro departamentos de la Amazonía-Orinoquía no tienen ninguna (Amazonas, Guainía, Vaupés y Vichada).", sec: "oferta" },
+    { t: "Más oferta, más atención; más pobreza, menos atención", d: "La tasa aumenta 1,32 veces por cada sede adicional por 100.000 habitantes y es 0,71 veces la de referencia por cada 10 puntos más de IPM, aun a igual oferta: tener sedes es necesario, pero no suficiente.", sec: "pobreza" },
+    { t: "Uno de cada cinco vive donde no hay neuropediatría", d: "El 19,9 % de las personas atendidas vive en municipios sin sede; en Guainía el 100 % de las atenciones se presta fuera del departamento y Bogotá recibe 20.703 atenciones netas de otros territorios.", sec: "movilidad" },
+    { t: "La desigualdad está más dentro de las regiones que entre ellas", d: "El 62,6 % de la desigualdad (Theil) ocurre entre departamentos de una misma región; un análisis solo regional ocultaría la mayor parte.", sec: "desigualdad" }
   ],
   hallazgosNota: "Lectura del equipo del proyecto a partir de datos ecológicos: son hipótesis para orientar la revisión sistemática, no conclusiones causales.",
 
@@ -134,19 +147,19 @@ window.TEA_CONTENIDO = {
       url: "https://dapre.presidencia.gov.co/normativa/normativa/LEY%20No.%202628%20DEL%2026%20DE%20AGOSTO%20DE%202026.pdf",
       urlCompilada: "https://normograma.mintic.gov.co/mintic/compilacion/docs/ley_2628_2026.htm",
       articulos: [
-        { art: "Art. 4", tema: "Política pública", d: "El Ministerio de Salud creará la política pública de atención, acompañamiento y protección para personas con TEA; departamentos, distritos y municipios deberán desarrollarla.", plazoMeses: 12, eje: "salud" },
-        { art: "Art. 6", tema: "Investigación y protocolo", d: "El Ministerio de Salud, con el Instituto Nacional de Salud, desarrollará investigación para actualizar el Protocolo Clínico de Atención.", plazoMeses: null, eje: "salud" },
-        { art: "Art. 7", tema: "Certificado Único de Trastorno del Neurodesarrollo", d: "Centros especializados certificarán en un término de dos meses desde que la EPS recibe el diagnóstico. El trámite es voluntario y no puede usarse como barrera de acceso a servicios de salud.", plazoMeses: null, plazoTexto: "2 meses por caso", eje: "salud" },
-        { art: "Art. 7, par. 2", tema: "Ruta de atención", d: "El Ministerio de Salud establecerá la ruta dentro del año siguiente a la vigencia de la ley.", plazoMeses: 12, eje: "salud" },
-        { art: "Art. 8", tema: "Estadísticas", d: "El DANE incluirá parámetros para identificar a estas personas en los censos; los ministerios de Salud y de Educación harán seguimiento y conteo estadístico en sus bases de datos.", plazoMeses: null, eje: "informacion" },
-        { art: "Art. 9", tema: "Contenido mínimo de la política", d: "Actualizar el protocolo clínico de diagnóstico, tratamiento y ruta de atención de niños, niñas y adolescentes con TEA; equipo interdisciplinario; guía de atención integral en el curso de vida; suficiencia de medicamentos.", plazoMeses: null, eje: "salud" },
-        { art: "Art. 10", tema: "Comité Nacional de Inclusión", d: "Presidido por el ministro de Salud; se reúne al menos dos veces al año e informa cada año a las Comisiones Séptimas del Congreso. Debe reglamentarse en seis meses.", plazoMeses: 6, eje: "gobernanza" },
-        { art: "Art. 12", tema: "Detección temprana", d: "Se propenderá por la detección y atención temprana mediante la remisión de los profesionales en las evaluaciones pediátricas periódicas.", plazoMeses: null, eje: "salud" },
-        { art: "Art. 13", tema: "Ruta de Atención Médica", d: "El Ministerio de Salud establecerá y coordinará una ruta de atención médica clara y pública.", plazoMeses: null, eje: "salud" },
-        { art: "Art. 14", tema: "Capacitación en salud", d: "Programa nacional de capacitación y sensibilización para el trato en salud; el personal de atención primaria en relación directa con personas con TEA deberá capacitarse y constará en el RETHUS.", plazoMeses: 12, eje: "salud" },
-        { art: "Arts. 15 a 18", tema: "Educación inclusiva", d: "Ruta de inclusión escolar, cupos mínimos, capacitación docente y un módulo en el sistema de matrícula para consolidar la información.", plazoMeses: null, eje: "educacion" },
-        { art: "Arts. 19 a 23", tema: "Familia, cuidadores y trabajo", d: "Apoyo y flexibilidad laboral para familiares, campañas de sensibilización, inserción laboral (Ministerio del Trabajo y SENA) y emprendimiento.", plazoMeses: null, eje: "social" },
-        { art: "Art. 24", tema: "2 de abril", d: "Los ministerios de Salud y de Educación realizarán actividades cada 2 de abril.", plazoMeses: null, eje: "social" }
+        { ancla: "4", art: "Art. 4", tema: "Política pública", d: "El Ministerio de Salud creará la política pública de atención, acompañamiento y protección para personas con TEA; departamentos, distritos y municipios deberán desarrollarla.", plazoMeses: 12, eje: "salud" },
+        { ancla: "6", art: "Art. 6", tema: "Investigación y protocolo", d: "El Ministerio de Salud, con el Instituto Nacional de Salud, desarrollará investigación para actualizar el Protocolo Clínico de Atención.", plazoMeses: null, eje: "salud" },
+        { ancla: "7", art: "Art. 7", tema: "Certificado Único de Trastorno del Neurodesarrollo", d: "Centros especializados certificarán en un término de dos meses desde que la EPS recibe el diagnóstico. El trámite es voluntario y no puede usarse como barrera de acceso a servicios de salud.", plazoMeses: null, plazoTexto: "2 meses por caso", eje: "salud" },
+        { ancla: "7", art: "Art. 7, par. 2", tema: "Ruta de atención", d: "El Ministerio de Salud establecerá la ruta dentro del año siguiente a la vigencia de la ley.", plazoMeses: 12, eje: "salud" },
+        { ancla: "8", art: "Art. 8", tema: "Estadísticas", d: "El DANE incluirá parámetros para identificar a estas personas en los censos; los ministerios de Salud y de Educación harán seguimiento y conteo estadístico en sus bases de datos.", plazoMeses: null, eje: "informacion" },
+        { ancla: "9", art: "Art. 9", tema: "Contenido mínimo de la política", d: "Actualizar el protocolo clínico de diagnóstico, tratamiento y ruta de atención de niños, niñas y adolescentes con TEA; equipo interdisciplinario; guía de atención integral en el curso de vida; suficiencia de medicamentos.", plazoMeses: null, eje: "salud" },
+        { ancla: "10", art: "Art. 10", tema: "Comité Nacional de Inclusión", d: "Presidido por el ministro de Salud; se reúne al menos dos veces al año e informa cada año a las Comisiones Séptimas del Congreso. Debe reglamentarse en seis meses.", plazoMeses: 6, eje: "gobernanza" },
+        { ancla: "12", art: "Art. 12", tema: "Detección temprana", d: "Se propenderá por la detección y atención temprana mediante la remisión de los profesionales en las evaluaciones pediátricas periódicas.", plazoMeses: null, eje: "salud" },
+        { ancla: "13", art: "Art. 13", tema: "Ruta de Atención Médica", d: "El Ministerio de Salud establecerá y coordinará una ruta de atención médica clara y pública.", plazoMeses: null, eje: "salud" },
+        { ancla: "14", art: "Art. 14", tema: "Capacitación en salud", d: "Programa nacional de capacitación y sensibilización para el trato en salud; el personal de atención primaria en relación directa con personas con TEA deberá capacitarse y constará en el RETHUS.", plazoMeses: 12, eje: "salud" },
+        { ancla: "15", art: "Arts. 15 a 18", tema: "Educación inclusiva", d: "Ruta de inclusión escolar, cupos mínimos, capacitación docente y un módulo en el sistema de matrícula para consolidar la información.", plazoMeses: null, eje: "educacion" },
+        { ancla: "19", art: "Arts. 19 a 23", tema: "Familia, cuidadores y trabajo", d: "Apoyo y flexibilidad laboral para familiares, campañas de sensibilización, inserción laboral (Ministerio del Trabajo y SENA) y emprendimiento.", plazoMeses: null, eje: "social" },
+        { ancla: "24", art: "Art. 24", tema: "2 de abril", d: "Los ministerios de Salud y de Educación realizarán actividades cada 2 de abril.", plazoMeses: null, eje: "social" }
       ],
       nota: "Resumen propio de los artículos a partir de la copia compilada en el normograma del MinTIC; para efectos legales consulte el texto oficial. Las fechas límite de la línea de tiempo son una estimación que cuenta los plazos desde la sanción (26/08/2026)."
     },
@@ -223,6 +236,84 @@ window.TEA_CONTENIDO = {
     ]
   },
 
+  /* Glosario: "re" es el patrón que activa el tooltip en el texto; "url", un enlace verificable. */
+  glosario: [
+    { id:"tea", t:"TEA (trastorno del espectro autista)", re:"\\bTEA\\b", d:"Trastorno del neurodesarrollo con dificultades persistentes en la comunicación y la interacción social y patrones de conducta, intereses o actividades restringidos y repetitivos (DSM-5-TR).", url:"https://www.who.int/es/news-room/fact-sheets/detail/autism-spectrum-disorders", fuente:"OMS" },
+    { id:"f84", t:"F84", re:"\\bF84\\b", d:"Código de la CIE-10 para los trastornos generalizados del desarrollo, que incluye el autismo. La app cuenta personas con F84 como diagnóstico principal de la atención.", url:"https://icd.who.int/browse10/2019/en", fuente:"OMS, CIE-10" },
+    { id:"rips", t:"RIPS", re:"\\bRIPS\\b", d:"Registro Individual de Prestación de Servicios de Salud: el reporte de cada atención que los prestadores envían al sistema. Se consulta en los cubos de SISPRO.", url:"https://www.sispro.gov.co/", fuente:"SISPRO" },
+    { id:"fevrips", t:"FEV-RIPS", re:"FEV-RIPS|factura electrónica", d:"Desde 2025 el RIPS se reporta como soporte de la factura electrónica de venta (Resolución 2275 de 2023). El cambio alteró la cobertura del registro y rompe la comparabilidad de la serie.", url:"https://normograma.supersalud.gov.co/compilacion/docs/resolucion_minsaludps_2275_2023.htm", fuente:"Resolución 2275 de 2023" },
+    { id:"reps", t:"REPS", re:"\\bREPS\\b", d:"Registro Especial de Prestadores de Servicios de Salud: lista las sedes y los servicios que cada prestador tiene habilitados. Aquí: sedes con el servicio 388 (neuropediatría).", url:"https://prestadores.minsalud.gov.co/habilitacion/", fuente:"MinSalud" },
+    { id:"sispro", t:"SISPRO", re:"\\bSISPRO\\b", d:"Sistema Integrado de Información de la Protección Social del Ministerio de Salud; publica cubos de consulta con datos agregados del RIPS.", url:"https://www.sispro.gov.co/", fuente:"MinSalud" },
+    { id:"prevtratada", t:"Prevalencia tratada", re:"prevalencia tratada", d:"Personas con al menos una atención registrada con el diagnóstico en el año. No es la prevalencia del trastorno: excluye a quienes no consultan o se registran con otro diagnóstico." },
+    { id:"tasa", t:"Tasa por 100.000 habitantes", re:"por 100\\.000 habitantes", d:"Personas atendidas dividido por la población del departamento (DANE 2024), multiplicado por 100.000. Permite comparar territorios de distinto tamaño." },
+    { id:"atpp", t:"Atenciones por persona", re:"atenciones por persona", d:"Atenciones registradas dividido por personas atendidas. Mide la intensidad de uso de servicios, no la cobertura." },
+    { id:"sede", t:"Sede con neuropediatría", re:"sedes? (con|de) neuropediatría", d:"Sede de un prestador con el servicio 388 habilitado en el REPS. Indica habilitación, no capacidad, número de especialistas ni tiempos de espera." },
+    { id:"ipm", t:"IPM (Índice de Pobreza Multidimensional)", re:"\\bIPM\\b", d:"Porcentaje de personas en hogares con privaciones en al menos el 33 % de 15 indicadores de educación, niñez y juventud, trabajo, salud y vivienda y servicios (DANE).", url:"https://www.dane.gov.co/index.php/estadisticas-por-tema/pobreza-y-condiciones-de-vida/pobreza-multidimensional", fuente:"DANE" },
+    { id:"mchat", t:"M-CHAT-R/F", re:"M-CHAT(-R/F)?", d:"Lista de chequeo modificada para autismo en niños pequeños (revisada, con entrevista de seguimiento). En Colombia se aplica entre los 18 y 30 meses según la Resolución 3280 de 2018.", url:"https://mchatscreen.com/", fuente:"M-CHAT" },
+    { id:"sextil", t:"Sextil", re:"sextil(es)?", d:"Cada uno de los seis grupos con igual número de departamentos en que se divide un indicador ordenado de menor a mayor. Se usa para colorear los mapas." },
+    { id:"razon", t:"Razón máximo/mínimo y P90/P10", re:"razón (máximo/mínimo|percentil 90)", d:"Cuántas veces es mayor el valor más alto que el más bajo (o el percentil 90 que el 10). Fácil de leer, pero sensible a los extremos." },
+    { id:"lorenz", t:"Curva de Lorenz", re:"curvas? de Lorenz", d:"Ordena los departamentos de menor a mayor tasa y grafica el % acumulado de población frente al % acumulado del indicador. Si todos tuvieran la misma tasa, la curva sería la diagonal." },
+    { id:"gini", t:"Índice de Gini", re:"\\bGini\\b", d:"Área entre la curva de Lorenz y la diagonal, en escala de 0 (todos los departamentos con la misma tasa) a 1 (todo concentrado en uno). Ponderado por población." },
+    { id:"theil", t:"Theil T", re:"\\bTheil\\b", d:"Medida de desigualdad basada en entropía (0 = igualdad). Se descompone en una parte entre grupos (regiones) y otra dentro de ellos." },
+    { id:"mld", t:"MLD (desviación logarítmica media)", re:"\\bMLD\\b", d:"Medida de desigualdad más sensible a los departamentos con tasas bajas. No se define si algún departamento tiene valor cero." },
+    { id:"ci", t:"Índice de concentración (Wagstaff)", re:"índices? de concentración", d:"Como el Gini, pero ordena los departamentos de más a menos pobres (IPM). Va de −1 a 1: positivo, el indicador se concentra en los menos pobres; negativo, en los más pobres.", url:"https://doi.org/10.1016/0277-9536(91)90212-U", fuente:"Wagstaff et al., 1991" },
+    { id:"sii", t:"SII y RII", re:"\\b(SII|RII)\\b|índices de pendiente", d:"Índice de pendiente (diferencia absoluta estimada entre el extremo más pobre y el menos pobre) e índice relativo (su razón), ambos ponderados por población.", url:"https://doi.org/10.1016/S0277-9536(96)00073-1", fuente:"Mackenbach y Kunst, 1997" },
+    { id:"disim", t:"Índice de disimilitud", re:"disimilitud", d:"Proporción de personas (o de sedes) que habría que redistribuir entre departamentos para que dos distribuciones fueran iguales. 0,233 significa cerca de 1 de cada 4." },
+    { id:"rho", t:"Correlación de Spearman (ρ)", re:"Spearman", d:"Correlación entre los rangos de dos indicadores, de −1 a 1. Aquí: |ρ| ≥ 0,6 fuerte; 0,4 a 0,6 moderada; 0,2 a 0,4 débil; menor, prácticamente nula." },
+    { id:"rr", t:"RR y regresión cuasi-Poisson", re:"cuasi-Poisson|\\bRR\\b", d:"Modelo para conteos (personas atendidas) con la población como denominador y que admite más variabilidad que Poisson. El RR (razón de tasas) indica cuántas veces cambia la tasa por unidad de la variable." },
+    { id:"ic", t:"IC95 % y bootstrap", re:"IC95 ?%|bootstrap", d:"Intervalo de confianza del 95 %. Para los índices se estimó remuestreando los 33 departamentos 4.000 veces (bootstrap); intervalos anchos indican incertidumbre." },
+    { id:"ecologico", t:"Estudio ecológico", re:"ecológic[oa]s?", d:"Análisis con unidades agregadas (departamentos). Sus asociaciones no se pueden atribuir a las personas (falacia ecológica) ni demuestran causalidad.", url:"https://doi.org/10.1093/oxfordjournals.aje.a117069", fuente:"Greenland y Robins, 1994" },
+    { id:"prisma", t:"PRISMA 2020", re:"PRISMA", d:"Guía para reportar revisiones sistemáticas, incluido el diagrama de flujo de la selección de estudios.", url:"https://doi.org/10.1136/bmj.n71", fuente:"Page et al., 2021" },
+    { id:"pcc", t:"PCC", re:"\\bPCC\\b", d:"Formato de pregunta Población, Concepto y Contexto, recomendado por JBI cuando el interés no es el efecto de una intervención.", url:"https://doi.org/10.46658/JBIMES-24-01", fuente:"Manual JBI" },
+    { id:"swim", t:"SWiM", re:"\\bSWiM\\b", d:"Guía para reportar síntesis sin metaanálisis.", url:"https://doi.org/10.1136/bmj.l6890", fuente:"Campbell et al., 2020" },
+    { id:"record", t:"RECORD", re:"\\bRECORD\\b", d:"Guía para reportar estudios con datos de salud recolectados de forma rutinaria (como el RIPS).", url:"https://doi.org/10.1371/journal.pmed.1001885", fuente:"Benchimol et al., 2015" },
+    { id:"certificado", t:"Certificado Único de Trastorno del Neurodesarrollo", re:"Certificado Único de Trastorno del Neurodesarrollo", d:"Certificado creado por la Ley 2628 de 2026 (art. 7): voluntario, se expide en dos meses desde que la EPS recibe el diagnóstico y no puede usarse como barrera de acceso.", url:"https://normograma.mintic.gov.co/mintic/compilacion/docs/ley_2628_2026.htm#7", fuente:"Ley 2628 de 2026, art. 7" },
+    { id:"linea106", t:"Línea 106", re:"Línea 106", d:"Línea de orientación, apoyo en crisis y gestión del riesgo en salud mental del Ministerio de Salud.", url:"https://www.minsalud.gov.co/salud/publica/salud-mental", fuente:"MinSalud" },
+    { id:"uninavarra", t:"UNINAVARRA", re:"\\bUNINAVARRA\\b", d:"Fundación Universitaria Navarra, con sede en Neiva (Huila). El proyecto pertenece a su Especialización en Medicina Familiar.", url:"https://www.uninavarra.edu.co/", fuente:"UNINAVARRA" }
+  ],
+
+  /* Normas que se enlazan automáticamente cuando aparecen en el texto */
+  normas: [
+    { re:"Ley 2628 de 2026", url:"https://normograma.mintic.gov.co/mintic/compilacion/docs/ley_2628_2026.htm" },
+    { re:"Resolución 3280 de 2018", url:"https://www.minsalud.gov.co/Normatividad_Nuevo/Resoluci%C3%B3n%20No.%203280%20de%2020183280.pdf" },
+    { re:"Resolución 2275 de 2023", url:"https://normograma.supersalud.gov.co/compilacion/docs/resolucion_minsaludps_2275_2023.htm" },
+    { re:"Resolución 8430 de 1993", url:"https://www.minsalud.gov.co/sites/rid/Lists/BibliotecaDigital/RIDE/DE/DIJ/RESOLUCION-8430-DE-1993.PDF" },
+    { re:"Ley 1618 de 2013", url:"https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=52081" },
+    { re:"Política Nacional de Salud Mental( 2024-2033)?", url:"https://www.colpsic.org.co/wp-content/uploads/2025/09/Politica-Nacional-de-Salud-Mental-2024-2033-MinSalud-Colombia-v1.pdf" }
+  ],
+
+  /* Referencias (Vancouver) con enlace verificable (DOI o sitio oficial) */
+  referencias: [
+    { c:"American Psychiatric Association. Diagnostic and Statistical Manual of Mental Disorders. 5th ed., text revision (DSM-5-TR). Washington, DC: APA Publishing; 2022.", url:"https://doi.org/10.1176/appi.books.9780890425787" },
+    { c:"Organización Mundial de la Salud. Autismo [nota descriptiva]. Ginebra: OMS.", url:"https://www.who.int/es/news-room/fact-sheets/detail/autism-spectrum-disorders" },
+    { c:"Zeidan J, Fombonne E, Scorah J, Ibrahim A, Durkin MS, Saxena S, et al. Global prevalence of autism: a systematic review update. Autism Res. 2022;15(5):778-90.", url:"https://doi.org/10.1002/aur.2696" },
+    { c:"García-Zambrano S, Pinto-Ocampo RH. How many autistic children are there in Colombia? A nationwide examination of autism through health system data. J Autism Dev Disord. 2024.", url:"https://doi.org/10.1007/s10803-024-06534-9" },
+    { c:"Pierce K, Gazestani VH, Bacon E, Barnes CC, Cha D, Nalabolu S, et al. Evaluation of the diagnostic stability of the early autism spectrum disorder phenotype in the general population starting at 12 months. JAMA Pediatr. 2019;173(6):578-87.", url:"https://doi.org/10.1001/jamapediatrics.2019.0624" },
+    { c:"Shaw KA, Williams S, Patrick ME, Valencia-Prado M, Durkin MS, Howerton EM, et al. Prevalence and early identification of autism spectrum disorder among children aged 4 and 8 years. ADDM Network, 16 sites, United States, 2022. MMWR Surveill Summ. 2025;74(2):1-22.", url:"https://doi.org/10.15585/mmwr.ss7402a1" },
+    { c:"Daniels AM, Mandell DS. Explaining differences in age at autism spectrum disorder diagnosis: a critical review. Autism. 2014;18(5):583-97.", url:"https://doi.org/10.1177/1362361313480277" },
+    { c:"Wieckowski AT, Hamner T, Nanovic S, Porto KS, Coulter KL, Eldeeb SY, et al. Early and repeated screening detects autism spectrum disorder. J Pediatr. 2021;234:227-35.", url:"https://doi.org/10.1016/j.jpeds.2021.03.009" },
+    { c:"Hyman SL, Levy SE, Myers SM; AAP Council on Children with Disabilities. Identification, evaluation, and management of children with autism spectrum disorder. Pediatrics. 2020;145(1):e20193447.", url:"https://doi.org/10.1542/peds.2019-3447" },
+    { c:"Dawson G, Rogers S, Munson J, Smith M, Winter J, Greenson J, et al. Randomized, controlled trial of an intervention for toddlers with autism: the Early Start Denver Model. Pediatrics. 2010;125(1):e17-23.", url:"https://doi.org/10.1542/peds.2009-0958" },
+    { c:"Paula CS, Cukier S, Cunha GR, Irarrázaval M, Montiel-Nava C, Garcia R, et al. Challenges, priorities, barriers to care, and stigma in families of people with autism: six Latin American countries. Autism. 2020;24(8):2228-42.", url:"https://doi.org/10.1177/1362361320940073" },
+    { c:"Smith-Young J, Pike A, Swab M, Chafe R. Parents and guardians experiences of barriers and facilitators in accessing autism spectrum disorder diagnostic services for their children: a qualitative systematic review. JBI Evid Synth. 2025;23(1):6-68.", url:"https://doi.org/10.11124/JBIES-23-00332" },
+    { c:"Wagstaff A, Paci P, van Doorslaer E. On the measurement of inequalities in health. Soc Sci Med. 1991;33(5):545-57.", url:"https://doi.org/10.1016/0277-9536(91)90212-U" },
+    { c:"Kakwani N, Wagstaff A, van Doorslaer E. Socioeconomic inequalities in health: measurement, computation, and statistical inference. J Econom. 1997;77(1):87-103.", url:"https://doi.org/10.1016/S0304-4076(96)01807-6" },
+    { c:"Mackenbach JP, Kunst AE. Measuring the magnitude of socio-economic inequalities in health: an overview of available measures. Soc Sci Med. 1997;44(6):757-71.", url:"https://doi.org/10.1016/S0277-9536(96)00073-1" },
+    { c:"Greenland S, Robins J. Invited commentary: ecologic studies: biases, misconceptions, and counterexamples. Am J Epidemiol. 1994;139(8):747-60.", url:"https://doi.org/10.1093/oxfordjournals.aje.a117069" },
+    { c:"Page MJ, McKenzie JE, Bossuyt PM, Boutron I, Hoffmann TC, Mulrow CD, et al. The PRISMA 2020 statement: an updated guideline for reporting systematic reviews. BMJ. 2021;372:n71.", url:"https://doi.org/10.1136/bmj.n71" },
+    { c:"Aromataris E, Lockwood C, Porritt K, Pilla B, Jordan Z, editores. JBI Manual for Evidence Synthesis. JBI; 2024.", url:"https://doi.org/10.46658/JBIMES-24-01" },
+    { c:"Campbell M, McKenzie JE, Sowden A, Katikireddi SV, Brennan SE, Ellis S, et al. Synthesis without meta-analysis (SWiM) in systematic reviews: reporting guideline. BMJ. 2020;368:l6890.", url:"https://doi.org/10.1136/bmj.l6890" },
+    { c:"Benchimol EI, Smeeth L, Guttmann A, Harron K, Moher D, Petersen I, et al. The REporting of studies Conducted using Observational Routinely-collected health Data (RECORD) statement. PLoS Med. 2015;12(10):e1001885.", url:"https://doi.org/10.1371/journal.pmed.1001885" },
+    { c:"Congreso de la República de Colombia. Ley 2628 de 2026 (26 de agosto), por medio de la cual se establecen medidas, servicios y mecanismos de atención integral para la protección e inclusión de las personas con TEA. Diario Oficial No. 53.604 [texto compilado, normograma MinTIC].", url:"https://normograma.mintic.gov.co/mintic/compilacion/docs/ley_2628_2026.htm" },
+    { c:"Presidencia de la República. Ley 2628 del 26 de agosto de 2026 [PDF oficial].", url:"https://dapre.presidencia.gov.co/normativa/normativa/LEY%20No.%202628%20DEL%2026%20DE%20AGOSTO%20DE%202026.pdf" },
+    { c:"Ministerio de Salud y Protección Social. Política Nacional de Salud Mental 2024-2033. Bogotá: MinSalud; 2024 [copia alojada por el Colegio Colombiano de Psicólogos].", url:"https://www.colpsic.org.co/wp-content/uploads/2025/09/Politica-Nacional-de-Salud-Mental-2024-2033-MinSalud-Colombia-v1.pdf" },
+    { c:"Ministerio de Salud y Protección Social. Salud mental [portal institucional].", url:"https://www.minsalud.gov.co/salud/publica/salud-mental" },
+    { c:"Ministerio de Salud y Protección Social. Resolución 3280 de 2018: lineamientos de la Ruta Integral de Atención para la Promoción y Mantenimiento de la Salud.", url:"https://www.minsalud.gov.co/Normatividad_Nuevo/Resoluci%C3%B3n%20No.%203280%20de%2020183280.pdf" },
+    { c:"Ministerio de Salud y Protección Social. Resolución 2275 de 2023: resolución única del RIPS como soporte de la factura electrónica de venta en salud.", url:"https://normograma.supersalud.gov.co/compilacion/docs/resolucion_minsaludps_2275_2023.htm" },
+    { c:"Ministerio de Salud. Resolución 8430 de 1993: normas científicas, técnicas y administrativas para la investigación en salud.", url:"https://www.minsalud.gov.co/sites/rid/Lists/BibliotecaDigital/RIDE/DE/DIJ/RESOLUCION-8430-DE-1993.PDF" },
+    { c:"Congreso de la República. Ley 1618 de 2013: garantía del pleno ejercicio de los derechos de las personas con discapacidad.", url:"https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=52081" }
+  ],
+
   fuentes: [
     { grupo: "Normativa y política pública", items: [
       { label: "Ley 2628 de 2026 (Presidencia de la República)", url: "https://dapre.presidencia.gov.co/normativa/normativa/LEY%20No.%202628%20DEL%2026%20DE%20AGOSTO%20DE%202026.pdf" },
@@ -237,21 +328,7 @@ window.TEA_CONTENIDO = {
       { label: "DANE, proyecciones de población", url: "https://www.dane.gov.co/index.php/estadisticas-por-tema/demografia-y-poblacion/proyecciones-de-poblacion" },
       { label: "DANE, pobreza multidimensional", url: "https://www.dane.gov.co/index.php/estadisticas-por-tema/pobreza-y-condiciones-de-vida/pobreza-multidimensional" }
     ]},
-    { grupo: "Literatura citada", items: [
-      { label: "OMS. Autismo (nota descriptiva)", url: "https://www.who.int/es/news-room/fact-sheets/detail/autism-spectrum-disorders" },
-      { label: "Zeidan J et al. Global prevalence of autism. Autism Res. 2022", url: "https://doi.org/10.1002/aur.2696" },
-      { label: "García-Zambrano S, Pinto-Ocampo RH. How many autistic children are there in Colombia? J Autism Dev Disord. 2024", url: "https://doi.org/10.1007/s10803-024-06534-9" },
-      { label: "Shaw KA et al. ADDM Network, 2022. MMWR Surveill Summ. 2025", url: "https://doi.org/10.15585/mmwr.ss7402a1" },
-      { label: "Pierce K et al. Diagnostic stability from 12 months. JAMA Pediatr. 2019", url: "https://doi.org/10.1001/jamapediatrics.2019.0624" },
-      { label: "Wieckowski AT et al. Early and repeated screening. J Pediatr. 2021", url: "https://doi.org/10.1016/j.jpeds.2021.03.009" },
-      { label: "Hyman SL et al. AAP clinical report on ASD. Pediatrics. 2020", url: "https://doi.org/10.1542/peds.2019-3447" },
-      { label: "Paula CS et al. Barriers to care in six Latin American countries. Autism. 2020", url: "https://doi.org/10.1177/1362361320940073" },
-      { label: "Smith-Young J et al. Barriers to ASD diagnostic services. JBI Evid Synth. 2025", url: "https://doi.org/10.11124/JBIES-23-00332" },
-      { label: "Page MJ et al. PRISMA 2020. BMJ. 2021", url: "https://doi.org/10.1136/bmj.n71" },
-      { label: "Benchimol EI et al. RECORD statement. PLoS Med. 2015", url: "https://doi.org/10.1371/journal.pmed.1001885" },
-      { label: "Wagstaff A et al. On the measurement of inequalities in health. Soc Sci Med. 1991", url: "https://doi.org/10.1016/0277-9536(91)90212-U" }
-    ]},
-    { grupo: "Otras apps del autor", items: [
+        { grupo: "Otras apps del autor", items: [
       { label: "HealthFactAnalytics: apps abiertas", url: "https://sites.google.com/view/healtyanalytics/inicio" }
     ]}
   ]
