@@ -7,8 +7,8 @@
 <meta name="description" content="Explorador interactivo sobre el trastorno del espectro autista (TEA) en Colombia: personas atendidas, oferta de neuropediatría e inequidad territorial con datos de SISPRO, REPS y DANE, y el marco de la Ley 2628 de 2026. Trabajo en construcción con UNINAVARRA.">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f5c66'/%3E%3Cpath d='M20 22a8 8 0 0 1 12 0 8 8 0 0 1 12 0M18 34h28M24 44h16' fill='none' stroke='%23fff' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/style.css?v=14">
-<link rel="stylesheet" href="css/tea.css?v=14">
+<link rel="stylesheet" href="css/style.css?v=15">
+<link rel="stylesheet" href="css/tea.css?v=15">
 
 <meta property="og:title" content="TEA en Colombia: atención, oferta e inequidad territorial">
 <meta property="og:description" content="Gráficos interactivos con datos públicos de SISPRO, REPS y DANE. Trabajo en construcción con la Fundación Universitaria Navarra (UNINAVARRA).">
@@ -40,6 +40,12 @@
       <button class="icon-btn" id="focus-toggle" type="button" aria-label="Modo de lectura enfocada" aria-pressed="false" title="Modo de lectura enfocada">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"/></svg>
       </button>
+      <div class="text-size" id="text-size">
+        <button class="icon-btn" id="text-size-btn" type="button" aria-label="Tamaño del texto" aria-haspopup="true" aria-expanded="false" aria-controls="text-size-menu" title="Tamaño del texto (+ / −)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 19l3.6-9 3.6 9M3.9 15.6h4.4M11 19l5-13 5 13M12.9 14.5h6.2"/></svg>
+        </button>
+        <div class="text-size-menu" id="text-size-menu" role="group" aria-label="Tamaño del texto" hidden></div>
+      </div>
       <button class="icon-btn theme-toggle" id="theme-toggle" type="button" aria-label="Cambiar modo claro/oscuro" title="Modo claro / oscuro">
         <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M4.4 4.4l1.7 1.7M17.9 17.9l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.4 19.6l1.7-1.7M17.9 6.1l1.7-1.7"/></svg>
         <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"/></svg>
@@ -79,6 +85,7 @@
       <div><dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Moverse entre resultados de búsqueda</dd></div>
       <div><dt><kbd>Enter</kbd></dt><dd>Ir al resultado resaltado</dd></div>
       <div><dt><kbd>?</kbd></dt><dd>Abrir/cerrar esta ayuda</dd></div>
+      <div><dt><kbd>+</kbd> <kbd>−</kbd></dt><dd>Agrandar o reducir el tamaño del texto</dd></div>
     </dl>
   </div>
 </div>
@@ -162,8 +169,8 @@
   </div>
 </footer>
 
-<script src="js/datos.js?v=14"></script>
-<script src="js/contenido.js?v=14"></script>
-<script src="js/app.js?v=14"></script>
+<script src="js/datos.js?v=15"></script>
+<script src="js/contenido.js?v=15"></script>
+<script src="js/app.js?v=15"></script>
 </body>
 </html>

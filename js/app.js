@@ -35,7 +35,7 @@ function fmt(n, dec){
 function svgEl(w, h, cls, label){
   const s = document.createElementNS(SVGNS, "svg");
   s.setAttribute("viewBox", "0 0 " + w + " " + h);
-  s.setAttribute("class", "chart-svg " + (cls||""));
+  s.setAttribute("class", "chart-svg " + (cls||"") + (w >= 600 && !/map-svg|size-legend|story-svg/.test(cls||"") ? " wide-svg" : ""));
   s.setAttribute("role", "img");
   if(label) s.setAttribute("aria-label", label);
   return s;
@@ -127,6 +127,10 @@ function currentTheme(){
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 try{ applyTheme(localStorage.getItem(THEME_KEY)); }catch(e){}
+const TEXT_KEY = "teaco_text", TEXT_SIZES = [ { k:"0", l:"Normal", p:"100 %" }, { k:"1", l:"Grande", p:"115 %" }, { k:"2", l:"Muy grande", p:"130 %" }, { k:"3", l:"Máximo", p:"150 %" } ];
+function applyTextSize(k){ if(!TEXT_SIZES.some(t=> t.k === k)) k = "0"; document.documentElement.setAttribute("data-text", k); try{ localStorage.setItem(TEXT_KEY, k); }catch(e){} document.querySelectorAll(".ts-opt").forEach(b=> b.setAttribute("aria-pressed", b.dataset.k === k ? "true" : "false")); }
+try{ const k0 = localStorage.getItem(TEXT_KEY); if(k0) document.documentElement.setAttribute("data-text", k0); }catch(e){}
+function stepTextSize(d){ const cur = +(document.documentElement.getAttribute("data-text") || 0); applyTextSize(String(Math.max(0, Math.min(3, cur + d)))); }
 function toggleTheme(){
   const next = currentTheme() === "dark" ? "light" : "dark";
   applyTheme(next); try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
@@ -134,24 +138,24 @@ function toggleTheme(){
 
 /* ---------------------------------------------------------------- secciones: de lo descriptivo a los cruces */
 const PARTS = [
-  { id:"I", k:"Primera parte", t:"El marco: qué debería pasar", d:"Qué factores explican la atención del autismo y qué ordenan la Ley 2628 y la Política de Salud Mental." },
-  { id:"II", k:"Segunda parte", t:"Los datos: qué está pasando", d:"Qué muestran los registros públicos, de las cifras generales a los cruces entre atención, oferta, pobreza y movilidad." },
-  { id:"III", k:"Tercera parte", t:"Cómo se hizo", d:"La revisión sistemática en curso, los métodos, el glosario y las referencias." }
+  { id:"I", k:"Primera parte", t:"El marco: qué explica la atención y qué ordenan las normas", d:"Qué factores explican la atención del autismo y qué ordenan la Ley 2628 y la Política de Salud Mental." },
+  { id:"II", k:"Segunda parte", t:"Los datos: qué muestran los registros públicos", d:"Qué muestran los registros públicos, de las cifras generales a los cruces entre atención, oferta, pobreza y movilidad." },
+  { id:"III", k:"Tercera parte", t:"¿Cómo se hizo?", d:"La revisión sistemática en curso, los métodos, el glosario y las referencias." }
 ];
 const SECTIONS = [
-  { id:"contexto", part:null, toc:"Resumen", title:"Resumen: ¿qué muestran los datos?", sub:"Qué es el TEA, cómo leer las cifras, seis hallazgos y el recorrido de la app", open:true,
-    subs:[{id:"contexto-hallazgos",label:"Seis hallazgos preliminares"},{id:"contexto-preguntas",label:"El recorrido de la app"}] },
-  { id:"causal", part:"I", toc:"Qué explica las atenciones", title:"¿Qué explica el número de atenciones de un departamento?", sub:"Diagrama causal: oferta, pacientes, severidad, oportunidad del diagnóstico, equipos y registro", open:false,
+  { id:"contexto", part:null, toc:"Resumen", title:"Resumen: ¿qué muestran los datos?", sub:"Un relato en siete pasos, cómo leer las cifras, seis hallazgos y el recorrido de la app", open:true,
+    subs:[{id:"contexto-relato",label:"El relato en siete pasos"},{id:"contexto-hallazgos",label:"Seis hallazgos preliminares"},{id:"contexto-preguntas",label:"El recorrido de la app"}] },
+  { id:"causal", part:"I", toc:"¿Qué explica las atenciones?", title:"¿Qué explica el número de atenciones de un departamento?", sub:"Diagrama causal: oferta, pacientes, severidad, oportunidad del diagnóstico, equipos y registro", open:false,
     subs:[{id:"causal-diagrama",label:"Diagrama causal"}] },
-  { id:"normativa", part:"I", toc:"Ley 2628 de 2026", title:"¿Qué ordena la Ley 2628 de 2026 y qué le falta?", sub:"Ruta del tamizaje a la inclusión, artículos, plazos y vacíos de implementación", open:false,
-    subs:[{id:"normativa-ruta",label:"Del tamizaje al diagnóstico"},{id:"normativa-ley",label:"La ley y sus plazos"},{id:"normativa-vacios",label:"Vacíos de implementación"}] },
+  { id:"normativa", part:"I", toc:"Ley 2628 de 2026", title:"¿Qué ordena la Ley 2628 de 2026 y qué queda por reglamentar?", sub:"Ruta del tamizaje a la inclusión, artículos, plazos y retos de implementación", open:false,
+    subs:[{id:"normativa-ruta",label:"Del tamizaje al diagnóstico"},{id:"normativa-ley",label:"La ley y sus plazos"},{id:"normativa-vacios",label:"Retos de implementación"}] },
   { id:"paralelo", part:"I", toc:"Ley y Política de Salud Mental", title:"¿Cómo se relaciona la ley con la Política Nacional de Salud Mental?", sub:"Resumen comparativo, paralelo punto por punto y lo que dice la política sobre el neurodesarrollo", open:false,
     subs:[{id:"paralelo-resumen",label:"Resumen comparativo"},{id:"normativa-paralelo",label:"Frente a frente"},{id:"normativa-pnsm",label:"La política en detalle"},{id:"normativa-minsalud",label:"Salud mental en MinSalud"}] },
   { id:"instrumentos", part:"I", toc:"Herramientas por edad", title:"¿Con qué herramientas se detecta y diagnostica el autismo en cada etapa de la vida?", sub:"Tamizaje y diagnóstico desde la primera infancia hasta la adultez", open:false,
     subs:[{id:"instrumentos-linea",label:"Herramientas según la edad"}] },
-  { id:"nacional", part:"II", toc:"Cuántos y quiénes", title:"¿Cuántas personas se atienden y quiénes son?", sub:"Total nacional 2019-2025, edad, sexo, régimen y la ruptura de 2025", open:false,
+  { id:"nacional", part:"II", toc:"¿Cuántos y quiénes?", title:"¿Cuántas personas se atienden y quiénes son?", sub:"Total nacional 2019-2025, edad, sexo, régimen y la ruptura de 2025", open:false,
     subs:[{id:"nacional-serie",label:"Serie nacional"},{id:"nacional-edad",label:"Edad y sexo"},{id:"nacional-regimen",label:"Régimen y ruptura de 2025"}] },
-  { id:"territorio", part:"II", toc:"Dónde viven", title:"¿A cuántas personas llega el sistema en cada departamento?", sub:"Prevalencia atendida (personas atendidas por 100.000 habitantes): mapa, ranking y evolución", open:false,
+  { id:"territorio", part:"II", toc:"¿Dónde viven?", title:"¿A cuántas personas llega el sistema en cada departamento?", sub:"Prevalencia atendida (personas atendidas por 100.000 habitantes): mapa, ranking y evolución", open:false,
     subs:[{id:"territorio-mapa",label:"Mapa de la prevalencia atendida"},{id:"territorio-ranking",label:"Ranking por región"},{id:"territorio-evolucion",label:"Evolución 2019-2025"},{id:"territorio-tabla",label:"Tabla y descarga"}] },
   { id:"intensidad", part:"II", toc:"Atenciones vs. atendidos", title:"¿Cuánta atención recibe cada persona atendida?", sub:"Tasa de atención (atenciones por 100 personas atendidas) frente a la cobertura", open:false,
     subs:[{id:"intensidad-ranking",label:"Tasa de atención"},{id:"intensidad-cruce",label:"Cobertura vs. intensidad"}] },
@@ -160,7 +164,7 @@ const SECTIONS = [
   { id:"ofertaatencion", part:"II", toc:"Oferta vs. pacientes", title:"¿Se atiende a más personas donde hay más oferta?", sub:"Disponibilidad del servicio frente a pacientes y posible necesidad no atendida", open:false,
     subs:[{id:"ofertaatencion-cruce",label:"Oferta vs. pacientes"}] },
   { id:"pobreza", part:"II", toc:"Pobreza vs. atención", title:"¿Se atiende menos donde hay más pobreza?", sub:"Pobreza multidimensional (IPM) frente a atención, oferta y movilidad", open:false,
-    subs:[{id:"pobreza-ipm",label:"Qué es el IPM"},{id:"pobreza-cruce",label:"Pobreza vs. indicadores"},{id:"pobreza-modelo",label:"Oferta y pobreza a la vez"}] },
+    subs:[{id:"pobreza-ipm",label:"¿Qué es el IPM?"},{id:"pobreza-cruce",label:"Pobreza vs. indicadores"},{id:"pobreza-modelo",label:"Oferta y pobreza a la vez"}] },
   { id:"movilidad", part:"II", toc:"Movilidad", title:"¿Cuánto se desplazan las personas para atenderse?", sub:"Atención fuera del departamento, municipios sin sede y flujos entre territorios", open:false,
     subs:[{id:"movilidad-mapa",label:"Mapa de la movilidad"},{id:"movilidad-flujos",label:"¿Dónde se atienden?"},{id:"movilidad-balance",label:"Receptores y emisores"},{id:"movilidad-cruce",label:"Oferta vs. movilidad"}] },
   { id:"desigualdad", part:"II", toc:"Síntesis de desigualdad", title:"¿Qué tan desigual es la distribución y cómo ha cambiado?", sub:"Glosario de índices, curvas de Lorenz, IC95 %, Theil regional y tendencia", open:false,
@@ -257,7 +261,7 @@ function strength(r){ const a = Math.abs(r); return a >= 0.6 ? "fuerte" : a >= 0
 function joinNames(arr){ if(arr.length <= 1) return arr.join(""); return arr.slice(0,-1).join(", ") + " y " + arr[arr.length-1]; }
 function reading(){ return el("div",{class:"reading", "aria-live":"polite"}); }
 function setReading(node, html){ node.innerHTML = '<span class="reading-k">Lectura del gráfico</span><p>' + html + '</p>'; }
-function howTo(text){ return el("p",{class:"howto"},[ el("strong",null,["Cómo leerlo. "]), text ]); }
+function howTo(text){ return el("p",{class:"howto"},[ el("strong",null,["¿Cómo leerlo? "]), text ]); }
 function legend(items){ return el("div",{class:"legend"}, items.map(i=> el("span",{class:"legend-item"},[ el("span",{class:"legend-sw " + i[0]}), i[1] ]))); }
 function regionChips(onPick, label){ return chips([{id:"todas",label:"Todas las regiones"}].concat(REGION_ORDER.map(r=>({id:r,label:r}))), "todas", onPick, label || "Filtrar por región"); }
 function scopeName(reg){ return reg === "todas" ? "el país" : "la región " + reg; }
@@ -460,7 +464,7 @@ function plainCorr(rho, X, Y){
 function scatterWidget(body, o){
   let yk = o.ys[0], reg = "todas", sk = (o.sizes || ["pob"])[0];
   if(o.ys.length > 1) body.appendChild(chips(o.ys.map(k=>({id:k, label:"Eje vertical: " + IND[k].short})), yk, id=>{ yk = id; draw(); }, "Indicador del eje vertical"));
-  if(o.sizes && o.sizes.length > 1) body.appendChild(chips(o.sizes.map(k=>({id:k, label:"Tamaño: " + SIZES[k].label})), sk, id=>{ sk = id; draw(); }, "Qué representa el tamaño"));
+  if(o.sizes && o.sizes.length > 1) body.appendChild(chips(o.sizes.map(k=>({id:k, label:"Tamaño: " + SIZES[k].label})), sk, id=>{ sk = id; draw(); }, "Tamaño de las burbujas"));
   body.appendChild(regionChips(id=>{ reg = id; draw(); }, "Resaltar región"));
   const box = el("div",{class:"chart-box"}); body.appendChild(box);
   const ipmBr = [10, 15, 20, 30];
@@ -565,7 +569,8 @@ function scatterWidget(body, o){
 function renderContexto(){
   const body = document.getElementById("body-contexto");
   C.panorama.intro.forEach(p=> body.appendChild(el("p",null,[p])));
-  body.appendChild(el("div",{class:"scope-limits"},[ el("p",{class:"scope-text"},[ el("strong",null,["Cómo leer las cifras. "]), C.panorama.lectura ]) ]));
+  renderStory(body);
+  body.appendChild(el("div",{class:"scope-limits"},[ el("p",{class:"scope-text"},[ el("strong",null,["¿Cómo leer las cifras? "]), C.panorama.lectura ]) ]));
   sub(body, "contexto-hallazgos", "Hallazgos preliminares en breve", C.hallazgosNota);
   const hz = el("div",{class:"finding-grid"});
   C.hallazgos.forEach((h,i)=>{
@@ -870,6 +875,112 @@ function causalDiagram(body){
 function wrapText(t, n){ const words = t.split(" "), out = []; let cur = ""; words.forEach(w=>{ if((cur + " " + w).trim().length > n && cur){ out.push(cur); cur = w; } else cur = (cur + " " + w).trim(); }); if(cur) out.push(cur); return out.slice(0,3); }
 
 
+
+/* ---------------------------------------------------------------- ideas clave por sección (titulares de lectura) */
+const CLAVES = {
+  causal: "El número de atenciones depende de cuántas personas se atienden y de cuánta atención recibe cada una; varios de sus determinantes aún no se miden en los registros públicos.",
+  normativa: "La Ley 2628 crea derechos y fija plazos hasta agosto de 2027; su reglamentación puede precisar instrumentos, metas e indicadores.",
+  paralelo: "La ley y la Política de Salud Mental se complementan en detección, atención, formación, información e inclusión, y pueden articularse en diagnóstico y coordinación.",
+  instrumentos: "Hay herramientas validadas para detectar y diagnosticar el autismo en todas las edades, no solo en la primera infancia.",
+  nacional: "Las personas atendidas se duplicaron entre 2019 y 2024 y el nuevo registro de 2025 muestra casi el doble; la mayoría son niños en edad escolar.",
+  territorio: "El sistema llega a 20 veces más personas por habitante en unos departamentos que en otros.",
+  intensidad: "La atención que recibe cada persona atendida varía aún más que la cobertura: de unas 360 a unas 2.640 atenciones por cada 100 personas.",
+  oferta: "Las sedes de neuropediatría siguen a la demanda; lo que se aparta depende más de la región que de la pobreza.",
+  ofertaatencion: "Donde hay más oferta se atiende a más personas, y la mitad de los departamentos queda por debajo del país en ambas medidas.",
+  pobreza: "A igual oferta, más pobreza se asocia con menos personas atendidas.",
+  movilidad: "Una de cada cinco personas atendidas vive en un municipio sin sede, y Bogotá atiende a muchas personas de otros departamentos.",
+  desigualdad: "La desigualdad entre departamentos es mayor en las atenciones que en las personas atendidas, y ocurre sobre todo dentro de las regiones.",
+  huila: "El Huila atiende a menos personas por habitante que el país, con una tasa de atención similar a la nacional."
+};
+
+/* ---------------------------------------------------------------- relato con desplazamiento (scrollytelling) */
+const STORY = [
+  { t:"Por cada 100 personas con autismo que se esperarían, el registro de 2024 muestra unas 12 atendidas", d:"Si 1 de cada 127 personas tuviera autismo (estimación de la OMS), en Colombia habría unas 414.000. En 2024 el sistema registró 51.474 personas atendidas con diagnóstico de TEA y, con el nuevo registro de 2025, 102.066. No es una cifra exacta de necesidad, pero muestra el tamaño del reto.", sec:"ofertaatencion" },
+  { t:"El sistema llega a 20 veces más personas en Atlántico que en Guainía", d:"La prevalencia atendida va de 12 personas por 100.000 habitantes en Guainía a 240 en Atlántico. Los valores más altos están en el Caribe y el Oriente; los más bajos, en la Amazonía-Orinoquía y el Pacífico.", sec:"territorio" },
+  { t:"La atención que recibe cada persona cambia mucho de un departamento a otro", d:"La tasa de atención va de unas 360 atenciones por cada 100 personas atendidas en Antioquia a unas 2.640 en Atlántico. Parte de la diferencia puede venir de la intensidad de las terapias y parte de la forma de registrar.", sec:"intensidad" },
+  { t:"Las sedes siguen a la demanda; el Caribe tiene más de las esperadas", d:"Donde se esperan más casos hay más sedes de neuropediatría (ρ = 0,80). Lo que se aparta de esa relación depende más de la región que de la pobreza: en el mapa, el naranja indica más sedes de las esperadas y el azul, menos.", sec:"oferta" },
+  { t:"A igual oferta, más pobreza va con menos personas atendidas", d:"Según el modelo del proyecto, por cada 10 puntos más de pobreza multidimensional la prevalencia atendida es un 29 % menor, aun con la misma oferta. El acceso al diagnóstico parece depender de algo más que de las sedes.", sec:"pobreza" },
+  { t:"Una de cada cinco personas atendidas vive en un municipio sin neuropediatría", d:"El 19,9 % de las personas atendidas vive en municipios sin sede y el 11,4 % de las atenciones se presta fuera del departamento de residencia. La telemedicina, presente en el 15,9 % de las sedes, puede acercar el servicio.", sec:"movilidad" },
+  { t:"La Ley 2628 fija hitos para 2027 y estos datos pueden servir de línea de base", d:"La ley prevé reglamentar el Comité Nacional de Inclusión hacia febrero de 2027 y la política pública, la ruta de atención y la capacitación hacia agosto de 2027. Las cifras de esta app pueden apoyar el punto de partida de su seguimiento.", sec:"normativa" }
+];
+function renderStory(body){
+  const host = document.getElementById("sec-contexto"); if(host) host.classList.add("story-host");
+  sub(body, "contexto-relato", "¿Qué cuentan los datos? Un relato en siete pasos", "Desplázate: el gráfico cambia con cada paso y cada paso enlaza con su análisis completo.");
+  const M = D.mapa;
+  const avg = a=> a.reduce((x,y)=>x+y,0)/a.length;
+  const esp = DEP.reduce((a,d)=>a+d.esperados,0), p24 = DEP.reduce((a,d)=>a+d.pers24,0), p25 = DEP.reduce((a,d)=>a+d.pers25,0);
+  const lx = DEP.map(d=> Math.log(d.esperados)), ly = DEP.map(d=> Math.log(d.sedes+0.5)), mx = avg(lx), my = avg(ly);
+  let sxy = 0, sxx = 0; lx.forEach((x,i)=>{ sxy += (x-mx)*(ly[i]-my); sxx += (x-mx)*(x-mx); });
+  const bb = sxy/sxx, aa = my - bb*mx, RES = {}; DEP.forEach((d,i)=> RES[d.cod] = ly[i] - (aa + bb*lx[i]));
+  function centroid(path){ const n = path.match(/-?\d+(\.\d+)?/g).map(Number); let x = 0, y = 0, k = 0; for(let i=0;i+1<n.length;i+=2){ x += n[i]; y += n[i+1]; k++; } return [x/k, y/k]; }
+  function miniMap(cls, labels, label){
+    const sv = svgEl(M.w, M.h, "map-svg story-svg", label);
+    let g = '<rect x="'+M.inset.x+'" y="'+M.inset.y+'" width="'+M.inset.w+'" height="'+M.inset.h+'" rx="6" class="map-inset"/>';
+    DEP.forEach(d=>{ g += '<path d="'+M.paths[d.cod]+'" class="dpto '+cls(d)+'"/>'; });
+    labels.forEach(l=>{ const c = centroid(M.paths[l[0]]); g += '<text x="'+c[0].toFixed(1)+'" y="'+c[1].toFixed(1)+'" text-anchor="middle" class="pt-lab story-lab">'+esc(l[1])+'</text>'; });
+    sv.innerHTML = g; return sv;
+  }
+  function seqCls(key){ const list = DEP.filter(d=> d[key] !== null), br = quantileBreaks(list.map(d=>d[key]), 6); return d=> d[key] === null ? "q-na" : "q" + classOf(d[key], br); }
+  function ramp(lo, hi){ return el("div",{class:"story-ramp"},[ el("span",null,[lo]) ].concat([0,1,2,3,4,5].map(i=> el("i",{class:"q"+i}))).concat([ el("span",null,[hi]) ])); }
+  function bars(rows, label, fmtv){
+    const w = 560, rowH = 58, h = rows.length*rowH + 10, mxv = Math.max(...rows.map(r=>r[1]));
+    const sv = svgEl(w, h, "story-svg", label); let g = "";
+    rows.forEach((r,i)=>{ const y = 10 + i*rowH, bw = Math.max(3, (w-130)*r[1]/mxv); g += '<text x="0" y="'+(y+12)+'" class="axis-lab strong">'+esc(r[0])+'</text><rect x="0" y="'+(y+20)+'" width="'+bw+'" height="24" rx="4" class="'+(r[2]||"bar-fill")+'"/><text x="'+(bw+8)+'" y="'+(y+37)+'" class="bar-val">'+esc(fmtv(r[1]))+'</text>'; });
+    sv.innerHTML = g; return sv;
+  }
+  const hiT = DEP.slice().sort((a,b)=> b.tasa24-a.tasa24)[0], loT = DEP.slice().sort((a,b)=> a.tasa24-b.tasa24)[0];
+  const hiA = DEP.slice().sort((a,b)=> b.tasaAten-a.tasaAten)[0], loA = DEP.slice().sort((a,b)=> a.tasaAten-b.tasaAten)[0];
+  const hiR = DEP.slice().sort((a,b)=> RES[b.cod]-RES[a.cod])[0], loR = DEP.slice().sort((a,b)=> RES[a.cod]-RES[b.cod])[0];
+  const hiS = DEP.slice().sort((a,b)=> b.pctSinSede-a.pctSinSede).slice(0,2);
+  const dv = d=>{ const v = RES[d.cod]; return v < -0.6 ? "dv-n2" : v < -0.2 ? "dv-n1" : v <= 0.2 ? "dv-0" : v <= 0.6 ? "dv-p1" : "dv-p2"; };
+  const FR = [
+    { cap:"Personas con autismo esperadas y atendidas", g: ()=> bars([["Esperadas si 1 de cada 127 tuviera autismo (OMS)", esp, "bar-nat"],["Atendidas con el registro de 2025", p25, "bar-fill bar-alt"],["Atendidas en 2024", p24, "bar-fill"]], "Personas esperadas y atendidas", v=> fmt(v)), note:"Fuente: SISPRO-RIPS 2024 y 2025; DANE; OMS. Aproximación: supone la misma frecuencia en todo el país." },
+    { cap:"Prevalencia atendida 2024 (personas por 100.000 habitantes)", g: ()=> miniMap(seqCls("tasa24"), [[hiT.cod, hiT.nombre + " " + fmt(hiT.tasa24,0)],[loT.cod, loT.nombre + " " + fmt(loT.tasa24,0)]], "Mapa de la prevalencia atendida"), legend: ()=> ramp("Menos", "Más"), note:"Colores por sextiles. Fuente: SISPRO-RIPS 2024; DANE." },
+    { cap:"Tasa de atención 2024 (atenciones por 100 personas atendidas)", g: ()=> miniMap(seqCls("tasaAten"), [[hiA.cod, hiA.nombre + " " + fmt(hiA.tasaAten,0)],[loA.cod, loA.nombre + " " + fmt(loA.tasaAten,0)]], "Mapa de la tasa de atención"), legend: ()=> ramp("Menos", "Más"), note:"Colores por sextiles. Fuente: SISPRO-RIPS 2024." },
+    { cap:"Sedes de neuropediatría frente a las esperadas por la demanda", g: ()=> miniMap(dv, [[hiR.cod, hiR.nombre],[loR.cod, loR.nombre]], "Mapa de sedes observadas frente a esperadas"), legend: ()=> el("div",{class:"story-ramp dv"},[ el("span",null,["Menos de las esperadas"]), el("i",{class:"dv-n2"}), el("i",{class:"dv-n1"}), el("i",{class:"dv-0"}), el("i",{class:"dv-p1"}), el("i",{class:"dv-p2"}), el("span",null,["Más"]) ]), note:"Demanda = población ÷ 127. Ajuste exploratorio de esta app. Fuente: REPS 13/11/2026; DANE." },
+    { cap:"Prevalencia atendida relativa según la pobreza, a igual oferta", g: ()=> bars([10,20,30,40,50,60,70].map(v=> ["IPM de " + v + " %", 100*Math.pow(0.71, (v-10)/10), "bar-fill"]), "Prevalencia atendida relativa según el IPM", v=> fmt(v,0)), note:"Índice: 100 = departamento con IPM de 10 %. Cálculo con la razón de tasas del modelo cuasi-Poisson (0,71 por cada 10 puntos de IPM, ajustada por oferta)." },
+    { cap:"Personas atendidas que viven en municipios sin sede (%)", g: ()=> miniMap(seqCls("pctSinSede"), hiS.map(d=> [d.cod, d.nombre + " " + fmt(d.pctSinSede,0) + " %"]), "Mapa del porcentaje de personas en municipios sin sede"), legend: ()=> ramp("Menos", "Más"), note:"Colores por sextiles. Fuente: SISPRO-RIPS 2024; REPS." },
+    { cap:"Hitos de la Ley 2628 de 2026", g: ()=>{
+        const w = 560, h = 210, sv = svgEl(w, h, "story-svg", "Hitos de la Ley 2628"), x0 = 30, x1 = w-30, t0 = new Date(2026,7,26).getTime(), t1 = new Date(2027,7,26).getTime(), X = d=> x0 + (x1-x0)*(d.getTime()-t0)/(t1-t0);
+        const hitos = [[new Date(2026,7,26),"Sanción","26 ago 2026"],[new Date(2027,1,26),"Comité Nacional de Inclusión","feb 2027"],[new Date(2027,7,26),"Política, ruta y capacitación","ago 2027"]];
+        let g = '<line x1="'+x0+'" x2="'+x1+'" y1="90" y2="90" class="tl-axis"/>';
+        hitos.forEach((hh,i)=>{ const x = X(hh[0]), anc = i === 0 ? "start" : i === 2 ? "end" : "middle"; g += '<circle cx="'+x+'" cy="90" r="9" class="tl-dot"/><text x="'+x+'" y="60" text-anchor="'+anc+'" class="axis-lab strong">'+esc(hh[1])+'</text><text x="'+x+'" y="124" text-anchor="'+anc+'" class="axis-lab">'+esc(hh[2])+'</text>'; });
+        const hoy = new Date(); if(hoy.getTime() > t0 && hoy.getTime() < t1){ const x = X(hoy); g += '<line x1="'+x+'" x2="'+x+'" y1="72" y2="150" class="tl-today"/><text x="'+(x+4)+'" y="164" class="axis-lab tl-today-lab">Hoy</text>'; }
+        sv.innerHTML = g; return sv; }, note:"Plazos contados desde la sanción (26/08/2026). Fuente: Ley 2628 de 2026." }
+  ];
+  const wrap = el("div",{class:"story"});
+  const gr = el("div",{class:"story-graphic", "aria-hidden":"true"});
+  const frames = FR.map((f,i)=>{ const fig = el("figure",{class:"story-frame" + (i===0?" on":"")},[ el("figcaption",{class:"story-cap"},[f.cap]) ]); fig.appendChild(f.g()); if(f.legend) fig.appendChild(f.legend()); fig.appendChild(el("p",{class:"story-note"},[f.note])); gr.appendChild(fig); return fig; });
+  const stepsBox = el("div",{class:"story-steps"});
+  const steps = STORY.map((st,i)=>{
+    const b = el("button",{type:"button", class:"finding-link"},["Ver el análisis completo"]);
+    b.addEventListener("click", ()=>{ openSection(st.sec); scrollSoon("sec-"+st.sec); });
+    const sec = el("section",{class:"story-step" + (i===0?" on":""), "data-i":String(i), "aria-label":"Paso " + (i+1) + " de " + STORY.length},[ el("div",{class:"story-card"},[ el("span",{class:"story-n"},["Paso " + (i+1) + " de " + STORY.length]), el("h4",null,[st.t]), el("p",null,[st.d]), b ]) ]);
+    stepsBox.appendChild(sec); return sec;
+  });
+  wrap.appendChild(gr); wrap.appendChild(stepsBox); body.appendChild(wrap);
+  const setActive = i=>{ frames.forEach((f,j)=> f.classList.toggle("on", j===i)); steps.forEach((s,j)=> s.classList.toggle("on", j===i)); };
+  if("IntersectionObserver" in window){
+    const io = new IntersectionObserver(es=> es.forEach(e=>{ if(e.isIntersecting) setActive(+e.target.dataset.i); }), { rootMargin:"-50% 0px -40% 0px" });
+    steps.forEach(st=> io.observe(st));
+  }
+  steps.forEach(st=> st.addEventListener("focusin", ()=> setActive(+st.dataset.i)));
+}
+
+/* ---------------------------------------------------------------- tamaño del texto */
+function initTextSize(){
+  const btn = document.getElementById("text-size-btn"), menu = document.getElementById("text-size-menu");
+  if(!btn || !menu) return;
+  TEXT_SIZES.forEach(t=>{
+    const b = el("button",{type:"button", class:"ts-opt", "data-k":t.k, "aria-pressed":"false"},[ el("span",null,[t.l]), el("span",{class:"ts-p"},[t.p]) ]);
+    b.addEventListener("click", ()=>{ applyTextSize(t.k); });
+    menu.appendChild(b);
+  });
+  applyTextSize(document.documentElement.getAttribute("data-text") || "0");
+  btn.addEventListener("click", ()=>{ const open = menu.hidden; menu.hidden = !open; btn.setAttribute("aria-expanded", open ? "true" : "false"); if(open){ const cur = menu.querySelector('[aria-pressed="true"]'); if(cur) cur.focus(); } });
+  document.addEventListener("click", e=>{ if(!menu.hidden && !e.target.closest("#text-size")){ menu.hidden = true; btn.setAttribute("aria-expanded","false"); } });
+}
+
 /* ---------------------------------------------------------------- oferta frente a demanda */
 function demandWidget(body){
   sub(body, "oferta-demanda", "¿La oferta sigue a la demanda?", "Primer paso: comparar el número de sedes con el tamaño de la demanda. Si la oferta sigue a la demanda, los puntos se alinean cerca de la línea.");
@@ -954,6 +1065,7 @@ function demandWidget(body){
 function addSectionNav(){
   SECTIONS.forEach((s,i)=>{
     const body = document.getElementById("body-"+s.id); if(!body) return;
+    if(CLAVES[s.id]) body.insertBefore(el("p",{class:"key-idea"},[ el("strong",null,["En una frase. "]), CLAVES[s.id] ]), body.firstChild);
     const prev = SECTIONS[i-1], next = SECTIONS[i+1];
     const nav = el("nav",{class:"sec-nav", "aria-label":"Navegación entre preguntas"});
     const mk = (t, kind)=>{
@@ -990,12 +1102,12 @@ function renderInstrumentos(){
     const y = pad.t + i*rowH + 4, x1 = AX(it.desde), x2 = AX(it.hasta);
     const gg = document.createElementNS(SVGNS,"g"); gg.setAttribute("class","bar-g life-row"); gg.setAttribute("tabindex","0"); gg.setAttribute("role","button");
     gg.innerHTML = '<rect x="0" y="'+(y-3)+'" width="'+w+'" height="'+rowH+'" class="row-hit"/><text x="'+(pad.l-8)+'" y="'+(y+15)+'" text-anchor="end" class="axis-lab">'+esc(it.nombre)+'</text><rect x="'+x1+'" y="'+(y+3)+'" width="'+Math.max(x2-x1,4)+'" height="'+(rowH-12)+'" rx="5" class="'+tcls[it.tipo]+'"/>';
-    const html = ()=> "<h5>"+esc(it.nombre)+" · "+esc(it.tipo)+"</h5><p>Edades: "+fmt(it.desde,it.desde%1?1:0)+" a "+(it.hasta>=65?"adultez":fmt(it.hasta,it.hasta%1?1:0)+" años")+"<br>Quién responde: "+esc(it.quien)+"</p><p>"+esc(it.d)+"</p>";
+    const html = ()=> "<h5>"+esc(it.nombre)+" · "+esc(it.tipo)+"</h5><p>Edades: "+fmt(it.desde,it.desde%1?1:0)+" a "+(it.hasta>=65?"adultez":fmt(it.hasta,it.hasta%1?1:0)+" años")+"<br>Responde: "+esc(it.quien)+"</p><p>"+esc(it.d)+"</p>";
     bindTip(gg, html);
     const pick = ()=>{
       det.innerHTML = "";
       det.appendChild(el("h4",null,[it.nombre + " · " + it.tipo]));
-      det.appendChild(el("p",null,["Edades: " + (it.desde < 1 ? "desde los " + Math.round(it.desde*12) + " meses" : it.desde < 3 && it.desde % 1 ? "desde los " + Math.round(it.desde*12) + " meses" : "desde los " + it.desde + " años") + (it.hasta >= 65 ? " hasta la adultez" : " hasta los " + (it.hasta % 1 ? Math.round(it.hasta*12) + " meses" : it.hasta + " años")) + ". Quién responde: " + it.quien + "."]));
+      det.appendChild(el("p",null,["Edades: " + (it.desde < 1 ? "desde los " + Math.round(it.desde*12) + " meses" : it.desde < 3 && it.desde % 1 ? "desde los " + Math.round(it.desde*12) + " meses" : "desde los " + it.desde + " años") + (it.hasta >= 65 ? " hasta la adultez" : " hasta los " + (it.hasta % 1 ? Math.round(it.hasta*12) + " meses" : it.hasta + " años")) + ". Responde: " + it.quien + "."]));
       det.appendChild(el("p",null,[it.d]));
       det.appendChild(el("p",{class:"link-row"},[ "Referencia: ", el("a",{href:it.url, target:"_blank", rel:"noopener"},[it.ref]) ]));
       decorate(det);
@@ -1006,7 +1118,7 @@ function renderInstrumentos(){
   body.appendChild(el("div",{class:"diagram-wrap life-wrap"},[s]));
   body.appendChild(legend([["tp-vig","Vigilancia del desarrollo"],["tp-tam","Tamizaje (detecta riesgo)"],["tp-apo","Apoyo al diagnóstico"],["tp-dia","Diagnóstico (lo confirma un equipo)"]]));
   body.appendChild(det);
-  setReading(det, "El cuestionario de tamizaje más usado en el mundo (M-CHAT-R/F) cubre de los 16 a los 30 meses, una franja estrecha frente al 83 % de las personas atendidas que tiene 6 años o más. Para escolares, adolescentes y adultos existen cuestionarios de tamizaje validados (SCQ, CAST, AQ en sus versiones) y para todas las edades instrumentos diagnósticos (ADOS-2, ADI-R) que debe aplicar un equipo entrenado. Ni la Ley 2628 ni la Política de Salud Mental definen qué herramienta usar ni a qué edades. Haz clic en una barra para ver el detalle.");
+  setReading(det, "El cuestionario de tamizaje más usado en el mundo (M-CHAT-R/F) cubre de los 16 a los 30 meses, una franja estrecha frente al 83 % de las personas atendidas que tiene 6 años o más. Para escolares, adolescentes y adultos existen cuestionarios de tamizaje validados (SCQ, CAST, AQ en sus versiones) y para todas las edades instrumentos diagnósticos (ADOS-2, ADI-R) que debe aplicar un equipo entrenado. La reglamentación de la Ley 2628 es una oportunidad para definir qué herramienta usar en cada edad. Haz clic en una barra para ver el detalle.");
   body.appendChild(el("p",{class:"muted small"},[I.nota]));
   body.appendChild(el("h4",{class:"chart-title"},["Guías de referencia"]));
   body.appendChild(el("ul",{class:"ref-list"}, I.guias.map(g=> el("li",null,[ el("a",{href:g.url, target:"_blank", rel:"noopener"},[g.label]) ]))));
@@ -1018,7 +1130,7 @@ function renderNormativaExtras(){
   const L = C.normativa.ley2628;
   // vacíos: al final de la sección de la ley
   const frag = document.createDocumentFragment();
-  const h = el("h3",{id:"normativa-vacios", class:"subsection-title"},["¿Qué le falta a la ley para llegar a las personas?"]);
+  const h = el("h3",{id:"normativa-vacios", class:"subsection-title"},["¿Qué retos tiene la implementación de la ley?"]);
   frag.appendChild(h);
   frag.appendChild(el("p",{class:"subsection-subtitle"},[C.vaciosNota]));
   const grid = el("div",{class:"gap-grid"});
@@ -1034,15 +1146,15 @@ function renderNormativaExtras(){
   // sección siguiente: resumen comparativo y paralelo, antes del detalle de la PNSM
   const bodyP = document.getElementById("body-paralelo");
   const f2 = document.createDocumentFragment();
-  f2.appendChild(el("p",null,["La Ley 2628 está más cerca de las personas con TEA que la Política Nacional de Salud Mental 2024-2033: trata del autismo en todo su texto, crea derechos y fija plazos. La política, en cambio, menciona el autismo una sola vez (p. 16, como ejemplo al definir los trastornos del neurodesarrollo) y no tiene acciones propias para él. Las dos deberían complementarse."]));
+  f2.appendChild(el("p",null,["La Ley 2628 se dirige de forma específica a las personas con TEA y otros trastornos del neurodesarrollo: crea derechos, mecanismos y plazos. La Política Nacional de Salud Mental 2024-2033 tiene un alcance más amplio y aborda el autismo dentro de los trastornos del neurodesarrollo (p. 16). Las dos se complementan y pueden articularse."]));
   f2.appendChild(el("h3",{id:"paralelo-resumen", class:"subsection-title"},["Resumen comparativo"]));
   const cmp = [
-    ["Qué es", "Ley de la República (2026)", "Política del Ministerio de Salud (2024), con horizonte a 2033"],
-    ["A quién se dirige", "Personas con TEA, otros trastornos del neurodesarrollo (como TDAH y trastornos del aprendizaje) y condiciones similares", "Toda la población: salud mental, problemas y trastornos mentales y epilepsia"],
-    ["Cuánto habla del autismo", "Es su tema central", "Una mención (p. 16), como ejemplo de trastorno del neurodesarrollo"],
-    ["Qué ofrece", "Política pública propia, ruta de atención, certificado, estadísticas, capacitación, inclusión escolar y laboral", "Cinco ejes: promoción, prevención, atención, rehabilitación e inclusión, y gestión"],
-    ["Plazos", "6 y 12 meses para reglamentar comité, política, ruta y capacitación", "Sin plazos específicos para el neurodesarrollo"],
-    ["Qué falta", "Ruta para adultos, metas de detección, indicadores de oportunidad", "Acciones específicas para el autismo y articulación con la ley"]
+    ["¿Qué es?", "Ley de la República (2026)", "Política del Ministerio de Salud (2024), con horizonte a 2033"],
+    ["¿A quién se dirige?", "Personas con TEA, otros trastornos del neurodesarrollo (como TDAH y trastornos del aprendizaje) y condiciones similares", "Toda la población: salud mental, problemas y trastornos mentales y epilepsia"],
+    ["¿Cómo aborda el autismo?", "Es su tema central", "Dentro de los trastornos del neurodesarrollo (p. 16), con un enfoque general de salud mental"],
+    ["¿Qué ofrece?", "Política pública propia, ruta de atención, certificado, estadísticas, capacitación, inclusión escolar y laboral", "Cinco ejes: promoción, prevención, atención, rehabilitación e inclusión, y gestión"],
+    ["¿Qué plazos fija?", "6 y 12 meses para reglamentar comité, política, ruta y capacitación", "Sin plazos específicos para el neurodesarrollo"],
+    ["¿Qué puede fortalecerse?", "Orientaciones para adultos, metas de detección e indicadores de oportunidad", "Acciones específicas para el neurodesarrollo y articulación con la ley"]
   ];
   const tb = el("table",{class:"cmp-table"});
   tb.appendChild(el("thead",null,[ el("tr",null,[ el("th",{scope:"col"},[""]), el("th",{scope:"col"},["Ley 2628 de 2026"]), el("th",{scope:"col"},["Política Nacional de Salud Mental 2024-2033"]) ]) ]));
@@ -1061,14 +1173,14 @@ function renderNormativaExtras(){
     const L1 = wrapText(r.ley, 40), R1 = wrapText(r.pnsm, 40);
     gg.innerHTML = '<rect x="0" y="'+(y+4)+'" width="'+lw+'" height="'+(rowH-12)+'" rx="8" class="par-box"/>' + L1.map((l,j)=>'<text x="10" y="'+(y+22+j*14)+'" class="par-txt">'+esc(l)+'</text>').join("") +
       '<rect x="'+rx+'" y="'+(y+4)+'" width="'+lw+'" height="'+(rowH-12)+'" rx="8" class="par-box'+(r.rel==="solo-ley"?" par-empty":"")+'"/>' + R1.map((l,j)=>'<text x="'+(rx+10)+'" y="'+(y+22+j*14)+'" class="par-txt">'+esc(l)+'</text>').join("") +
-      '<line x1="'+(lw+4)+'" x2="'+(rx-4)+'" y1="'+(y+rowH/2-2)+'" y2="'+(y+rowH/2-2)+'" class="par-link"/><text x="'+(w/2)+'" y="'+(y+rowH/2-8)+'" text-anchor="middle" class="par-tag">'+(r.rel==="coincide"?"se complementan":r.rel==="vacio"?"vacío de articulación":"solo en la ley")+'</text>';
+      '<line x1="'+(lw+4)+'" x2="'+(rx-4)+'" y1="'+(y+rowH/2-2)+'" y2="'+(y+rowH/2-2)+'" class="par-link"/><text x="'+(w/2)+'" y="'+(y+rowH/2-8)+'" text-anchor="middle" class="par-tag">'+(r.rel==="coincide"?"se complementan":r.rel==="vacio"?"por articular":"solo en la ley")+'</text>';
     bindTip(gg, ()=> "<h5>"+esc(r.ley)+"</h5><p>"+esc(r.d)+"</p>");
     s.appendChild(gg);
   });
   f2.appendChild(el("div",{class:"diagram-wrap par-wrap"},[s]));
-  f2.appendChild(legend([["rel-coincide-sw","Se complementan"],["rel-vacio-sw","Vacío de articulación"],["rel-solo-sw","Solo en la ley"]]));
+  f2.appendChild(legend([["rel-coincide-sw","Se complementan"],["rel-vacio-sw","Por articular"],["rel-solo-sw","Solo en la ley"]]));
   const rd = reading(); f2.appendChild(rd);
-  setReading(rd, "La ley y la política coinciden en detectar a tiempo, definir rutas de atención, formar al personal, medir y promover la inclusión, pero se escribieron por separado. Hay dos vacíos de articulación: el diagnóstico (la ley se limita a niños, niñas y adolescentes y la política no trata el autismo de forma específica) y la coordinación (la ley crea su propio comité y su propia política sin decir cómo se conectan con las instancias de salud mental). Pasa el cursor por cada fila para ver el detalle.");
+  setReading(rd, "La ley y la política coinciden en detectar a tiempo, definir rutas de atención, formar al personal, medir y promover la inclusión. Hay dos temas por articular: el diagnóstico (la ley se centra en niños, niñas y adolescentes y la política tiene un enfoque general) y la coordinación (cada una tiene sus propias instancias). Pasa el cursor por cada fila para ver el detalle.");
   const lst = el("ul",{class:"a11y-list"}); lst.hidden = true;
   P.forEach(r=> lst.appendChild(el("li",null,[ el("div",{class:"a11y-title"},[r.ley + " ↔ " + r.pnsm]), el("div",{class:"a11y-meta"},[r.d]) ])));
   const lt = el("button",{class:"btn a11y-list-toggle", type:"button", "aria-expanded":"false"},["Ver el paralelo como lista"]);
@@ -1266,7 +1378,7 @@ const GLOS_IDX = ["razon","lorenz","gini","theil","mld","ci","sii","disim","rho"
 function renderDesigualdad(){
   const body = document.getElementById("body-desigualdad");
   body.appendChild(el("p",null,["Las secciones anteriores compararon departamentos de a dos indicadores. Aquí se responde, en conjunto, qué tan parejo o disparejo está repartido el acceso entre departamentos y si ha cambiado con el tiempo. Se usan medidas estándar de equidad en salud; abajo se explica cada una en una frase."]));
-  sub(body, "desigualdad-glosario", "Glosario de los índices de desigualdad", "Qué mide cada uno y cómo interpretar su valor.");
+  sub(body, "desigualdad-glosario", "Glosario de los índices de desigualdad", "¿Qué mide cada índice y cómo se interpreta su valor?");
   const gg = el("div",{class:"concept-grid"});
   GLOS_IDX.forEach(id=>{ const g = C.glosario.find(x=>x.id===id); if(!g) return;
     const more = el("button",{class:"finding-link", type:"button"},["Definición completa →"]);
@@ -1601,7 +1713,7 @@ function renderNormativa(){
     });
   }
   drawArts();
-  body.appendChild(callout("Por qué importan los datos de esta app para la ley: la ruta de atención (art. 13), la capacitación del personal de atención primaria (art. 14) y el seguimiento estadístico (art. 8) necesitan saber dónde y con qué oferta se atiende hoy el TEA. El 19,9 % de las personas atendidas vive en municipios sin sede de neuropediatría y solo el 15,9 % de las sedes ofrece telemedicina.", "callout-info"));
+  body.appendChild(callout("¿Por qué importan los datos de esta app para la ley? La ruta de atención (art. 13), la capacitación del personal de atención primaria (art. 14) y el seguimiento estadístico (art. 8) necesitan saber dónde y con qué oferta se atiende hoy el TEA. El 19,9 % de las personas atendidas vive en municipios sin sede de neuropediatría y solo el 15,9 % de las sedes ofrece telemedicina.", "callout-info"));
 
   const P = N.pnsm;
   body = document.getElementById("body-paralelo");
@@ -1611,7 +1723,7 @@ function renderNormativa(){
   const ejesWrap = el("div",{class:"ejes-grid"});
   P.ejes.forEach(e=> ejesWrap.appendChild(el("div",{class:"eje-card"},[ el("span",{class:"eje-n"},["Eje " + e.n]), el("p",null,[e.nombre]) ])));
   body.appendChild(ejesWrap);
-  body.appendChild(el("h4",{class:"chart-title"},["Qué dice sobre el neurodesarrollo"]));
+  body.appendChild(el("h4",{class:"chart-title"},["¿Qué dice sobre el neurodesarrollo?"]));
   const nl = el("ul",{class:"gap-list"});
   P.neurodesarrollo.forEach(n=> nl.appendChild(el("li",null,[ el("span",null,[ n.d + " ", el("span",{class:"cite-tag"},["p. " + n.pag]) ]) ])));
   body.appendChild(nl);
@@ -1674,11 +1786,11 @@ function renderMetodologia(){
   M.fuentes.forEach(f=> g.appendChild(el("div",{class:"pcc-card"},[ el("span",{class:"k"},[f.k]), el("p",null,[f.d]) ])));
   body.appendChild(g);
   body.appendChild(el("p",null,[ el("strong",null,["Diseño. "]), M.unidad ]));
-  body.appendChild(el("h4",{class:"chart-title", id:"metodologia-codigos"},["Qué cuenta el código F84"]));
+  body.appendChild(el("h4",{class:"chart-title", id:"metodologia-codigos"},["¿Qué cuenta el código F84?"]));
   body.appendChild(el("p",null,[M.codigos]));
-  body.appendChild(el("h4",{class:"chart-title", id:"metodologia-definiciones"},["Cómo se calcula cada medida"]));
+  body.appendChild(el("h4",{class:"chart-title", id:"metodologia-definiciones"},["¿Cómo se calcula cada medida?"]));
   const dt = el("table",{class:"cmp-table def-table"});
-  dt.appendChild(el("thead",null,[ el("tr",null,[ el("th",{scope:"col"},["Medida"]), el("th",{scope:"col"},["Fórmula"]), el("th",{scope:"col"},["Qué dice"]) ]) ]));
+  dt.appendChild(el("thead",null,[ el("tr",null,[ el("th",{scope:"col"},["Medida"]), el("th",{scope:"col"},["Fórmula"]), el("th",{scope:"col"},["¿Qué indica?"]) ]) ]));
   const dtb = el("tbody"); M.definiciones.forEach(x=> dtb.appendChild(el("tr",null,[ el("th",{scope:"row"},[x.k]), el("td",null,[ el("code",null,[x.f]) ]), el("td",null,[x.d]) ]))); dt.appendChild(dtb);
   body.appendChild(el("div",{class:"table-wrap"},[dt]));
   body.appendChild(el("p",null,[ el("strong",null,["Medidas de desigualdad. "]), M.medidas ]));
@@ -1754,6 +1866,7 @@ function buildSearchIndex(){
   C.instrumentos.items.forEach(it=> idx.push({ type:"Herramienta", label:it.nombre, detail:it.tipo + " · " + it.quien, sec:"instrumentos", anchor:"instrumentos-linea" }));
   C.vacios.forEach(v=> idx.push({ type:"Vacío de la ley", label:v.t, detail:v.d, sec:"normativa", anchor:"normativa-vacios" }));
   C.causal.nodos.forEach(n=> idx.push({ type:"Diagrama causal", label:n.t, detail:n.d, sec:"causal", anchor:"causal-diagrama" }));
+  STORY.forEach(st=> idx.push({ type:"Relato", label:st.t, detail:st.d, sec:"contexto", anchor:"contexto-relato" }));
   C.panorama.hipotesis.forEach(h=> idx.push({ type:"Hipótesis 2025", label:h.t, detail:h.d, sec:"nacional", anchor:"nacional-regimen" }));
   C.metodologia.definiciones.forEach(x=> idx.push({ type:"Definición", label:x.k, detail:x.f + ". " + x.d, sec:"metodologia", anchor:"metodologia-definiciones" }));
   return idx;
@@ -1840,10 +1953,14 @@ function initShortcuts(search){
     const tag = (e.target.tagName||"").toLowerCase();
     const typing = tag === "input" || tag === "textarea" || tag === "select";
     if(e.key === "Escape"){
-      if(search.isOpen()) search.close(); else if(!help.hidden) toggleHelp(false); else closeSidebar();
+      const tsm = document.getElementById("text-size-menu");
+      if(tsm && !tsm.hidden){ tsm.hidden = true; document.getElementById("text-size-btn").setAttribute("aria-expanded","false"); document.getElementById("text-size-btn").focus(); }
+      else if(search.isOpen()) search.close(); else if(!help.hidden) toggleHelp(false); else closeSidebar();
       hideTip(); return;
     }
     if(typing) return;
+    if(e.key === "+" || e.key === "="){ e.preventDefault(); stepTextSize(1); return; }
+    if(e.key === "-" || e.key === "_"){ e.preventDefault(); stepTextSize(-1); return; }
     if(e.key === "/"){ e.preventDefault(); search.open(); }
     else if(e.key === "?"){ e.preventDefault(); toggleHelp(); }
   });
@@ -1903,6 +2020,7 @@ function boot(){
   const search = initSearch();
   initShortcuts(search);
   initFocusMode();
+  initTextSize();
   initScrollTop();
   initScrollspy();
 }

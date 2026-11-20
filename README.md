@@ -8,17 +8,17 @@ Explorador interactivo sobre el trastorno del espectro autista (TEA) en Colombia
 
 ## Qué contiene
 
-La app abre con un resumen y el resto queda colapsado en preguntas, organizadas en tres partes: primero el marco (qué explica la atención y qué ordenan las normas), después los datos y al final cómo se hizo. Cada gráfico tiene un párrafo de lectura que se recalcula al filtrar; los términos técnicos muestran su definición al pasar el cursor y las normas enlazan a su texto. Al final de cada sección hay botones para ir a la pregunta anterior o a la siguiente.
+La app abre con un resumen y el resto queda colapsado en preguntas, organizadas en tres partes: primero el marco (qué explica la atención y qué ordenan las normas), después los datos y al final cómo se hizo. Cada gráfico tiene un párrafo de lectura que se recalcula al filtrar; los términos técnicos muestran su definición al pasar el cursor y las normas enlazan a su texto. Cada sección abre con su idea clave en una frase y termina con botones para ir a la pregunta anterior o a la siguiente. La app se adapta a móviles (los gráficos anchos se desplazan hacia los lados) y tiene modo claro u oscuro y cuatro tamaños de texto (botón «Aa» o teclas + y −).
 
 | # | Pregunta | Gráficos interactivos |
 | --- | --- | --- |
-| 01 | Resumen: ¿qué muestran los datos? | Seis hallazgos y el recorrido de la app |
-| **Primera parte** | **El marco: qué debería pasar** | |
+| 01 | Resumen: ¿qué muestran los datos? | Relato en siete pasos con gráfico fijo que cambia al desplazarse, seis hallazgos y el recorrido de la app |
+| **Primera parte** | **El marco: qué explica la atención y qué ordenan las normas** | |
 | 02 | ¿Qué explica el número de atenciones de un departamento? | Diagrama causal con factores medidos, medidos en parte y sin dato |
-| 03 | ¿Qué ordena la Ley 2628 de 2026 y qué le falta? | Ruta del tamizaje a la inclusión, plazos, artículos, vacíos de implementación |
+| 03 | ¿Qué ordena la Ley 2628 de 2026 y qué queda por reglamentar? | Ruta del tamizaje a la inclusión, plazos, artículos, retos de implementación |
 | 04 | ¿Cómo se relaciona la ley con la Política Nacional de Salud Mental? | Resumen comparativo, paralelo punto por punto, la política en detalle |
 | 05 | ¿Con qué herramientas se detecta y diagnostica el autismo en cada etapa de la vida? | Línea de edades con 10 herramientas |
-| **Segunda parte** | **Los datos: qué está pasando** | |
+| **Segunda parte** | **Los datos: qué muestran los registros públicos** | |
 | 06 | ¿Cuántas personas se atienden y quiénes son? | Serie 2019-2025, edad y sexo, régimen e hipótesis de la ruptura de 2025 |
 | 07 | ¿A cuántas personas llega el sistema en cada departamento? | Mapa, ranking y evolución de la prevalencia atendida, tabla y CSV |
 | 08 | ¿Cuánta atención recibe cada persona atendida? | Tasa de atención (atenciones por 100 atendidos), cobertura vs. intensidad |
@@ -28,7 +28,7 @@ La app abre con un resumen y el resto queda colapsado en preguntas, organizadas 
 | 12 | ¿Cuánto se desplazan las personas para atenderse? | Mapa, destino de las atenciones, receptores y emisores, oferta vs. movilidad |
 | 13 | ¿Qué tan desigual es la distribución y cómo ha cambiado? | Lorenz, IC95 %, Theil por región, tendencia, resumen de cruces |
 | 14 | ¿Cómo está el Huila frente al país? | Comparación con el país y destino de sus atenciones |
-| **Tercera parte** | **Cómo se hizo** | |
+| **Tercera parte** | **¿Cómo se hizo?** | |
 | 15 | ¿Qué sigue? La revisión sistemática en curso | Pregunta PCC, PRISMA preliminar |
 | 16-18 | Métodos y equipo, glosario, referencias | Códigos F84, fórmulas de cada medida, enlaces verificables |
 
