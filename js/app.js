@@ -58,6 +58,15 @@ function confidenceTag(level){
   const L = { verificado:"Verificado en fuente pública", "nota-autor":"Lectura del equipo", pendiente:"Pendiente de verificación", preliminar:"Resultado preliminar" };
   return el("span",{class:"confidence-tag confidence-"+level, title:"Procedencia del dato: "+(L[level]||level)},[L[level]||level]);
 }
+function scrollSoon(id){
+  // La sección se abre con una transición de altura; mientras dura, la página aún no tiene su
+  // altura final y el desplazamiento se queda corto (caía en el encabezado). Al navegar a un
+  // elemento concreto se despliega su sección sin animación y luego se desplaza.
+  const t = document.getElementById(id), it = t && t.closest(".acc-item");
+  if(it){ it.classList.add("instant"); void it.offsetHeight; }
+  scrollToId(id);
+  window.setTimeout(()=>{ if(it) it.classList.remove("instant"); scrollToId(id); }, 350);
+}
 function scrollToId(id){
   const t = document.getElementById(id); if(!t) return;
   const y = t.getBoundingClientRect().top + window.scrollY - 86;
@@ -365,6 +374,7 @@ function rankingWidget(body, opts){
     const s = svgEl(w, h, "rank-svg", "Ranking por " + I.label);
     let bg = "";
     ticks(mx).forEach(t=>{ const x = pad.l + iw*t/mx; bg += '<line x1="'+x+'" x2="'+x+'" y1="'+(pad.t-6)+'" y2="'+(h-pad.b)+'" class="grid"/><text x="'+x+'" y="'+(pad.t-10)+'" class="axis-lab" text-anchor="middle">'+fmt(t, mx<10?1:0)+'</text>'; });
+    bg += '<text x="'+(pad.l + iw/2)+'" y="9" class="axis-title" text-anchor="middle">'+esc(I.label)+'</text>';
     s.innerHTML = bg; bars = {};
     list.forEach((d,i)=>{
       const y = pad.t + i*rowH, bw = iw * d[ind]/mx;
@@ -394,6 +404,16 @@ function rankingWidget(body, opts){
 }
 
 /* ---------------------------------------------------------------- widget: dispersión con cuadrantes */
+const MAXPOB = Math.max(...DEP.map(d=>d.pob));
+function bubbleR(pob){ return Math.max(2.5, 22*Math.sqrt(pob/MAXPOB)); }
+function sizeLegend(){
+  const vals = [500000, 2000000, 8000000], w = 230, h = 54;
+  const s = svgEl(w, h, "size-legend", "Tamaño de las burbujas según la población");
+  let g = '<text x="0" y="12" class="axis-lab strong">Tamaño = población</text>', x = 8;
+  vals.forEach(v=>{ const r = bubbleR(v); g += '<circle cx="'+(x+r)+'" cy="'+(46-r)+'" r="'+r+'" class="size-ref"/><text x="'+(x+r)+'" y="'+(h-1)+'" class="axis-lab" text-anchor="middle"></text>'; g += '<text x="'+(x+2*r+4)+'" y="'+(42)+'" class="axis-lab">'+(v>=1e6? fmt(v/1e6)+' M' : fmt(v/1e3)+' mil')+'</text>'; x += 2*r + 52; });
+  s.innerHTML = g;
+  return el("div",{class:"size-legend-wrap"},[s]);
+}
 function scatterWidget(body, o){
   let yk = o.ys[0], reg = "todas";
   if(o.ys.length > 1) body.appendChild(chips(o.ys.map(k=>({id:k, label:"Eje vertical: " + IND[k].short})), yk, id=>{ yk = id; draw(); }, "Indicador del eje vertical"));
@@ -401,8 +421,9 @@ function scatterWidget(body, o){
   const box = el("div",{class:"chart-box"}); body.appendChild(box);
   const ipmBr = [10, 15, 20, 30];
   body.appendChild(o.colorBy === "ipm"
-    ? legend([["bub-sw ipm0","IPM < 10 %"],["bub-sw ipm1","10–15 %"],["bub-sw ipm2","15–20 %"],["bub-sw ipm3","20–30 %"],["bub-sw ipm4","≥ 30 %"],["size-sw","Tamaño = población"]])
-    : legend(REGION_ORDER.map(r=>["rg-sw "+REGION_CLASS[r], r]).concat([["size-sw","Tamaño = población"]])));
+    ? legend([["bub-sw ipm0","IPM < 10 %"],["bub-sw ipm1","10–15 %"],["bub-sw ipm2","15–20 %"],["bub-sw ipm3","20–30 %"],["bub-sw ipm4","≥ 30 %"],["ref-sw","Valor de referencia"]])
+    : legend(REGION_ORDER.map(r=>["rg-sw "+REGION_CLASS[r], r]).concat([["ref-sw","Valor de referencia"]])));
+  body.appendChild(sizeLegend());
   if(o.colorBy === "ipm") body.appendChild(el("p",{class:"legend-note"},["Color: pobreza multidimensional del departamento (IPM del DANE, % de personas en hogares pobres). Más oscuro = más pobreza."]));
   const rd = reading(); body.appendChild(rd);
   function draw(){
@@ -430,7 +451,7 @@ function scatterWidget(body, o){
     g += '<text x="'+(w-pad.r-6)+'" y="'+(h-pad.b-8)+'" class="quad-lab" text-anchor="end">'+esc(q.hl)+'</text>';
     s.innerHTML = g;
     all.slice().sort((a,b)=> b.pob-a.pob).forEach(d=>{
-      const r = 4 + 18*Math.sqrt(d.pob/7918660);
+      const r = bubbleR(d.pob);
       const c = document.createElementNS(SVGNS,"circle");
       c.setAttribute("cx", PX(d[o.x])); c.setAttribute("cy", PY(d[yk])); c.setAttribute("r", r);
       const col = o.colorBy === "ipm" ? "bub ipm" + classOf(d.ipm, ipmBr) : "bub rgb " + REGION_CLASS[d.region];
@@ -443,7 +464,7 @@ function scatterWidget(body, o){
       s.appendChild(c);
     });
     all.filter(d=> inR(d) && (reg !== "todas" || (o.labels||[]).includes(d.cod) || d.cod === STATE.sel)).forEach(d=>{
-      const r = 4 + 18*Math.sqrt(d.pob/7918660);
+      const r = bubbleR(d.pob);
       const t = document.createElementNS(SVGNS,"text"); t.setAttribute("x", PX(d[o.x]) + r + 3); t.setAttribute("y", PY(d[yk]) + 4);
       t.setAttribute("class","pt-lab" + (d.cod === STATE.sel ? " sel-pt-lab" : "")); t.textContent = d.nombre.replace(" D.C.",""); s.appendChild(t);
     });
@@ -479,7 +500,7 @@ function renderContexto(){
   const hz = el("div",{class:"finding-grid"});
   C.hallazgos.forEach((h,i)=>{
     const a = el("button",{class:"finding-link", type:"button"},["Ver el análisis →"]);
-    a.addEventListener("click", ()=>{ openSection(h.sec); setTimeout(()=> scrollToId("sec-"+h.sec), 60); });
+    a.addEventListener("click", ()=>{ openSection(h.sec); scrollSoon("sec-"+h.sec); });
     hz.appendChild(el("article",{class:"finding-card"},[ el("span",{class:"finding-num"},[String(i+1)]), el("h4",null,[h.t]), el("p",null,[h.d]), a ]));
   });
   body.appendChild(hz);
@@ -488,7 +509,7 @@ function renderContexto(){
   const ol = el("ol",{class:"question-list"});
   SECTIONS.slice(1).forEach(s=>{
     const b = el("button",{type:"button", class:"q-link"},[ el("span",{class:"q-num"},[s.num]), s.title ]);
-    b.addEventListener("click", ()=>{ openSection(s.id); setTimeout(()=> scrollToId("sec-"+s.id), 60); });
+    b.addEventListener("click", ()=>{ openSection(s.id); scrollSoon("sec-"+s.id); });
     ol.appendChild(el("li",null,[b, el("span",{class:"q-sub"},[s.sub])]));
   });
   body.appendChild(ol);
@@ -512,6 +533,7 @@ function renderNacional(){
     const s = svgEl(w, h, "", "Serie nacional");
     let g = "";
     ticks(mx).forEach(t=>{ const y = pad.t + ih - ih*t/mx; g += '<line x1="'+pad.l+'" x2="'+(w-pad.r)+'" y1="'+y+'" y2="'+y+'" class="grid"/><text x="'+(pad.l-8)+'" y="'+(y+4)+'" class="axis-lab" text-anchor="end">'+fmt(t)+'</text>'; });
+    g += '<text x="12" y="'+(pad.t+ih/2)+'" class="axis-title" text-anchor="middle" transform="rotate(-90 12 '+(pad.t+ih/2)+')">'+(metric==="tasa" ? "Personas por 100.000 hab." : "Personas atendidas")+'</text>';
     s.innerHTML = g;
     ser.forEach((v,i)=>{
       const bh = ih*v[metric]/mx, x = pad.l + i*bw + bw*0.18, y = pad.t + ih - bh;
@@ -553,6 +575,7 @@ function renderNacional(){
   const mx = niceMax(Math.max(...rg.map(r=>r.y2025))), ih = h2 - pad.t - pad.b, iw = w2 - pad.l - pad.r;
   let gs = "";
   ticks(mx).forEach(t=>{ const y = pad.t + ih - ih*t/mx; gs += '<line x1="'+pad.l+'" x2="'+(w2-pad.r)+'" y1="'+y+'" y2="'+y+'" class="grid"/><text x="'+(pad.l-8)+'" y="'+(y+4)+'" class="axis-lab" text-anchor="end">'+fmt(t)+'</text>'; });
+  gs += '<text x="12" y="'+(pad.t+ih/2)+'" class="axis-title" text-anchor="middle" transform="rotate(-90 12 '+(pad.t+ih/2)+')">Personas atendidas</text>';
   s2.innerHTML = gs;
   const gw = iw / rg.length;
   rg.forEach((r,i)=>{
@@ -609,6 +632,7 @@ function trendWidget(body){
     if(show25) g += '<rect x="'+((X(5)+X(6))/2)+'" y="'+pad.t+'" width="'+((X(6)-X(5))/2+4)+'" height="'+ih+'" class="break-band"/><text x="'+(X(6)-4)+'" y="'+(pad.t+12)+'" class="axis-lab" text-anchor="end">FEV-RIPS</text>';
     ticks(mx).forEach(t=>{ g += '<line x1="'+pad.l+'" x2="'+(w-pad.r)+'" y1="'+Y(t)+'" y2="'+Y(t)+'" class="grid"/><text x="'+(pad.l-8)+'" y="'+(Y(t)+4)+'" class="axis-lab" text-anchor="end">'+fmt(t)+'</text>'; });
     yrs.forEach((y,i)=>{ g += '<text x="'+X(i)+'" y="'+(h-10)+'" class="axis-lab" text-anchor="middle">'+y+'</text>'; });
+    g += '<text x="12" y="'+(pad.t+ih/2)+'" class="axis-title" text-anchor="middle" transform="rotate(-90 12 '+(pad.t+ih/2)+')">Personas por 100.000 hab.</text>';
     s.innerHTML = g;
     const sel = BY[STATE.sel];
     yrs.forEach((y,i)=>{
@@ -620,7 +644,7 @@ function trendWidget(body){
       if(d.cod === STATE.sel) return;
       const p = document.createElementNS(SVGNS,"path");
       p.setAttribute("d", d.serie.slice(0,n).map((v,i)=> (i?"L":"M") + X(i).toFixed(1) + "," + Y(rate(d,i)).toFixed(1)).join(""));
-      p.setAttribute("class","spag " + REGION_CLASS[d.region]); p.setAttribute("tabindex","0");
+      p.setAttribute("class","spag " + (reg === "todas" ? "spag-ctx" : REGION_CLASS[d.region])); p.setAttribute("tabindex","0");
       bindTip(p, ()=> "<h5>"+esc(d.nombre)+"</h5><p>"+yrs.map((y,i)=> y+": "+fmt(rate(d,i),1)).join("<br>")+"</p><p class='muted'>Clic para resaltar</p>");
       p.addEventListener("click", ()=> selectDept(d.cod));
       s.appendChild(p);
@@ -715,6 +739,7 @@ function forestChart(body){
   const fs = svgEl(fw, fh, "", "Razones de tasas del modelo cuasi-Poisson");
   let fg = "";
   [0.5,0.75,1,1.5,2].forEach(t=>{ fg += '<line x1="'+FX(t)+'" x2="'+FX(t)+'" y1="'+(fpad.t-6)+'" y2="'+(fh-fpad.b)+'" class="grid'+(t===1?' zero':'')+'"/><text x="'+FX(t)+'" y="'+(fpad.t-10)+'" class="axis-lab" text-anchor="middle">'+fmt(t,2)+'</text>'; });
+  fg += '<text x="'+FX(1)+'" y="9" class="axis-title" text-anchor="middle">Razón de tasas (RR, escala logarítmica)</text>';
   fs.innerHTML = fg;
   ms.forEach((m,i)=>{
     const y = fpad.t + i*fH + fH/2;
@@ -931,6 +956,7 @@ function renderDesigualdad(){
     const s = svgEl(w, h, "", "Índices de desigualdad");
     let g = "";
     for(let t=lo; t<=hi+1e-9; t+=0.1){ g += '<line x1="'+X(t)+'" x2="'+X(t)+'" y1="'+(pad.t-6)+'" y2="'+(h-pad.b)+'" class="grid'+(Math.abs(t)<1e-9?' zero':'')+'"/><text x="'+X(t)+'" y="'+(pad.t-10)+'" class="axis-lab" text-anchor="middle">'+fmt(t,1)+'</text>'; }
+    g += '<text x="'+(pad.l+iw/2)+'" y="9" class="axis-title" text-anchor="middle">Valor del índice (punto) e IC95 % (bigotes)</text>';
     if(mm === "ci") g += '<text x="'+(X(lo)+4)+'" y="'+(h-2)+'" class="quad-lab">← en los más pobres</text><text x="'+(X(hi)-4)+'" y="'+(h-2)+'" class="quad-lab" text-anchor="end">en los menos pobres →</text>';
     s.innerHTML = g;
     rows.forEach((r,i)=>{
@@ -1009,7 +1035,7 @@ function renderDesigualdad(){
     const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g rank-row"); g.setAttribute("role","button");
     g.innerHTML = '<rect x="0" y="'+y+'" width="'+cw+'" height="'+cH+'" class="row-hit"/><text x="'+(cpad.l-10)+'" y="'+(y+18)+'" class="axis-lab" text-anchor="end">'+esc(c.par)+'</text><rect x="'+(pos?cx0:cx0-bw)+'" y="'+(y+6)+'" width="'+Math.max(bw,1)+'" height="'+(cH-12)+'" rx="3" class="'+(pos?"net-pos":"net-neg")+'"/><text x="'+(pos?cx0+bw+5:cx0-bw-5)+'" y="'+(y+18)+'" class="bar-val" text-anchor="'+(pos?"start":"end")+'">'+fmt(c.rho,2)+'</text>';
     bindTip(g, ()=> "<h5>"+esc(c.par)+"</h5><p>ρ de Spearman "+fmt(c.rho,3)+" · p "+c.p+" · asociación "+strength(c.rho)+"</p><p class='muted'>Clic para ir al análisis</p>");
-    const go = ()=>{ openSection(c.sec); setTimeout(()=> scrollToId("sec-"+c.sec), 60); };
+    const go = ()=>{ openSection(c.sec); scrollSoon("sec-"+c.sec); };
     g.addEventListener("click", go); g.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } });
     cs.appendChild(g);
   });
@@ -1046,7 +1072,7 @@ function renderHuila(){
   const rd2 = reading(); body.appendChild(rd2);
   setReading(rd2, "El 84,2 % de las atenciones de los residentes del Huila se prestó en el propio departamento. De las que salieron, casi la mitad (832 de 1.695) fue a Bogotá D.C. y 375 a Atlántico. El número de personas atendidas pasó de 333 en 2019 a 944 en 2024.");
   const btn = el("button",{class:"btn", type:"button"},["Ver el Huila en el mapa"]);
-  btn.addEventListener("click", ()=>{ selectDept("41"); openSection("territorio"); setTimeout(()=> scrollToId("territorio-mapa"), 60); });
+  btn.addEventListener("click", ()=>{ selectDept("41"); openSection("territorio"); scrollSoon("territorio-mapa"); });
   body.appendChild(el("p",null,[btn]));
   body.appendChild(sourceLine("Fuente: SISPRO-RIPS 2024; REPS 13/11/2026; DANE."));
 }
@@ -1058,7 +1084,7 @@ function renderGlosario(){
   const dl = el("dl",{class:"glossary"});
   C.glosario.slice().sort((a,b)=> a.t.localeCompare(b.t,"es")).forEach(g=>{
     dl.appendChild(el("dt",{id:"glos-"+g.id},[g.t]));
-    dl.appendChild(el("dd",null,[ g.d + " ", g.url ? el("a",{href:g.url, target:"_blank", rel:"noopener"},["Fuente: " + g.fuente]) : null ]));
+    dl.appendChild(el("dd",null,[ g.d, el("span",{class:"g-ref"},[ "Referencia: ", g.url ? el("a",{href:g.url, target:"_blank", rel:"noopener"},[g.fuente]) : g.fuente ]) ]));
   });
   body.appendChild(dl);
 }
@@ -1102,13 +1128,13 @@ function decorate(root){
   });
 }
 function initTerms(){
-  const html = id=>{ const g = GLOS[id]; return "<h5>"+esc(g.t)+"</h5><p>"+esc(g.d)+"</p>"+(g.url?"<p class='muted'>Fuente: "+esc(g.fuente)+"</p>":"")+"<p class='muted'>Clic: ver en el glosario</p>"; };
+  const html = id=>{ const g = GLOS[id]; return "<h5>"+esc(g.t)+"</h5><p>"+esc(g.d)+"</p>"+(g.url?"<p class='muted'>Referencia: "+esc(g.fuente)+"</p>":"")+"<p class='muted'>Clic: ver en el glosario</p>"; };
   document.addEventListener("mouseover", e=>{ const t = e.target.closest && e.target.closest(".term"); if(t) showTip(html(t.dataset.term), e); });
   document.addEventListener("mousemove", e=>{ const t = e.target.closest && e.target.closest(".term"); if(t) showTip(html(t.dataset.term), e); });
   document.addEventListener("mouseout", e=>{ if(e.target.closest && e.target.closest(".term")) hideTip(); });
   document.addEventListener("focusin", e=>{ const t = e.target.closest && e.target.closest(".term"); if(t) showTip(html(t.dataset.term), e, t); });
   document.addEventListener("focusout", e=>{ if(e.target.closest && e.target.closest(".term")) hideTip(); });
-  const go = t=>{ hideTip(); openSection("glosario"); setTimeout(()=>{ scrollToId("glos-"+t.dataset.term); const d = document.getElementById("glos-"+t.dataset.term); if(d){ d.classList.add("flash"); setTimeout(()=> d.classList.remove("flash"), 1600); } }, 60); };
+  const go = t=>{ hideTip(); openSection("glosario"); const id = "glos-"+t.dataset.term; scrollSoon(id); const d = document.getElementById(id); if(d){ d.classList.add("flash"); setTimeout(()=> d.classList.remove("flash"), 2200); } };
   document.addEventListener("click", e=>{ const t = e.target.closest && e.target.closest(".term"); if(t) go(t); });
   document.addEventListener("keydown", e=>{ const t = e.target.closest && e.target.closest(".term"); if(t && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); go(t); } });
   // las lecturas se regeneran al filtrar: se decoran de nuevo
@@ -1302,7 +1328,7 @@ function renderTOC(){
     toc.appendChild(a);
     (s.subs||[]).forEach(su=>{
       const b = el("a",{ href:"#"+su.id, class:"toc-link sub", "data-target":s.id, "data-sub":su.id },[su.label]);
-      b.addEventListener("click", e=>{ e.preventDefault(); openSection(s.id); setTimeout(()=> scrollToId(su.id), 40); closeSidebar(); });
+      b.addEventListener("click", e=>{ e.preventDefault(); openSection(s.id); scrollSoon(su.id); closeSidebar(); });
       toc.appendChild(b);
     });
   });
@@ -1375,7 +1401,7 @@ function initSearch(){
     close();
     if(r.dept) selectDept(r.dept);
     openSection(r.sec);
-    setTimeout(()=> scrollToId(r.anchor), 60);
+    scrollSoon(r.anchor);
   }
   function move(d){
     if(!results.length) return;
@@ -1415,7 +1441,7 @@ function renderSources(){
       el("ul",{class:"sources-panel-list"}, g.items.map(i=> el("li",null,[ el("a",{href:i.url, target:"_blank", rel:"noopener"},[i.label]) ]))) ]));
   });
   const btn = document.getElementById("sources-panel-btn"), panel = document.getElementById("sources-panel");
-  function show(){ panel.hidden = false; closeSidebar(); setTimeout(()=> scrollToId("sources-panel"), 30); }
+  function show(){ panel.hidden = false; closeSidebar(); scrollSoon("sources-panel"); }
   btn.addEventListener("click", show);
   document.querySelectorAll(".js-open-sources").forEach(x=> x.addEventListener("click", e=>{ e.preventDefault(); show(); }));
 }

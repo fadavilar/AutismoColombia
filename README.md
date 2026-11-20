@@ -4,7 +4,7 @@ Explorador interactivo sobre el trastorno del espectro autista (TEA) en Colombia
 
 **Análisis preliminar de datos públicos y del marco normativo**, en construcción con la [Fundación Universitaria Navarra (UNINAVARRA)](https://www.uninavarra.edu.co/), Neiva, dentro del proyecto *Barreras para el diagnóstico oportuno del Trastorno del Espectro Autista (TEA) en Colombia: una revisión sistemática de la literatura* (Especialización en Medicina Familiar). Las cifras son resultados preliminares y pueden cambiar.
 
-**Equipo:** Leydi Hernández y Wilmer Esquivel (estudiantes, Especialización en Medicina Familiar), Jhonatan Andrés Portes (tutor del proyecto) y Fabián Dávila Ramírez, MD, MBA, PhD (docente de investigación; análisis de datos y app; [ORCID](https://orcid.org/0000-0002-1678-7288)).
+**Equipo:** Leydi Hernández y Wilmer Esquivel (estudiantes, Especialización en Medicina Familiar), Jhonatan Andrés Portes (tutor del proyecto) y Fabian Antonio Dávila Ramírez, MD, MBA, PhD (docente de investigación; análisis de datos y app; [ORCID](https://orcid.org/0000-0002-1678-7288)).
 
 ## Qué contiene
 

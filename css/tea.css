@@ -3,7 +3,7 @@
    Se carga después de style.css (sistema de diseño del explorador).
    ===================================================================== */
 :root{
-  --seq-0:#ffffcc; --seq-1:#c7e9b4; --seq-2:#7fcdbb; --seq-3:#41b6c4; --seq-4:#2c7fb8; --seq-5:#253494; --map-line:#7d8a99; --map-bg:#ffffff;
+  --seq-0:#ffffb2; --seq-1:#fed976; --seq-2:#feb24c; --seq-3:#fd8d3c; --seq-4:#f03b20; --seq-5:#bd0026; --map-line:#8a8a8a; --map-bg:#ffffff; --map-sel:#111827;
   --ipm-0:#fde9cc; --ipm-1:#f7c584; --ipm-2:#ea9a48; --ipm-3:#c9671f; --ipm-4:#8f3b0c;
   --rg-caribe: var(--chip-c); --rg-bogota: var(--chip-b); --rg-central: var(--chip-d);
   --rg-oriental: var(--chip-e); --rg-pacifica: var(--chip-a); --rg-amazonia: var(--success);
@@ -11,13 +11,13 @@
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --seq-0:#440154; --seq-1:#414487; --seq-2:#2a788e; --seq-3:#22a884; --seq-4:#7ad151; --seq-5:#fde725; --map-line:#0e141b; --map-bg:#1b2531;
+    --seq-0:#3b0f70; --seq-1:#8c2981; --seq-2:#de4968; --seq-3:#f66e5c; --seq-4:#fe9f6d; --seq-5:#fcfdbf; --map-line:#7c8798; --map-bg:#1b2531; --map-sel:#ffffff;
     --ipm-0:#4a3a22; --ipm-1:#7a5a2a; --ipm-2:#b07a34; --ipm-3:#d9984a; --ipm-4:#f2c07e;
     --na:#2c3644;
   }
 }
 :root[data-theme="dark"]{
-  --seq-0:#440154; --seq-1:#414487; --seq-2:#2a788e; --seq-3:#22a884; --seq-4:#7ad151; --seq-5:#fde725; --map-line:#0e141b; --map-bg:#1b2531;
+  --seq-0:#3b0f70; --seq-1:#8c2981; --seq-2:#de4968; --seq-3:#f66e5c; --seq-4:#fe9f6d; --seq-5:#fcfdbf; --map-line:#7c8798; --map-bg:#1b2531; --map-sel:#ffffff;
   --ipm-0:#4a3a22; --ipm-1:#7a5a2a; --ipm-2:#b07a34; --ipm-3:#d9984a; --ipm-4:#f2c07e;
   --na:#2c3644;
 }
@@ -95,7 +95,7 @@ h4.chart-title{ font-size:.92rem; margin: 18px 0 10px; }
 .dpto.q3{ fill: var(--seq-3); } .dpto.q4{ fill: var(--seq-4); } .dpto.q5{ fill: var(--seq-5); }
 .dpto.q-na{ fill: var(--na); }
 .dpto:hover, .dpto:focus-visible{ stroke: var(--text); stroke-width:1.8; }
-.dpto.sel{ stroke: #e8590c; stroke-width:3; }
+.dpto.sel{ stroke: var(--map-sel); stroke-width:3; }
 .map-inset{ fill:none; stroke: var(--border); stroke-dasharray:3 3; }
 .map-inset-lab{ fill: var(--text-muted); font-size:9.5px; }
 .map-legend{ margin-top:8px; font-size:.76rem; }
@@ -302,3 +302,14 @@ a.art-num:hover{ text-decoration:underline; }
   .glossary{ grid-template-columns: 1fr; }
   .glossary dt{ padding-top:6px; }
 }
+
+/* ---------------- v3: correcciones de la auditoría de visualización ---------------- */
+.spag.spag-ctx{ stroke: var(--text-muted); opacity:.28; }
+.size-legend-wrap{ margin: -2px 0 8px; }
+.size-legend-wrap svg{ width: 230px; height:auto; display:block; }
+.size-ref{ fill:none; stroke: var(--text-muted); stroke-width:1.2; }
+.glossary dt{ scroll-margin-top: 110px; }
+.glossary dt.flash, .glossary dt.flash + dd{ background: color-mix(in srgb, var(--accent) 24%, transparent); transition: background .4s ease; }
+.glossary dd .g-ref{ display:block; margin-top:4px; font-size:.8rem; }
+
+.acc-item.instant .acc-panel{ transition: none !important; }
