@@ -313,3 +313,66 @@ a.art-num:hover{ text-decoration:underline; }
 .glossary dd .g-ref{ display:block; margin-top:4px; font-size:.8rem; }
 
 .acc-item.instant .acc-panel{ transition: none !important; }
+
+/* ---------------- v4: disclosure, diagrama causal, ciclo vital, paralelo ---------------- */
+.disclosure{ border:1px solid var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); border-radius:12px; padding:12px 16px; margin: 6px 0 12px; }
+.disclosure h4{ margin:0 0 6px; font-size:.9rem; color: var(--text); }
+.disclosure ul{ margin:0; padding-left:18px; font-size:.84rem; color: var(--text-muted); display:flex; flex-direction:column; gap:4px; }
+.quad-lab.quad-flag{ fill: var(--danger); font-weight:700; font-style:normal; opacity:1; }
+.size-legend-wrap svg{ width: 360px; max-width:100%; }
+.causal-wrap svg.causal-svg{ min-width: 900px; }
+.causal-col{ fill: var(--text-muted); font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; }
+.cnode{ cursor:pointer; outline:none; }
+.cnode rect{ fill: var(--surface); stroke: var(--primary); stroke-width:1.6; }
+.cnode.m-parcial rect{ stroke-dasharray: 6 3; }
+.cnode.m-no rect{ stroke: var(--text-muted); stroke-dasharray: 3 3; fill: var(--surface-2); }
+.cnode.cnode-out rect{ fill: var(--primary); stroke: var(--primary); }
+.cnode.cnode-out text{ fill: #fff; font-weight:800; }
+:root[data-theme="dark"] .cnode.cnode-out text{ fill:#06222a; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .cnode.cnode-out text{ fill:#06222a; } }
+.cnode text{ fill: var(--text); font-size:11px; font-weight:600; }
+.cnode .cnode-badge{ font-size:8.5px; font-weight:700; fill: var(--text-muted); text-transform:uppercase; }
+.cnode.cnode-out .cnode-badge{ fill:#fff; opacity:.8; }
+.cnode:hover rect, .cnode:focus-visible rect, .cnode.on rect{ stroke-width:3; }
+.cedge path{ fill:none; stroke-width:1.5; }
+.cedge.pos path{ stroke: var(--primary); }
+.cedge.neg path{ stroke: var(--danger); }
+.cedge.mix path{ stroke: var(--text-muted); stroke-dasharray: 4 3; }
+.cedge.dim{ opacity:.12; }
+.cedge-sign{ font-size:12px; font-weight:800; fill: var(--text); paint-order: stroke; stroke: var(--surface-2); stroke-width:3px; }
+.cedge{ outline:none; }
+.cedge:hover path, .cedge:focus path{ stroke-width:3; }
+.legend-sw.cn-si{ background: var(--surface); border:2px solid var(--primary); }
+.legend-sw.cn-parcial{ background: var(--surface); border:2px dashed var(--primary); }
+.legend-sw.cn-no{ background: var(--surface-2); border:2px dotted var(--text-muted); }
+.legend-sw.ce-pos{ background: var(--primary); height:3px; } .legend-sw.ce-neg{ background: var(--danger); height:3px; } .legend-sw.ce-mix{ background: var(--text-muted); height:3px; }
+.causal-detail h4{ margin: 4px 0 4px; font-size:.92rem; }
+.causal-detail p{ margin: 4px 0; }
+.life-wrap svg.life-svg{ min-width: 720px; }
+.etapa{ opacity:.55; }
+.etapa.e0{ fill: color-mix(in srgb, var(--primary) 14%, transparent); } .etapa.e1{ fill: color-mix(in srgb, var(--primary) 7%, transparent); }
+.etapa.e2{ fill: color-mix(in srgb, var(--primary) 14%, transparent); } .etapa.e3{ fill: color-mix(in srgb, var(--primary) 7%, transparent); }
+.small-lab{ font-size:9.5px; }
+.tp-vig{ fill: #9aa5b1; } .tp-tam{ fill: var(--accent); } .tp-apo{ fill: var(--chip-a); } .tp-dia{ fill: var(--primary); }
+.legend-sw.tp-vig{ background:#9aa5b1; } .legend-sw.tp-tam{ background: var(--accent); } .legend-sw.tp-apo{ background: var(--chip-a); } .legend-sw.tp-dia{ background: var(--primary); }
+.life-row{ cursor:pointer; }
+.life-row:hover .row-hit, .life-row:focus .row-hit{ fill: var(--primary-tint); }
+.gap-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:10px; margin-bottom:8px; }
+.gap-card{ background: var(--surface); border:1px solid var(--border); border-left:4px solid var(--danger); border-radius:10px; padding:12px 14px; display:flex; flex-direction:column; gap:4px; }
+.gap-card h4{ margin:4px 0 2px; font-size:.92rem; }
+.gap-card p{ margin:0; font-size:.83rem; color: var(--text-muted); }
+.gap-card .gap-dato{ color: var(--text); font-weight:600; font-size:.8rem; }
+.gap-card a{ color: var(--primary-2); font-weight:600; margin-top:4px; }
+.par-wrap svg.par-svg{ min-width: 780px; }
+.par-box{ fill: var(--surface); stroke: var(--border); }
+.par-box.par-empty{ fill: var(--surface-2); stroke-dasharray: 4 3; }
+.par-txt{ fill: var(--text); font-size:11.5px; }
+.par-tag{ font-size:10px; font-weight:800; fill: var(--text-muted); }
+.par-link{ stroke-width:2.2; }
+.par-row{ outline:none; }
+.par-row.rel-coincide .par-link{ stroke: var(--primary); } .par-row.rel-coincide .par-tag{ fill: var(--primary-2); }
+.par-row.rel-vacio .par-link{ stroke: var(--danger); stroke-dasharray: 6 4; } .par-row.rel-vacio .par-tag{ fill: var(--danger); }
+.par-row.rel-solo-ley .par-link{ stroke: var(--text-muted); stroke-dasharray: 2 4; }
+.par-row:hover .par-box, .par-row:focus .par-box{ stroke: var(--primary); stroke-width:2; }
+.legend-sw.rel-coincide-sw{ background: var(--primary); height:3px; } .legend-sw.rel-vacio-sw{ background: var(--danger); height:3px; } .legend-sw.rel-solo-sw{ background: var(--text-muted); height:3px; }
+.g-plain{ display:block; color: var(--text); margin-bottom:4px; }

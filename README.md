@@ -17,14 +17,15 @@ La app abre con un resumen y el resto queda colapsado en preguntas que van de lo
 | 03 | ¿Dónde viven las personas atendidas? | Mapa, ranking por región, evolución por departamento, tabla y CSV |
 | 04 | ¿Cuánta atención recibe cada persona atendida? | Ranking de atenciones por persona, cobertura vs. intensidad |
 | 05 | ¿Dónde está la oferta de neuropediatría? | Mapa y ranking de sedes, telemedicina y sedes públicas |
-| 06 | ¿Se atiende más donde hay más oferta? | Dispersión con cuadrantes (color IPM) |
+| 06 | ¿Se atiende más donde hay más oferta? | Oferta vs. pacientes (tamaño = atenciones), posible necesidad no atendida, diagrama causal |
 | 07 | ¿Se atiende menos donde hay más pobreza? | Qué es el IPM, mapa, dispersión IPM vs. 4 indicadores, modelo cuasi-Poisson |
 | 08 | ¿Cuánto se desplazan las personas para atenderse? | Mapa de movilidad, destino de las atenciones, receptores y emisores, oferta vs. movilidad |
 | 09 | ¿Qué tan desigual es la distribución y cómo ha cambiado? | Glosario de índices, Lorenz, IC95 %, Theil por región, tendencia, resumen de cruces |
 | 10 | ¿Cómo está el Huila frente al país? | Comparación con el país y destino de sus atenciones |
-| 11 | ¿Qué dice el marco normativo? | Ruta tamizaje → inclusión, plazos de la Ley 2628 con enlace por artículo, PNSM 2024-2033 |
-| 12 | ¿Qué sigue? La revisión sistemática en curso | Pregunta PCC, PRISMA preliminar |
-| 13-15 | Métodos y equipo, glosario, referencias | Enlaces verificables (DOI o sitio oficial) |
+| 11 | ¿Con qué herramientas se detecta y diagnostica el autismo en cada etapa de la vida? | Línea de edades con 10 herramientas de vigilancia, tamizaje y diagnóstico |
+| 12 | ¿Qué dice el marco normativo? | Ruta tamizaje → inclusión, plazos de la Ley 2628, vacíos de implementación, paralelo con la PNSM 2024-2033 |
+| 13 | ¿Qué sigue? La revisión sistemática en curso | Pregunta PCC, PRISMA preliminar |
+| 14-16 | Métodos y equipo, glosario, referencias | Enlaces verificables (DOI o sitio oficial) |
 
 ## Estructura
 
