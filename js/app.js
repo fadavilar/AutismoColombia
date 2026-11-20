@@ -1184,8 +1184,8 @@ function renderFooter(){
   document.getElementById("footer-disclaimer").textContent = C.aviso + " Esta app describe datos administrativos agregados; no ofrece orientación clínica individual.";
   document.getElementById("footer-author").innerHTML = "Autor: <strong>" + esc(C.meta.autor) + "</strong> (<a href='" + C.meta.orcid + "' target='_blank' rel='noopener'>ORCID</a>) · Proyecto: " + esc(C.meta.proyecto) + ", " + esc(C.meta.institucion) + ".";
   const cc = document.getElementById("cc-badge");
-  cc.href = "https://creativecommons.org/licenses/by-sa/4.0/deed.es"; cc.textContent = "CC BY-SA 4.0";
-  document.getElementById("footer-license-text").textContent = "Textos y gráficos bajo licencia Creative Commons Atribución-CompartirIgual 4.0. Los datos de origen pertenecen a sus fuentes oficiales (SISPRO, REPS, DANE).";
+  cc.href = "https://creativecommons.org/publicdomain/zero/1.0/deed.es"; cc.textContent = "CC0 1.0";
+  document.getElementById("footer-license-text").textContent = "Textos, gráficos y código bajo dedicación al dominio público CC0 1.0 Universal; se agradece citar la fuente. Los datos de origen pertenecen a sus fuentes oficiales (SISPRO, REPS, DANE).";
 }
 
 /* ---------------------------------------------------------------- arranque */

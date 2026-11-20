@@ -55,4 +55,6 @@ python -m http.server 8765
 
 ## Licencia
 
-Textos y gráficos: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.es). Los datos de origen pertenecen a sus fuentes oficiales.
+[CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/deed.es) (ver `LICENSE`). Los datos de origen pertenecen a sus fuentes oficiales (SISPRO, REPS, DANE).
+
+Sitio publicado: https://fadavilar.github.io/AutismoColombia/
