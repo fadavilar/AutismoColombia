@@ -174,8 +174,8 @@ const PARTS = [
 const SECTIONS = [
   { id:"contexto", part:null, toc:"Resumen", title:"Resumen", sub:"Introducción, métodos, resultados y conclusiones", open:true,
     subs:[{id:"resumen-introduccion",label:"Introducción"},{id:"resumen-metodos",label:"Métodos y códigos CIE-10"},{id:"resumen-resultados",label:"Resultados"},{id:"resumen-conclusiones",label:"Conclusiones"},{id:"contexto-relato",label:"Los resultados, paso a paso"},{id:"contexto-preguntas",label:"Recorrido del documento"}] },
-  { id:"causal", part:"I", toc:"¿Qué mueve la oportunidad?", title:"¿Qué facilita y qué dificulta que una persona llegue a tiempo al diagnóstico?", sub:"Dinámica de sistemas: niveles, flujos, bucles, demoras, facilitadores y barreras", open:false,
-    subs:[{id:"causal-diagrama",label:"Diagrama de dinámica de sistemas"},{id:"causal-factores",label:"Facilitadores y barreras"},{id:"causal-formas",label:"Relaciones no lineales"}] },
+  { id:"causal", part:"I", toc:"¿Qué mueve la oportunidad?", title:"¿Qué facilita y qué dificulta que una persona llegue a tiempo al diagnóstico?", sub:"Dinámica de sistemas: niveles, flujos, bucles, demoras, facilitadores y barreras, y una simulación de escenarios", open:false,
+    subs:[{id:"causal-diagrama",label:"Diagrama de dinámica de sistemas"},{id:"causal-factores",label:"Facilitadores y barreras"},{id:"causal-formas",label:"Relaciones no lineales"},{id:"causal-simulacion",label:"¿Qué pasaría si…? Simulación"},{id:"causal-sensibilidad",label:"¿De qué depende más el resultado?"},{id:"causal-firmeza",label:"¿Se sostiene la comparación?"},{id:"causal-parametros",label:"¿De dónde sale cada número?"}] },
   { id:"normativa", part:"I", toc:"Ley 2628 de 2026", title:"¿Qué ordena la Ley 2628 de 2026 y qué queda por reglamentar?", sub:"Ruta del tamizaje a la inclusión, primera infancia, artículos, plazos y retos de implementación", open:false,
     subs:[{id:"normativa-ruta",label:"Del tamizaje al diagnóstico"},{id:"normativa-infancia",label:"Tamizaje en primera infancia"},{id:"normativa-ley",label:"La ley y sus plazos"},{id:"normativa-vacios",label:"Retos de implementación"}] },
   { id:"paralelo", part:"I", toc:"Ley y Política de Salud Mental", title:"¿Cómo se relaciona la ley con la Política Nacional de Salud Mental?", sub:"Resumen comparativo, paralelo punto por punto y lo que dice la política sobre el neurodesarrollo", open:false,
@@ -979,7 +979,7 @@ function renderCausal(){
   const body = document.getElementById("body-causal"), G = window.TEA_DINAMICA;
   body.appendChild(el("p",null,["Antes de mirar los datos, un mapa de lo que puede acercar o alejar el diagnóstico. En el centro están los pacientes con diagnóstico de TEA: un nivel que se llena a medida que las personas se detectan, esperan la evaluación y reciben la confirmación. A su alrededor, los factores se influyen en círculo: cada cambio vuelve, con demora, sobre su propia causa."]));
   sub(body, "causal-diagrama", "Diagrama de dinámica de sistemas", "Elige un bucle para recorrerlo, o un factor para ver qué se sabe de él.");
-  sdDiagram(body);
+  const diag = sdDiagram(body);
   sub(body, "causal-factores", "Facilitadores y barreras", "Factores externos que empujan o frenan el sistema, y sobre qué variable actúan.");
   const two = el("div",{class:"sd-fb"});
   [["f","Facilitadores"],["b","Barreras"]].forEach(k=>{
@@ -1001,6 +1001,11 @@ function renderCausal(){
   });
   body.appendChild(fg);
   body.appendChild(sourceLine(G.nota));
+  if(window.TEA_SIMULACION && window.Motor && window.Motor.simulador){
+    sub(body, "causal-simulacion", "¿Qué pasaría si…?", "Una simulación de la parte del diagrama que tiene datos, de 2019 a 2032. Las decisiones empiezan a actuar en 2027.");
+    body.appendChild(el("p",null,["El diagrama dice cómo se influyen las variables; la simulación las pone a andar para comparar caminos. Sirve para responder preguntas como: ¿qué pasa con la espera si la detección crece y la capacidad no? Al recorrer el tiempo, los niveles del diagrama se llenan y se vacían."]));
+    window.Motor.simulador(body, window.TEA_SIMULACION, { diagrama: diag, id: "causal" });
+  }
   body.appendChild(el("div",{class:"tag-row"},[confidenceTag("nota-autor"), confidenceTag("preliminar")]));
 }
 /* Forma de una relación (minigráfico). Con signo negativo la curva baja. */
@@ -1017,7 +1022,6 @@ function sdDiagram(body){
   const G = window.TEA_DINAMICA, N = {}; G.nodos.forEach(n=> N[n.id] = n);
   const W = 1420, H = 1000, CH = 9.4, Y0 = N.c.y;
   // aristas de flujo (tuberías) tratadas también como relaciones del bucle
-  const PIPES = [["s1","v1"],["v1","s2"],["s2","v2"],["v2","c"]];
   const isLoopEdge = (b, de, a)=> b.v.some((v,i)=> v === de && b.v[(i+1)%b.v.length] === a);
   let loop = null, mode = "todo";
   body.appendChild(howTo("los rectángulos son niveles: se llenan y se vacían. Las válvulas son flujos. Las flechas curvas son influencias: «+» significa que las dos variables cambian en el mismo sentido y «−», en sentido contrario. Las dos rayas sobre una flecha indican una demora. R es un bucle de refuerzo (se amplifica) y B, uno de balance (se frena o se regula). ▲ marca un facilitador y ▼ una barrera."));
@@ -1137,6 +1141,15 @@ function sdDiagram(body){
   G.aristas.forEach(e=> lst.appendChild(el("li",null,[ el("div",{class:"a11y-title"},[N[e.de].t + " → " + N[e.a].t + " (" + e.s + ")" + (e.dm ? " · con demora" : "")]), el("div",{class:"a11y-meta"},[e.d + " " + G.formas[e.f].t + ". " + G.evid[e.ev] + "."]) ])));
   lt.addEventListener("click", ()=>{ lst.hidden = !lst.hidden; lt.setAttribute("aria-expanded", lst.hidden?"false":"true"); lt.textContent = lst.hidden ? "Ver las relaciones como lista" : "Ocultar la lista"; });
   body.appendChild(lt); body.appendChild(lst);
+  // para la simulación: llena cada nivel (0 a 1) y escribe su valor
+  return { svg:s, valor:(id, frac, txt)=>{
+    const x = nodeEls.find(q=> q.n.id === id); if(!x || (x.n.k !== "nivel" && x.n.k !== "centro")) return;
+    const n = x.n, w = 2*n.D.hw, h = 2*n.D.hh, f = Math.max(0, Math.min(1, frac)), r0 = x.g.querySelector("rect");
+    let b = x.g.querySelector(".sd-fill"), t = x.g.querySelector(".sd-val");
+    if(frac === null){ if(b){ b.remove(); if(n.k === "centro" && t){ t.textContent = t.dataset.ini || ""; t.classList.remove("sd-val"); } else if(t) t.remove(); } return; }
+    if(!b){ b = document.createElementNS(SVGNS,"rect"); b.setAttribute("class","sd-fill"); r0.after(b); t = x.g.querySelector(".sd-sub") || document.createElementNS(SVGNS,"text"); if(t.dataset.ini === undefined) t.dataset.ini = t.textContent; t.setAttribute("class", (n.k === "centro" ? "sd-sub " : "") + "sd-val"); t.setAttribute("x", n.x); t.setAttribute("text-anchor","middle"); t.setAttribute("y", n.k === "centro" ? n.y+46 : n.y+n.D.hh+20); x.g.appendChild(t); }
+    b.setAttribute("x", n.x-n.D.hw+3); b.setAttribute("width", w-6); b.setAttribute("y", n.y+n.D.hh-3-(h-6)*f); b.setAttribute("height", (h-6)*f); t.textContent = txt;
+  } };
 }
 
 /* ---------------------------------------------------------------- diagrama causal */
@@ -2198,6 +2211,7 @@ function buildSearchIndex(){
   C.instrumentos.items.forEach(it=> idx.push({ type:"Herramienta", label:it.nombre, detail:it.tipo + " · " + it.quien, sec:"instrumentos", anchor:"instrumentos-linea" }));
   C.vacios.forEach(v=> idx.push({ type:"Vacío de la ley", label:v.t, detail:v.d, sec:"normativa", anchor:"normativa-vacios" }));
   window.TEA_DINAMICA.nodos.forEach(n=> idx.push({ type:"Dinámica de sistemas", label:n.t, detail:n.d, sec:"causal", anchor:"causal-diagrama" }));
+  if(window.TEA_SIMULACION) window.TEA_SIMULACION.escenarios.forEach(n=> idx.push({ type:"Escenario", label:n.t, detail:n.d, sec:"causal", anchor:"causal-simulacion" }));
   window.TEA_DINAMICA.bucles.forEach(n=> idx.push({ type:"Bucle", label:n.id + " · " + n.t, detail:n.d, sec:"causal", anchor:"causal-diagrama" }));
   window.TEA_DINAMICA.factores.forEach(n=> idx.push({ type:n.k === "f" ? "Facilitador" : "Barrera", label:n.t, detail:n.d, sec:"causal", anchor:"causal-factores" }));
   STORY.forEach(st=> idx.push({ type:"Relato", label:st.t, detail:st.d, sec:"contexto", anchor:"contexto-relato" }));
@@ -2316,6 +2330,16 @@ function renderFooter(){
   cc.href = "https://creativecommons.org/publicdomain/zero/1.0/deed.es"; cc.textContent = "CC0 1.0";
   document.getElementById("footer-license-text").textContent = "Textos, gráficos y código bajo dedicación al dominio público CC0 1.0 Universal; se agradece citar la fuente. Los datos de origen pertenecen a sus fuentes oficiales (SISPRO, REPS, DANE).";
 }
+
+function tabla(cab, filas, cls){
+  const t = el("table",{class:"cmp-table " + (cls||"")}), tb = el("tbody");
+  t.appendChild(el("thead",null,[ el("tr",null, cab.map(x=> el("th",{scope:"col"},[x]))) ]));
+  filas.forEach(f=> tb.appendChild(el("tr",null, f.map((c,i)=> el(i ? "td" : "th", i ? null : {scope:"row"}, [c]))))); t.appendChild(tb);
+  return el("div",{class:"table-wrap"},[t]);
+}
+
+/* Piezas que usa js/motor-sim.js */
+window.Motor = { el, esc, fmt, svgEl, VW, MOB, bindTip, SVGNS, howTo, chips, legend, reading, setReading, sub, tabla, ticks, niceMax, niceStep, compact, wrapText, lowFirst, downloadCSV };
 
 /* ---------------------------------------------------------------- arranque */
 function boot(){

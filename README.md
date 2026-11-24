@@ -14,7 +14,7 @@ Abre con un resumen estructurado (introducción, métodos, resultados y conclusi
 | --- | --- | --- |
 | 01 | Resumen | Introducción, métodos (con los ocho códigos CIE-10), resultados, conclusiones y los resultados paso a paso con un gráfico que cambia al desplazarse |
 | **Primera parte** | **El marco: qué explica la atención y qué ordenan las normas** | |
-| 02 | ¿Qué facilita y qué dificulta que una persona llegue a tiempo al diagnóstico? | Diagrama de dinámica de sistemas (niveles, flujos, siete bucles, demoras, facilitadores y barreras) con recorrido de cada bucle y forma de cada relación |
+| 02 | ¿Qué facilita y qué dificulta que una persona llegue a tiempo al diagnóstico? | Diagrama de dinámica de sistemas (niveles, flujos, siete bucles, demoras, facilitadores y barreras) con recorrido de cada bucle y forma de cada relación. Simulación exploratoria (2019-2032): escenarios, controles, rango, sensibilidad, firmeza de la comparación, fuente de cada número y CSV |
 | 03 | ¿Qué ordena la Ley 2628 de 2026 y qué queda por reglamentar? | Ruta del tamizaje a la inclusión, primera infancia (Resolución 3280 de 2018: EAD-3 y m-Chat), plazos, artículos, retos de implementación |
 | 04 | ¿Cómo se relaciona la ley con la Política Nacional de Salud Mental? | Resumen comparativo, paralelo punto por punto, la política en detalle |
 | 05 | ¿Con qué herramientas se detecta y diagnostica el autismo en cada etapa de la vida? | Línea de edades con 11 herramientas |
@@ -49,12 +49,18 @@ css/tea.css           estilos de los gráficos
 js/datos.js           datos por departamento, flujos y mapa (generado, no editar)
 js/contenido.js       textos, tablas resumen y fuentes
 js/dinamica.js        modelo de dinámica de sistemas (nodos, relaciones, bucles, fuentes)
+js/simulacion.js      modelo de simulación: ecuaciones, parámetros con fuente, serie observada y escenarios
+js/motor-sim.js       motor de simulación (Euler, calibración, franja, sensibilidad)
 js/app.js             motor de la página y gráficos SVG (sin dependencias)
 scripts/build_data.py genera js/datos.js
 data/                 insumos: libro de cálculo exportado a Markdown y dptos.geojson (DANE, MGN)
 ```
 
 No hay paso de compilación ni dependencias: se sirve tal cual (GitHub Pages desde `main`, carpeta raíz).
+
+## Alcance de la simulación
+
+Es **exploratoria**: se expresa como índice (2019 = 100) y con rango, y sirve para comparar escenarios, no para pronosticar. Simula 14 de las 18 variables y cinco de los siete bucles. Cada número dice si es dato, literatura, valor ajustado a la serie o supuesto con rango. Las decisiones (detección, oferta, distribución de tareas) son magnitudes ilustrativas que actúan desde 2027. La serie 2019-2025 tiene cuatro puntos utilizables para ajustar: 2019 es el inicio, 2020 tuvo la caída de la pandemia y en 2025 cambió el registro.
 
 ## Regenerar los datos
 

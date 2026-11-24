@@ -1,5 +1,5 @@
 /* Modelo conceptual de dinámica de sistemas: oportunidad del diagnóstico de TEA.
-   Cualitativo: no está parametrizado ni simulado. Cada relación declara su signo, si tiene demora,
+   El diagrama es cualitativo; js/simulacion.js simula la parte con datos (mismos ids). Cada relación declara su signo, si tiene demora,
    su forma (no lineal) y de dónde sale: dato de este análisis, literatura, norma o hipótesis del equipo. */
 window.TEA_DINAMICA = {
   refs: {
@@ -42,6 +42,7 @@ window.TEA_DINAMICA = {
     { id: "opor", k: "clave", x: 345, y: 914, w: 206, t: "Oportunidad del diagnóstico", d: "Qué tan pronto llega el diagnóstico después de los primeros signos. La edad media al diagnóstico fue de 38 a 120 meses en 42 estudios internacionales (Daniels y Mandell, 2014). Los registros usados aquí no traen la edad al diagnóstico.", ev: "lit", ref: "dm" },
     { id: "conf", k: "var", x: 172, y: 772, w: 186, t: "Confianza y recursos de la familia", d: "Disposición y posibilidad de seguir en el proceso. Las esperas largas traen frustración y carga económica; sentirse escuchado da apoyo (Smith-Young et al., 2025).", ev: "lit", ref: "sy" }
   ],
+  tuberias: [["s1","v1"],["v1","s2"],["s2","v2"],["v2","c"]],
   /* b: curvatura de la flecha; dm: demora importante */
   aristas: [
     { de: "c", a: "conc", s: "+", b: 30, dm: 1, f: "s", ev: "hip", d: "Más personas con diagnóstico hacen más visible el TEA en familias, escuelas y redes de apoyo." },
@@ -97,5 +98,5 @@ window.TEA_DINAMICA = {
     "La forma del sistema es la de un crecimiento con límites. El reconocimiento, la experiencia y la oferta lo impulsan; la espera y la capacidad compartida lo contienen. Si crece la detección y no crece la capacidad para confirmar, aumenta la fila y se pierde oportunidad: conviene que ambas crezcan a la vez.",
     "Las relaciones no son lineales. La espera, por ejemplo, crece despacio y se dispara cerca del límite de la capacidad; la formación y la oferta tardan en rendir. Por eso un mismo esfuerzo puede tener efectos muy distintos según el momento y el territorio."
   ],
-  nota: "Modelo conceptual cualitativo del equipo del proyecto, con notación de dinámica de sistemas (Sterman, 2006; Homer y Hirsch, 2006). No está parametrizado ni simulado: orienta preguntas e hipótesis, no estima efectos. Se verificó por programa que cada bucle cierra y que su signo es correcto; el modelo contiene nueve bucles y aquí se nombran los siete principales. Los estudios citados son internacionales, salvo los datos de este análisis."
+  nota: "Modelo conceptual cualitativo del equipo del proyecto, con notación de dinámica de sistemas (Sterman, 2006; Homer y Hirsch, 2006). Orienta preguntas e hipótesis y no estima efectos; la simulación de más abajo explora una parte, con supuestos y rangos a la vista. Se verificó por programa que cada bucle cierra y que su signo es correcto; el modelo contiene nueve bucles y aquí se nombran los siete principales. Los estudios citados son internacionales, salvo los datos de este análisis."
 };
