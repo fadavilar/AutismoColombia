@@ -15,9 +15,9 @@ Abre con un resumen estructurado (introducción, métodos, resultados y conclusi
 | 01 | Resumen | Introducción, métodos (con los ocho códigos CIE-10), resultados, conclusiones y los resultados paso a paso con un gráfico que cambia al desplazarse |
 | **Primera parte** | **El marco: qué explica la atención y qué ordenan las normas** | |
 | 02 | ¿Qué explica el número de atenciones de un departamento? | Diagrama causal con factores medidos, medidos en parte y sin dato |
-| 03 | ¿Qué ordena la Ley 2628 de 2026 y qué queda por reglamentar? | Ruta del tamizaje a la inclusión, plazos, artículos, retos de implementación |
+| 03 | ¿Qué ordena la Ley 2628 de 2026 y qué queda por reglamentar? | Ruta del tamizaje a la inclusión, primera infancia (Resolución 3280 de 2018: EAD-3 y m-Chat), plazos, artículos, retos de implementación |
 | 04 | ¿Cómo se relaciona la ley con la Política Nacional de Salud Mental? | Resumen comparativo, paralelo punto por punto, la política en detalle |
-| 05 | ¿Con qué herramientas se detecta y diagnostica el autismo en cada etapa de la vida? | Línea de edades con 10 herramientas |
+| 05 | ¿Con qué herramientas se detecta y diagnostica el autismo en cada etapa de la vida? | Línea de edades con 11 herramientas |
 | **Segunda parte** | **Los datos: qué muestran los registros públicos** | |
 | 06 | ¿Cuántas personas se atienden, cuántas por habitante y cuántas se esperarían? | Prevalencia absoluta, relativa y esperada juntas, en el país y por departamento; mapa, serie, evolución, tabla y CSV |
 | 07 | ¿Qué cobertura reciben: cuánta atención y qué tan cerca de su residencia? | Frecuencia (atenciones por 100 atendidos), cercanía (atención en el propio departamento y municipios con sede), flujos, receptores y emisores |

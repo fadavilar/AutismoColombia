@@ -149,8 +149,8 @@ const SECTIONS = [
     subs:[{id:"resumen-introduccion",label:"Introducción"},{id:"resumen-metodos",label:"Métodos y códigos CIE-10"},{id:"resumen-resultados",label:"Resultados"},{id:"resumen-conclusiones",label:"Conclusiones"},{id:"contexto-relato",label:"Los resultados, paso a paso"},{id:"contexto-preguntas",label:"Recorrido del documento"}] },
   { id:"causal", part:"I", toc:"¿Qué explica las atenciones?", title:"¿Qué explica el número de atenciones de un departamento?", sub:"Diagrama causal: oferta, pacientes, severidad, oportunidad del diagnóstico, equipos y registro", open:false,
     subs:[{id:"causal-diagrama",label:"Diagrama causal"}] },
-  { id:"normativa", part:"I", toc:"Ley 2628 de 2026", title:"¿Qué ordena la Ley 2628 de 2026 y qué queda por reglamentar?", sub:"Ruta del tamizaje a la inclusión, artículos, plazos y retos de implementación", open:false,
-    subs:[{id:"normativa-ruta",label:"Del tamizaje al diagnóstico"},{id:"normativa-ley",label:"La ley y sus plazos"},{id:"normativa-vacios",label:"Retos de implementación"}] },
+  { id:"normativa", part:"I", toc:"Ley 2628 de 2026", title:"¿Qué ordena la Ley 2628 de 2026 y qué queda por reglamentar?", sub:"Ruta del tamizaje a la inclusión, primera infancia, artículos, plazos y retos de implementación", open:false,
+    subs:[{id:"normativa-ruta",label:"Del tamizaje al diagnóstico"},{id:"normativa-infancia",label:"Tamizaje en primera infancia"},{id:"normativa-ley",label:"La ley y sus plazos"},{id:"normativa-vacios",label:"Retos de implementación"}] },
   { id:"paralelo", part:"I", toc:"Ley y Política de Salud Mental", title:"¿Cómo se relaciona la ley con la Política Nacional de Salud Mental?", sub:"Resumen comparativo, paralelo punto por punto y lo que dice la política sobre el neurodesarrollo", open:false,
     subs:[{id:"paralelo-resumen",label:"Resumen comparativo"},{id:"normativa-paralelo",label:"Frente a frente"},{id:"normativa-pnsm",label:"La política en detalle"},{id:"normativa-minsalud",label:"Salud mental en MinSalud"}] },
   { id:"instrumentos", part:"I", toc:"Herramientas por edad", title:"¿Con qué herramientas se detecta y diagnostica el autismo en cada etapa de la vida?", sub:"Tamizaje y diagnóstico desde la primera infancia hasta la adultez", open:false,
@@ -1002,9 +1002,9 @@ function wrapText(t, n){ const words = t.split(" "), out = []; let cur = ""; wor
 /* ---------------------------------------------------------------- ideas clave por sección (titulares de lectura) */
 const CLAVES = {
   causal: "El número de atenciones depende de cuántas personas se atienden y de cuánta atención recibe cada una; varios de sus determinantes aún no se miden en los registros públicos.",
-  normativa: "La Ley 2628 crea derechos y fija plazos hasta agosto de 2027; su reglamentación puede precisar instrumentos, metas e indicadores.",
+  normativa: "La Ley 2628 crea derechos y fija plazos hasta agosto de 2027, y la Resolución 3280 ya define el tamizaje de la primera infancia; la reglamentación puede articularlos con metas e indicadores.",
   paralelo: "La ley y la Política de Salud Mental se complementan en detección, atención, formación, información e inclusión, y pueden articularse en diagnóstico y coordinación.",
-  instrumentos: "Hay herramientas validadas para detectar y diagnosticar el autismo en todas las edades, no solo en la primera infancia.",
+  instrumentos: "La EAD-3 y el m-Chat son las herramientas de la primera infancia según la Resolución 3280; hay otras validadas para detectar y diagnosticar el autismo en las demás edades.",
   nacional: "La mayoría son hombres y más de la mitad tiene entre 6 y 11 años; en 2025 las personas registradas aumentaron sobre todo en el contributivo, y las atenciones, en ambos regímenes.",
   territorio: "En 2024 se atendió a 51.474 personas con residencia conocida (absoluta), 97,8 por 100.000 habitantes (relativa), frente a 414.282 esperadas: cerca del 12 %, y cerca del 25 % con el registro de 2025.",
   intensidad: "Cada 100 personas atendidas recibieron 1.214 atenciones y el 88,6 % de ellas se prestó en su departamento; ambas cifras cambian mucho entre territorios.",
@@ -1222,13 +1222,13 @@ function renderInstrumentos(){
   I.items.forEach((it,i)=>{
     const y = pad.t + i*rowH + 4, x1 = AX(it.desde), x2 = AX(it.hasta);
     const gg = document.createElementNS(SVGNS,"g"); gg.setAttribute("class","bar-g life-row"); gg.setAttribute("tabindex","0"); gg.setAttribute("role","button");
-    gg.innerHTML = '<rect x="0" y="'+(y-3)+'" width="'+w+'" height="'+rowH+'" class="row-hit"/><text x="'+(pad.l-8)+'" y="'+(y+15)+'" text-anchor="end" class="axis-lab">'+esc(it.nombre)+'</text><rect x="'+x1+'" y="'+(y+3)+'" width="'+Math.max(x2-x1,4)+'" height="'+(rowH-12)+'" rx="5" class="'+tcls[it.tipo]+'"/>';
-    const html = ()=> "<h5>"+esc(it.nombre)+" · "+esc(it.tipo)+"</h5><p>Edades: "+fmt(it.desde,it.desde%1?1:0)+" a "+(it.hasta>=65?"adultez":fmt(it.hasta,it.hasta%1?1:0)+" años")+"<br>Responde: "+esc(it.quien)+"</p><p>"+esc(it.d)+"</p>";
+    gg.innerHTML = '<rect x="0" y="'+(y-3)+'" width="'+w+'" height="'+rowH+'" class="row-hit"/><text x="'+(pad.l-8)+'" y="'+(y+15)+'" text-anchor="end" class="axis-lab">'+esc(it.nombre)+'</text><rect x="'+x1+'" y="'+(y+3)+'" width="'+Math.max(x2-x1,4)+'" height="'+(rowH-12)+'" rx="5" class="'+tcls[it.tipo]+'"/>' + (it.norma ? '<text x="'+(x2+6)+'" y="'+(y+15)+'" class="axis-lab strong">'+esc(it.norma)+'</text>' : "");
+    const html = ()=> "<h5>"+esc(it.nombre)+" · "+esc(it.tipo)+"</h5><p>Edades: "+(it.edadTxt ? esc(it.edadTxt) : fmt(it.desde,it.desde%1?1:0)+" a "+(it.hasta>=65?"adultez":fmt(it.hasta,it.hasta%1?1:0)+" años"))+"<br>Responde: "+esc(it.quien)+"</p><p>"+esc(it.d)+"</p>";
     bindTip(gg, html);
     const pick = ()=>{
       det.innerHTML = "";
       det.appendChild(el("h4",null,[it.nombre + " · " + it.tipo]));
-      det.appendChild(el("p",null,["Edades: " + (it.desde < 1 ? "desde los " + Math.round(it.desde*12) + " meses" : it.desde < 3 && it.desde % 1 ? "desde los " + Math.round(it.desde*12) + " meses" : "desde los " + it.desde + " años") + (it.hasta >= 65 ? " hasta la adultez" : " hasta los " + (it.hasta % 1 ? Math.round(it.hasta*12) + " meses" : it.hasta + " años")) + ". Responde: " + it.quien + "."]));
+      det.appendChild(el("p",null,["Edades: " + (it.edadTxt ? it.edadTxt : (it.desde < 1 ? "desde los " + Math.round(it.desde*12) + " meses" : it.desde < 3 && it.desde % 1 ? "desde los " + Math.round(it.desde*12) + " meses" : "desde los " + it.desde + " años") + (it.hasta >= 65 ? " hasta la adultez" : " hasta los " + (it.hasta % 1 ? Math.round(it.hasta*12) + " meses" : it.hasta + " años"))) + ". Responde: " + it.quien + "."]));
       det.appendChild(el("p",null,[it.d]));
       det.appendChild(el("p",{class:"link-row"},[ "Referencia: ", el("a",{href:it.url, target:"_blank", rel:"noopener"},[it.ref]) ]));
       decorate(det);
@@ -1239,7 +1239,7 @@ function renderInstrumentos(){
   body.appendChild(el("div",{class:"diagram-wrap life-wrap"},[s]));
   body.appendChild(legend([["tp-vig","Vigilancia del desarrollo"],["tp-tam","Tamizaje (detecta riesgo)"],["tp-apo","Apoyo al diagnóstico"],["tp-dia","Diagnóstico (lo confirma un equipo)"]]));
   body.appendChild(det);
-  setReading(det, "El cuestionario de tamizaje M-CHAT-R/F cubre de los 16 a los 30 meses, una franja estrecha frente al 83 % de las personas atendidas que tiene 6 años o más. Para escolares, adolescentes y adultos existen cuestionarios de tamizaje validados (SCQ, CAST, AQ en sus versiones) y para todas las edades instrumentos diagnósticos (ADOS-2, ADI-R) que debe aplicar un equipo entrenado. La reglamentación de la Ley 2628 es una oportunidad para definir qué herramienta usar en cada edad. Haz clic en una barra para ver el detalle.");
+  setReading(det, "En la primera infancia, la Resolución 3280 de 2018 define la EAD-3 en cada consulta y el m-Chat entre los 18 y los 30 meses; el 83 % de las personas atendidas en 2024 tenía 6 años o más. Para escolares, adolescentes y adultos existen cuestionarios de tamizaje validados (SCQ, CAST, AQ en sus versiones) y para todas las edades instrumentos diagnósticos (ADOS-2, ADI-R) que debe aplicar un equipo entrenado. La reglamentación de la Ley 2628 es una oportunidad para orientar la detección en las demás edades. Haz clic en una barra para ver el detalle.");
   body.appendChild(el("p",{class:"muted small"},[I.nota]));
   body.appendChild(el("h4",{class:"chart-title"},["Guías de referencia"]));
   body.appendChild(el("ul",{class:"ref-list"}, I.guias.map(g=> el("li",null,[ el("a",{href:g.url, target:"_blank", rel:"noopener"},[g.label]) ]))));
@@ -1723,8 +1723,8 @@ function renderNormativa(){
 
   sub(body, "normativa-ruta", "Del tamizaje al diagnóstico: dónde interviene cada norma", "Esquema de lectura del equipo del proyecto. Pasa el cursor o el foco por cada paso.");
   const steps = [
-    { t:"Tamizaje", s:"Según la edad", d:"El artículo 12 de la Ley 2628 orienta la detección temprana; la ley no detalla instrumentos ni edades (ver «Herramientas por edad»).", norma:"Ley 2628, art. 12" },
-    { t:"Remisión", s:"Evaluaciones pediátricas", d:"Ley 2628, art. 12: se propenderá por la detección y atención temprana mediante la remisión de los profesionales en las evaluaciones pediátricas periódicas.", norma:"Ley 2628, art. 12" },
+    { t:"Tamizaje", s:"Según la edad", d:"Resolución 3280 de 2018: EAD-3 en cada consulta de primera infancia y test m-Chat entre los 18 y los 30 meses. El artículo 12 de la Ley 2628 orienta la detección temprana. Para las demás edades, ver «Herramientas por edad».", norma:"Res. 3280 de 2018" },
+    { t:"Remisión", s:"Evaluaciones pediátricas", d:"Resolución 3280 de 2018: ante alteraciones se deriva a evaluación a profundidad del desarrollo. Ley 2628, art. 12: se propenderá por la detección y atención temprana mediante la remisión de los profesionales en las evaluaciones pediátricas periódicas.", norma:"Ley 2628, art. 12" },
     { t:"Diagnóstico", s:"Equipo interdisciplinario", d:"Ley 2628, arts. 6 y 9: actualizar el protocolo clínico de diagnóstico, tratamiento y ruta de atención de niños, niñas y adolescentes con TEA. Los adultos no tienen una ruta diagnóstica explícita.", norma:"Ley 2628, arts. 6 y 9" },
     { t:"Certificación", s:"2 meses (voluntaria)", d:"Ley 2628, art. 7: Certificado Único de Trastorno del Neurodesarrollo en dos meses desde que la EPS recibe el diagnóstico; no puede usarse como barrera de acceso.", norma:"Ley 2628, art. 7" },
     { t:"Atención integral", s:"Ruta pública", d:"Ley 2628, art. 13 y PNSM eje 3: ruta de atención médica clara y pública y atención integral de los problemas y trastornos mentales.", norma:"Ley 2628, art. 13 · PNSM" },
@@ -1749,6 +1749,16 @@ function renderNormativa(){
   lt.addEventListener("click", ()=>{ lst.hidden = !lst.hidden; lt.setAttribute("aria-expanded", lst.hidden?"false":"true"); lt.textContent = lst.hidden ? "Ver como lista" : "Ocultar lista"; });
   body.appendChild(lt); body.appendChild(lst);
   body.appendChild(el("div",{class:"tag-row"},[confidenceTag("nota-autor")]));
+
+  const Z = N.res3280;
+  sub(body, "normativa-infancia", "Primera infancia: valoración del desarrollo y tamizaje", Z.nombre + " · " + Z.fecha);
+  body.appendChild(el("p",null,[ el("strong",null,["¿Cuál es su alcance? "]), Z.alcance ]));
+  const zt = el("table",{class:"cmp-table"}), ztb = el("tbody");
+  zt.appendChild(el("thead",null,[ el("tr",null,["¿Qué se aplica?","¿A quién?","¿Cómo?"].map(x=> el("th",{scope:"col"},[x]))) ]));
+  Z.filas.forEach(f=> ztb.appendChild(el("tr",null,[ el("th",{scope:"row"},[f[0]]), el("td",null,[f[1]]), el("td",null,[f[2]]) ]))); zt.appendChild(ztb);
+  body.appendChild(el("div",{class:"table-wrap"},[zt]));
+  body.appendChild(el("p",null,[Z.lectura]));
+  body.appendChild(el("p",{class:"link-row"},[ el("a",{href:Z.url, target:"_blank", rel:"noopener"},["Texto compilado (Supersalud)"]), " · ", el("a",{href:Z.urlPdf, target:"_blank", rel:"noopener"},["Texto oficial (MinSalud, PDF)"]) ]));
 
   const L = N.ley2628;
   sub(body, "normativa-ley", L.nombre, L.fecha);
