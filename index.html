@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>TEA en Colombia</title>
-<meta name="description" content="Explorador interactivo sobre el trastorno del espectro autista (TEA) en Colombia: personas atendidas, oferta de neuropediatría e inequidad territorial con datos de SISPRO, REPS y DANE, y el marco de la Ley 2628 de 2026. Trabajo en construcción con UNINAVARRA.">
+<title>Panorama del TEA en Colombia</title>
+<meta name="description" content="Resumen del marco normativo y de los datos públicos (SISPRO, REPS y DANE) como análisis preliminar del panorama del trastorno del espectro autista (TEA) en Colombia. Trabajo en construcción con UNINAVARRA.">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f5c66'/%3E%3Cpath d='M20 22a8 8 0 0 1 12 0 8 8 0 0 1 12 0M18 34h28M24 44h16' fill='none' stroke='%23fff' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/style.css?v=15">
-<link rel="stylesheet" href="css/tea.css?v=15">
+<link rel="stylesheet" href="css/style.css?v=19">
+<link rel="stylesheet" href="css/tea.css?v=19">
 
-<meta property="og:title" content="TEA en Colombia: atención, oferta e inequidad territorial">
-<meta property="og:description" content="Gráficos interactivos con datos públicos de SISPRO, REPS y DANE. Trabajo en construcción con la Fundación Universitaria Navarra (UNINAVARRA).">
+<meta property="og:title" content="Panorama del TEA en Colombia: marco normativo y datos públicos">
+<meta property="og:description" content="Análisis preliminar con gráficos interactivos. Trabajo en construcción con la Fundación Universitaria Navarra (UNINAVARRA).">
 <meta property="og:locale" content="es_CO">
 <meta property="og:type" content="website">
 </head>
@@ -26,7 +26,7 @@
     </button>
     <div class="brand">
       <span class="dot" aria-hidden="true"></span>
-      <span id="brand-title">TEA en Colombia</span>
+      <span id="brand-title">Panorama del TEA en Colombia</span>
     </div>
         <button class="search-trigger" id="search-trigger" type="button" aria-haspopup="dialog" aria-controls="search-panel">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
@@ -56,7 +56,7 @@
 </header>
 
 <!-- Search overlay -->
-<div class="search-panel" id="search-panel" role="dialog" aria-modal="true" aria-label="Buscar en el explorador" hidden>
+<div class="search-panel" id="search-panel" role="dialog" aria-modal="true" aria-label="Buscar en el documento" hidden>
   <div class="search-panel-inner">
     <div class="search-input-row">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
@@ -102,9 +102,9 @@
   <main id="main">
     <div class="container">
       <section class="hero">
-        <span class="eyebrow" id="hero-framework">Explorador de datos públicos</span>
+        <span class="eyebrow" id="hero-framework">Análisis preliminar</span>
         <span class="eyebrow" id="hero-period" style="background:transparent;padding-left:0"></span>
-        <h1 id="hero-title">TEA en Colombia</h1>
+        <h1 id="hero-title">Panorama del TEA en Colombia</h1>
         <p class="lede" id="hero-lede"></p>
         <div class="wip-banner" role="note"><span class="wip-badge">En construcción</span><p id="wip-text"></p></div>
         <p class="byline" id="byline"></p>
@@ -120,7 +120,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 19h14"/></svg>
           Exportar a PDF (secciones visibles)
         </button>
-        <p class="export-panel-hint">En algunos navegadores integrados (el de la app de LinkedIn, Instagram o Facebook, por ejemplo) el diálogo de impresión no se abre — si no pasa nada al tocar el botón, abre este enlace directamente en Chrome o Safari.</p>
+        <p class="export-panel-hint">En algunos navegadores integrados (el de LinkedIn, Instagram o Facebook, por ejemplo) el diálogo de impresión no se abre — si no pasa nada al tocar el botón, abre este enlace directamente en Chrome o Safari.</p>
       </section>
 
       <div class="toolbar">
@@ -141,7 +141,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 19h14"/></svg>
           Exportar a PDF (secciones visibles)
         </button>
-        <p class="export-panel-hint">En algunos navegadores integrados (el de la app de LinkedIn, Instagram o Facebook, por ejemplo) el diálogo de impresión no se abre — si no pasa nada al tocar el botón, abre este enlace directamente en Chrome o Safari.</p>
+        <p class="export-panel-hint">En algunos navegadores integrados (el de LinkedIn, Instagram o Facebook, por ejemplo) el diálogo de impresión no se abre — si no pasa nada al tocar el botón, abre este enlace directamente en Chrome o Safari.</p>
       </section>
 
       <section class="sources-panel" id="sources-panel" aria-labelledby="sources-panel-title" hidden>
@@ -169,8 +169,8 @@
   </div>
 </footer>
 
-<script src="js/datos.js?v=15"></script>
-<script src="js/contenido.js?v=15"></script>
-<script src="js/app.js?v=15"></script>
+<script src="js/datos.js?v=19"></script>
+<script src="js/contenido.js?v=19"></script>
+<script src="js/app.js?v=19"></script>
 </body>
 </html>

@@ -14,7 +14,7 @@ Salida
 Uso
   python scripts/build_data.py <ruta_md> <ruta_geojson> <ruta_salida_js>
 
-Las cifras se copian de las tablas del libro tal cual (no se recalculan aquí), para que la app
+Las cifras se copian de las tablas del libro tal cual (no se recalculan aquí), para que la página
 muestre exactamente los mismos valores que el informe. Solo el mapa se transforma
 (proyección equirectangular y simplificación Douglas-Peucker) para dibujarlo en SVG.
 """

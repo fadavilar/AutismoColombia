@@ -1,4 +1,4 @@
-/* TEA en Colombia: motor del explorador y gráficos interactivos (SVG, sin dependencias). */
+/* Panorama del TEA en Colombia: motor y gráficos interactivos (SVG, sin dependencias). */
 (function(){
 "use strict";
 
@@ -8,7 +8,9 @@ const DEP = D.deptos.slice();
 const BY = {}; DEP.forEach(d=>{ BY[d.cod] = d; });
 const NAC = { pob: 52613753, pers24: 51474, tasa24: 97.8, sedes100k: 1.12, pctFuera: 11.4, atenPorPersona: 12.1, tasaAten: 1214 };
 // Tasa de atención = atenciones a personas con F84 / personas atendidas con F84 x 100 (denominador: personas con TEA atendidas)
-DEP.forEach(d=>{ d.tasaAten = d.pers24 ? 100*d.aten24/d.pers24 : null; d.esperados = d.pob/127; });
+DEP.forEach(d=>{ d.tasaAten = d.pers24 ? 100*d.aten24/d.pers24 : null; d.esperados = d.pob/127; d.pctEsp = 100*d.pers24/d.esperados; d.pctEsp25 = 100*d.pers25/d.esperados; d.pctLocal = 100 - d.pctFuera; d.pctConSede = 100 - d.pctSinSede; });
+// Totales del cubo nacional (personas únicas, con y sin departamento de residencia)
+const CUBO = { p24: 54367, p25: 109135 };
 const REGION_ORDER = ["Caribe","Bogotá","Central","Oriental","Pacífica","Amazonía-Orinoquía"];
 const REGION_CLASS = { "Caribe":"rg-caribe", "Bogotá":"rg-bogota", "Central":"rg-central", "Oriental":"rg-oriental", "Pacífica":"rg-pacifica", "Amazonía-Orinoquía":"rg-amazonia" };
 const SVGNS = "http://www.w3.org/2000/svg";
@@ -139,12 +141,12 @@ function toggleTheme(){
 /* ---------------------------------------------------------------- secciones: de lo descriptivo a los cruces */
 const PARTS = [
   { id:"I", k:"Primera parte", t:"El marco: qué explica la atención y qué ordenan las normas", d:"Qué factores explican la atención del autismo y qué ordenan la Ley 2628 y la Política de Salud Mental." },
-  { id:"II", k:"Segunda parte", t:"Los datos: qué muestran los registros públicos", d:"Qué muestran los registros públicos, de las cifras generales a los cruces entre atención, oferta, pobreza y movilidad." },
+  { id:"II", k:"Segunda parte", t:"Los datos: qué muestran los registros públicos", d:"Qué muestran los registros públicos, primero la prevalencia (absoluta, relativa y esperada), luego la cobertura (frecuencia y cercanía) y después la oferta, la pobreza y la desigualdad." },
   { id:"III", k:"Tercera parte", t:"¿Cómo se hizo?", d:"La revisión sistemática en curso, los métodos, el glosario y las referencias." }
 ];
 const SECTIONS = [
-  { id:"contexto", part:null, toc:"Resumen", title:"Resumen: ¿qué muestran los datos?", sub:"Un relato en siete pasos, cómo leer las cifras, seis hallazgos y el recorrido de la app", open:true,
-    subs:[{id:"contexto-relato",label:"El relato en siete pasos"},{id:"contexto-hallazgos",label:"Seis hallazgos preliminares"},{id:"contexto-preguntas",label:"El recorrido de la app"}] },
+  { id:"contexto", part:null, toc:"Resumen", title:"Resumen", sub:"Introducción, métodos, resultados y conclusiones", open:true,
+    subs:[{id:"resumen-introduccion",label:"Introducción"},{id:"resumen-metodos",label:"Métodos y códigos CIE-10"},{id:"resumen-resultados",label:"Resultados"},{id:"resumen-conclusiones",label:"Conclusiones"},{id:"contexto-relato",label:"Los resultados, paso a paso"},{id:"contexto-preguntas",label:"Recorrido del documento"}] },
   { id:"causal", part:"I", toc:"¿Qué explica las atenciones?", title:"¿Qué explica el número de atenciones de un departamento?", sub:"Diagrama causal: oferta, pacientes, severidad, oportunidad del diagnóstico, equipos y registro", open:false,
     subs:[{id:"causal-diagrama",label:"Diagrama causal"}] },
   { id:"normativa", part:"I", toc:"Ley 2628 de 2026", title:"¿Qué ordena la Ley 2628 de 2026 y qué queda por reglamentar?", sub:"Ruta del tamizaje a la inclusión, artículos, plazos y retos de implementación", open:false,
@@ -153,20 +155,18 @@ const SECTIONS = [
     subs:[{id:"paralelo-resumen",label:"Resumen comparativo"},{id:"normativa-paralelo",label:"Frente a frente"},{id:"normativa-pnsm",label:"La política en detalle"},{id:"normativa-minsalud",label:"Salud mental en MinSalud"}] },
   { id:"instrumentos", part:"I", toc:"Herramientas por edad", title:"¿Con qué herramientas se detecta y diagnostica el autismo en cada etapa de la vida?", sub:"Tamizaje y diagnóstico desde la primera infancia hasta la adultez", open:false,
     subs:[{id:"instrumentos-linea",label:"Herramientas según la edad"}] },
-  { id:"nacional", part:"II", toc:"¿Cuántos y quiénes?", title:"¿Cuántas personas se atienden y quiénes son?", sub:"Total nacional 2019-2025, edad, sexo, régimen y la ruptura de 2025", open:false,
-    subs:[{id:"nacional-serie",label:"Serie nacional"},{id:"nacional-edad",label:"Edad y sexo"},{id:"nacional-regimen",label:"Régimen y ruptura de 2025"}] },
-  { id:"territorio", part:"II", toc:"¿Dónde viven?", title:"¿A cuántas personas llega el sistema en cada departamento?", sub:"Prevalencia atendida (personas atendidas por 100.000 habitantes): mapa, ranking y evolución", open:false,
-    subs:[{id:"territorio-mapa",label:"Mapa de la prevalencia atendida"},{id:"territorio-ranking",label:"Ranking por región"},{id:"territorio-evolucion",label:"Evolución 2019-2025"},{id:"territorio-tabla",label:"Tabla y descarga"}] },
-  { id:"intensidad", part:"II", toc:"Atenciones vs. atendidos", title:"¿Cuánta atención recibe cada persona atendida?", sub:"Tasa de atención (atenciones por 100 personas atendidas) frente a la cobertura", open:false,
-    subs:[{id:"intensidad-ranking",label:"Tasa de atención"},{id:"intensidad-cruce",label:"Cobertura vs. intensidad"}] },
+  { id:"territorio", part:"II", toc:"Prevalencia: absoluta, relativa y esperada", title:"¿Cuántas personas se atienden, cuántas por habitante y cuántas se esperarían?", sub:"Prevalencia absoluta, relativa y esperada, en el país y por departamento", open:false,
+    subs:[{id:"territorio-tres",label:"Las tres medidas, juntas"},{id:"territorio-deptos",label:"Por departamento"},{id:"territorio-mapa",label:"Mapa de la prevalencia relativa"},{id:"territorio-serie",label:"Serie nacional 2019-2025"},{id:"territorio-evolucion",label:"Evolución por departamento"},{id:"territorio-tabla",label:"Tabla y descarga"}] },
+  { id:"intensidad", part:"II", toc:"Cobertura: frecuencia y cercanía", title:"¿Qué cobertura reciben: cuánta atención y qué tan cerca de su residencia?", sub:"Atenciones por cada 100 personas atendidas y atención cerca del lugar de residencia", open:false,
+    subs:[{id:"intensidad-ranking",label:"Frecuencia de la atención"},{id:"intensidad-cercania",label:"Cercanía a la residencia"},{id:"intensidad-ambas",label:"Frecuencia y cercanía a la vez"},{id:"movilidad-flujos",label:"¿Dónde se atienden?"},{id:"movilidad-balance",label:"Receptores y emisores"},{id:"intensidad-cruce",label:"Prevalencia vs. frecuencia"}] },
+  { id:"nacional", part:"II", toc:"¿Quiénes son?", title:"¿Quiénes son las personas atendidas y qué cambió en el registro de 2025?", sub:"Edad, sexo, régimen de afiliación e hipótesis sobre la ruptura de la serie", open:false,
+    subs:[{id:"nacional-edad",label:"Edad y sexo"},{id:"nacional-regimen",label:"Régimen y ruptura de 2025"}] },
   { id:"oferta", part:"II", toc:"Oferta y demanda", title:"¿Dónde está la oferta de neuropediatría y sigue a la demanda?", sub:"Sedes del REPS frente a los casos esperados; lo que se aparta, ¿es riqueza o región?", open:false,
     subs:[{id:"oferta-mapa",label:"Mapa de la oferta"},{id:"oferta-demanda",label:"¿La oferta sigue a la demanda?"},{id:"oferta-residuo",label:"Más o menos sedes de las esperadas"},{id:"oferta-ranking",label:"Telemedicina y sedes públicas"}] },
   { id:"ofertaatencion", part:"II", toc:"Oferta vs. pacientes", title:"¿Se atiende a más personas donde hay más oferta?", sub:"Disponibilidad del servicio frente a pacientes y posible necesidad no atendida", open:false,
-    subs:[{id:"ofertaatencion-cruce",label:"Oferta vs. pacientes"}] },
+    subs:[{id:"ofertaatencion-cruce",label:"Oferta vs. pacientes"},{id:"movilidad-cruce",label:"Oferta vs. cercanía"}] },
   { id:"pobreza", part:"II", toc:"Pobreza vs. atención", title:"¿Se atiende menos donde hay más pobreza?", sub:"Pobreza multidimensional (IPM) frente a atención, oferta y movilidad", open:false,
     subs:[{id:"pobreza-ipm",label:"¿Qué es el IPM?"},{id:"pobreza-cruce",label:"Pobreza vs. indicadores"},{id:"pobreza-modelo",label:"Oferta y pobreza a la vez"}] },
-  { id:"movilidad", part:"II", toc:"Movilidad", title:"¿Cuánto se desplazan las personas para atenderse?", sub:"Atención fuera del departamento, municipios sin sede y flujos entre territorios", open:false,
-    subs:[{id:"movilidad-mapa",label:"Mapa de la movilidad"},{id:"movilidad-flujos",label:"¿Dónde se atienden?"},{id:"movilidad-balance",label:"Receptores y emisores"},{id:"movilidad-cruce",label:"Oferta vs. movilidad"}] },
   { id:"desigualdad", part:"II", toc:"Síntesis de desigualdad", title:"¿Qué tan desigual es la distribución y cómo ha cambiado?", sub:"Glosario de índices, curvas de Lorenz, IC95 %, Theil regional y tendencia", open:false,
     subs:[{id:"desigualdad-glosario",label:"Glosario de índices"},{id:"desigualdad-lorenz",label:"Curvas de Lorenz"},{id:"desigualdad-indices",label:"Índices con IC95 %"},{id:"desigualdad-theil",label:"Entre y dentro de regiones"},{id:"desigualdad-tiempo",label:"Evolución 2019-2025"},{id:"desigualdad-cruces",label:"Resumen de los cruces"}] },
   { id:"huila", part:"II", toc:"Huila", title:"¿Cómo está el Huila frente al país?", sub:"El departamento sede de UNINAVARRA", open:false },
@@ -261,7 +261,7 @@ function strength(r){ const a = Math.abs(r); return a >= 0.6 ? "fuerte" : a >= 0
 function joinNames(arr){ if(arr.length <= 1) return arr.join(""); return arr.slice(0,-1).join(", ") + " y " + arr[arr.length-1]; }
 function reading(){ return el("div",{class:"reading", "aria-live":"polite"}); }
 function setReading(node, html){ node.innerHTML = '<span class="reading-k">Lectura del gráfico</span><p>' + html + '</p>'; }
-function howTo(text){ return el("p",{class:"howto"},[ el("strong",null,["¿Cómo leerlo? "]), text ]); }
+function howTo(text){ return el("p",{class:"howto"},[ el("strong",null,["¿Cómo leerlo? "]), text.charAt(0).toUpperCase() + text.slice(1) ]); }
 function legend(items){ return el("div",{class:"legend"}, items.map(i=> el("span",{class:"legend-item"},[ el("span",{class:"legend-sw " + i[0]}), i[1] ]))); }
 function regionChips(onPick, label){ return chips([{id:"todas",label:"Todas las regiones"}].concat(REGION_ORDER.map(r=>({id:r,label:r}))), "todas", onPick, label || "Filtrar por región"); }
 function scopeName(reg){ return reg === "todas" ? "el país" : "la región " + reg; }
@@ -271,6 +271,8 @@ const INDICATORS = [
   { id:"tasa24", plain:"personas atendidas por habitante", label:"Prevalencia atendida: personas atendidas por 100.000 hab. (2024)", short:"prevalencia atendida", dec:1, unit:" por 100.000 hab.", nac:97.8 },
   { id:"tasa25", plain:"personas atendidas por habitante en 2025", label:"Prevalencia atendida 2025: personas por 100.000 hab. (registro FEV-RIPS)", short:"prevalencia atendida 2025", dec:1, unit:" por 100.000 hab.", nac:194.0 },
   { id:"tasaAten", plain:"atenciones por cada persona atendida", label:"Tasa de atención: atenciones por 100 personas atendidas (2024)", short:"tasa de atención", dec:0, unit:" por 100 atendidos", nac:1214 },
+  { id:"pctLocal", plain:"atención dentro del propio departamento", label:"Atenciones prestadas en el departamento de residencia (2024, %)", short:"atención en el propio departamento", pal:"teal", dec:1, unit:" %", nac:88.6 },
+  { id:"pctConSede", plain:"personas en municipios con sede", label:"Personas atendidas que viven en municipios con sede de neuropediatría (%)", short:"proporción de personas en municipios con sede", pal:"teal", dec:1, unit:" %", nac:80.1 },
   { id:"sedes100k", plain:"sedes de neuropediatría por habitante", label:"Sedes con neuropediatría por 100.000 hab.", short:"oferta de neuropediatría", dec:2, unit:" por 100.000", nac:1.12 },
   { id:"pctTele", plain:"sedes con telemedicina", label:"% de sedes con telemedicina", short:"% de sedes con telemedicina", dec:1, unit:" %", nac:15.9 },
   { id:"pctPub", plain:"sedes públicas", label:"% de sedes de naturaleza pública", short:"% de sedes públicas", dec:1, unit:" %", nac:5.6 },
@@ -298,10 +300,10 @@ function rankOf(cod, key){ return DEP.filter(d=> d[key] !== null).slice().sort((
 /* ---------------------------------------------------------------- hero */
 function renderHero(){
   const m = C.meta;
-  document.getElementById("hero-framework").textContent = "Análisis preliminar · datos públicos y marco normativo";
+  document.getElementById("hero-framework").textContent = "Análisis preliminar";
   document.getElementById("hero-title").textContent = m.titulo;
-  document.getElementById("hero-lede").textContent = "Análisis preliminar de datos públicos de SISPRO (RIPS), REPS y DANE y del marco normativo vigente. El recorrido tiene tres partes: primero, qué explica la atención y qué ordenan las normas; después, qué muestran los datos; al final, cómo se hizo.";
-  const strip = el("ol",{class:"thread", "aria-label":"Recorrido de la app"});
+  document.getElementById("hero-lede").textContent = "Resumen del marco normativo y de los datos públicos de SISPRO (RIPS), REPS y DANE, como análisis preliminar. El recorrido tiene tres partes: primero, qué explica la atención y qué ordenan las normas; después, qué muestran los datos; al final, cómo se hizo.";
+  const strip = el("ol",{class:"thread", "aria-label":"Recorrido del documento"});
   PARTS.forEach(P=>{
     const first = SECTIONS.find(x=> x.part === P.id);
     const b = el("button",{type:"button", class:"thread-step part-"+P.id},[ el("span",{class:"thread-k"},[P.k]), el("strong",null,[P.t]), el("span",{class:"thread-d"},[P.d]) ]);
@@ -346,6 +348,7 @@ function mapWidget(body, opts){
     const I = IND[ind], list = DEP.filter(d=> d[ind] !== null);
     const br = quantileBreaks(list.map(d=>d[ind]), 6);
     DEP.forEach(d=>{ const c = classOf(d[ind], br); shapes[d.cod].setAttribute("class", "dpto " + (c < 0 ? "q-na" : "q"+c) + (STATE.sel === d.cod ? " sel":"")); });
+    mapBox.classList.toggle("pal-teal", I.pal === "teal");
     leg.innerHTML = "";
     leg.appendChild(el("span",{class:"legend-title"},[I.label]));
     const sorted = list.map(d=>d[ind]).sort((a,b)=>a-b);
@@ -535,7 +538,7 @@ function scatterWidget(body, o){
     });
     all.filter(d=> inR(d) && (reg !== "todas" || (o.labels||[]).includes(d.cod) || d.cod === STATE.sel)).forEach(d=>{
       const r = rFn(SZ.val(d));
-      const t = document.createElementNS(SVGNS,"text"); t.setAttribute("x", PX(d[o.x]) + r + 3); t.setAttribute("y", PY(d[yk]) + 4);
+      const t = document.createElementNS(SVGNS,"text"); const atEnd = PX(d[o.x]) + r + 6 + d.nombre.length*6 > w; t.setAttribute("x", PX(d[o.x]) + (atEnd ? -r - 4 : r + 3)); if(atEnd) t.setAttribute("text-anchor","end"); t.setAttribute("y", PY(d[yk]) + 4);
       t.setAttribute("class","pt-lab" + (d.cod === STATE.sel ? " sel-pt-lab" : "")); t.textContent = d.nombre.replace(" D.C.",""); s.appendChild(t);
     });
     box.innerHTML = ""; box.appendChild(s);
@@ -566,30 +569,39 @@ function scatterWidget(body, o){
 
 
 /* ================================================================= 01 CONTEXTO */
+function cie10List(){
+  return el("div",{class:"cie-block"},[
+    el("h5",null,["Códigos CIE-10 incluidos (diagnóstico principal)"]),
+    el("ul",{class:"cie-list no-term"}, C.cie10.map(x=> el("li",null,[ el("strong",null,[x.c]), el("span",null,[x.n]) ]))),
+    el("p",{class:"muted small"},[C.cie10Nota])
+  ]);
+}
 function renderContexto(){
-  const body = document.getElementById("body-contexto");
-  C.panorama.intro.forEach(p=> body.appendChild(el("p",null,[p])));
+  const body = document.getElementById("body-contexto"), R = C.resumen;
+  const block = (id, title, kids)=> body.appendChild(el("section",{class:"abs-block", id:id, "aria-labelledby":id+"-t"},[ el("h3",{class:"abs-title", id:id+"-t"},[title]), el("div",{class:"abs-body"}, kids) ]));
+  block("resumen-introduccion", "Introducción", R.introduccion.map(p=> el("p",null,[p])));
+  block("resumen-metodos", "Métodos", R.metodos.map(p=>{ const k = p.indexOf(":"); return el("p",null,[ el("strong",null,[p.slice(0,k+1)]), p.slice(k+1) ]); }).concat([ cie10List() ]));
+  const ol = el("ol",{class:"abs-results"});
+  C.hallazgos.forEach(h=>{
+    const b = el("button",{class:"finding-link", type:"button", "aria-label":"Ver el análisis de " + h.t},["Ver el análisis"]);
+    b.addEventListener("click", ()=>{ openSection(h.sec); scrollSoon("sec-"+h.sec); });
+    ol.appendChild(el("li",null,[ el("strong",null,[h.t + ". "]), h.d + " ", b ]));
+  });
+  block("resumen-resultados", "Resultados", [ ol ]);
+  block("resumen-conclusiones", "Conclusiones", [ el("ul",{class:"abs-concl"}, R.conclusiones.map(c=> el("li",null,[c]))) ]);
+  body.appendChild(el("div",{class:"tag-row"},[confidenceTag("nota-autor"), confidenceTag("preliminar")]));
   renderStory(body);
   body.appendChild(el("div",{class:"scope-limits"},[ el("p",{class:"scope-text"},[ el("strong",null,["¿Cómo leer las cifras? "]), C.panorama.lectura ]) ]));
-  sub(body, "contexto-hallazgos", "Hallazgos preliminares en breve", C.hallazgosNota);
-  const hz = el("div",{class:"finding-grid"});
-  C.hallazgos.forEach((h,i)=>{
-    const a = el("button",{class:"finding-link", type:"button"},["Ver el análisis →"]);
-    a.addEventListener("click", ()=>{ openSection(h.sec); scrollSoon("sec-"+h.sec); });
-    hz.appendChild(el("article",{class:"finding-card"},[ el("span",{class:"finding-num"},[String(i+1)]), el("h4",null,[h.t]), el("p",null,[h.d]), a ]));
-  });
-  body.appendChild(hz);
-  body.appendChild(el("div",{class:"tag-row"},[confidenceTag("nota-autor"), confidenceTag("preliminar")]));
-  sub(body, "contexto-preguntas", "El recorrido de la app", "Cada sección responde una pregunta. La primera parte arma el marco con el que se leen los datos de la segunda.");
+  sub(body, "contexto-preguntas", "Recorrido del documento", "Cada sección responde una pregunta. La primera parte arma el marco con el que se leen los datos de la segunda.");
   PARTS.forEach(P=>{
     body.appendChild(el("h4",{class:"q-part part-"+P.id},[P.k + ": " + P.t]));
-    const ol = el("ol",{class:"question-list part-"+P.id});
+    const ql = el("ol",{class:"question-list part-"+P.id});
     SECTIONS.filter(s=> s.part === P.id).forEach(s=>{
       const b = el("button",{type:"button", class:"q-link"},[ el("span",{class:"q-num"},[s.num]), s.title ]);
       b.addEventListener("click", ()=>{ openSection(s.id); scrollSoon("sec-"+s.id); });
-      ol.appendChild(el("li",null,[b, el("span",{class:"q-sub"},[s.sub])]));
+      ql.appendChild(el("li",null,[b, el("span",{class:"q-sub"},[s.sub])]));
     });
-    body.appendChild(ol);
+    body.appendChild(ql);
   });
   body.appendChild(el("p",{class:"muted small"},["Los términos subrayados con puntos muestran su definición al pasar el cursor o el foco; las normas citadas enlazan a su texto. Glosario completo en la sección " + SEC.glosario.num + " y referencias en la " + SEC.referencias.num + "."]));
 }
@@ -598,8 +610,98 @@ function renderContexto(){
 const YEARS = [2019,2020,2021,2022,2023,2024,2025];
 function renderNacional(){
   const body = document.getElementById("body-nacional");
-  body.appendChild(el("p",null,["Empezamos por el total del país: cuántas personas con diagnóstico principal F84 registra el RIPS cada año, qué edad y sexo tienen y en qué régimen están afiliadas."]));
-  sub(body, "nacional-serie", "Personas atendidas por año, 2019-2025");
+  body.appendChild(el("p",null,["Vistas la prevalencia y la cobertura, esta sección describe a las personas atendidas por edad, sexo y régimen de afiliación, y explica por qué el registro de 2025 no se puede comparar sin más con los años anteriores."]));
+  sub(body, "nacional-edad", "Edad y sexo de las personas atendidas en 2024");
+  const two = el("div",{class:"two-col"});
+  const ed = C.panorama.edad, w = 360, rowH = 40, h = ed.length*rowH + 16;
+  const s = svgEl(w, h, "", "Distribución por grupo de edad");
+  ed.forEach((e,i)=>{
+    const y = 8 + i*rowH, bw = (w-170) * e.pct / 60;
+    const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g");
+    g.innerHTML = '<text x="0" y="'+(y+22)+'" class="axis-lab">'+esc(e.grupo)+'</text><rect x="110" y="'+(y+6)+'" width="'+(w-170)+'" height="24" rx="5" class="bar-track"/><rect x="110" y="'+(y+6)+'" width="'+bw+'" height="24" rx="5" class="bar-fill'+(e.derivado?' bar-derived':'')+'"/><text x="'+(116+bw)+'" y="'+(y+23)+'" class="bar-val">'+fmt(e.pct,1)+' %</text>';
+    bindTip(g, ()=> "<h5>"+esc(e.grupo)+"</h5><p>"+fmt(e.pct,1)+" % de las personas atendidas"+(e.derivado?" (complemento de los otros grupos)":"")+"</p>");
+    s.appendChild(g);
+  });
+  two.appendChild(el("div",{class:"chart-box"},[ el("h4",{class:"chart-title"},["Grupo de edad"]), s ]));
+  const sx = C.panorama.sexo;
+  two.appendChild(el("div",{class:"chart-box"},[ el("h4",{class:"chart-title"},["Sexo"]),
+    el("div",{class:"split-bar", role:"img", "aria-label":"Hombres "+fmt(sx.hombres,1)+" %, mujeres "+fmt(sx.mujeres,1)+" %"},[
+      el("span",{class:"split-a", style:"width:"+sx.hombres+"%"},["Hombres "+fmt(sx.hombres,1)+" %"]), el("span",{class:"split-b", style:"width:"+sx.mujeres+"%"},[fmt(sx.mujeres,1)+" %"]) ]) ]));
+  body.appendChild(two);
+  const rd2 = reading(); body.appendChild(rd2);
+  setReading(rd2, "Más de la mitad de las personas atendidas (55,2 %) tiene entre 6 y 11 años y solo el 16,7 % tiene 5 años o menos, la etapa en la que el diagnóstico oportuno tiene más impacto. Como la edad es la de la atención y no la del diagnóstico, esto no mide directamente el retraso diagnóstico, pero es coherente con una atención que se concentra en la edad escolar. Por cada mujer se atendieron cerca de " + fmt(sx.hombres/sx.mujeres,1) + " hombres; la literatura internacional describe una razón cercana a 4 a 1 en la prevalencia.");
+  body.appendChild(sourceLine(C.panorama.edadNota));
+
+  sub(body, "nacional-regimen", "Régimen de afiliación y ruptura de la serie en 2025", "Elige la medida: el salto de 2025 no se ve igual en las personas que en las atenciones.");
+  let rm = "y";
+  const RM = { y:{ t:"Personas", f:(r,a)=> r["y"+a], u:"registros persona-régimen", dec:0 }, a:{ t:"Atenciones", f:(r,a)=> r["a"+a], u:"atenciones", dec:0 }, t:{ t:"Tasa de atención", f:(r,a)=> 100*r["a"+a]/r["y"+a], u:"atenciones por 100 personas", dec:0 } };
+  body.appendChild(chips([{id:"y",label:"Personas"},{id:"a",label:"Atenciones"},{id:"t",label:"Tasa de atención"}], rm, id=>{ rm = id; drawReg(); }, "Medida por régimen"));
+  const rbox = el("div",{class:"chart-box"}); body.appendChild(rbox);
+  body.appendChild(legend([["bar-fill","2024 (año de referencia)"],["bar-alt","2025 (FEV-RIPS)"]]));
+  const rd3 = reading(); body.appendChild(rd3);
+  function drawReg(){
+    const rg = C.panorama.regimen, M = RM[rm], w2 = 580, h2 = 240, pad = { l:78, r:16, t:20, b:40 };
+    const s2 = svgEl(w2, h2, "", M.t + " por régimen, 2024 y 2025"), mx = niceMax(Math.max(...rg.map(r=> Math.max(M.f(r,2024), M.f(r,2025))))), ih = h2-pad.t-pad.b, iw = w2-pad.l-pad.r;
+    let gs = "";
+    ticks(mx).forEach(t=>{ const y = pad.t + ih - ih*t/mx; gs += '<line x1="'+pad.l+'" x2="'+(w2-pad.r)+'" y1="'+y+'" y2="'+y+'" class="grid"/><text x="'+(pad.l-8)+'" y="'+(y+4)+'" class="axis-lab" text-anchor="end">'+fmt(t)+'</text>'; });
+    gs += '<text x="12" y="'+(pad.t+ih/2)+'" class="axis-title" text-anchor="middle" transform="rotate(-90 12 '+(pad.t+ih/2)+')">'+M.u.charAt(0).toUpperCase()+M.u.slice(1)+'</text>';
+    s2.innerHTML = gs;
+    const gw = iw/rg.length;
+    rg.forEach((r,i)=>{
+      [[2024,"bar-fill"],[2025,"bar-fill bar-alt"]].forEach((b,j)=>{
+        const v = M.f(r,b[0]), bh = ih*v/mx, x = pad.l + i*gw + gw*0.18 + j*gw*0.33, y = pad.t + ih - bh, g = document.createElementNS(SVGNS,"g");
+        g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g");
+        g.innerHTML = '<rect x="'+x+'" y="'+y+'" width="'+(gw*0.3)+'" height="'+bh+'" rx="4" class="'+b[1]+'"/><text x="'+(x+gw*0.15)+'" y="'+(y-6)+'" class="bar-val" text-anchor="middle">'+fmt(v)+'</text>';
+        bindTip(g, ()=> "<h5>"+esc(r.nombre)+" · "+b[0]+"</h5><p>"+fmt(v)+" "+M.u+"</p>");
+        s2.appendChild(g);
+      });
+      const t = document.createElementNS(SVGNS,"text"); t.setAttribute("x", pad.l+i*gw+gw/2); t.setAttribute("y", h2-14); t.setAttribute("class","axis-lab strong"); t.setAttribute("text-anchor","middle"); t.textContent = r.nombre; s2.appendChild(t);
+    });
+    rbox.innerHTML = ""; rbox.appendChild(s2);
+    const k = (r)=> M.f(r,2025)/M.f(r,2024), c0 = rg[0], c1 = rg[1];
+    let t = rm === "y" ? "En personas, el subsidiado casi no cambió (" + fmt(c1.y2024) + " en 2024 y " + fmt(c1.y2025) + " en 2025), mientras que el contributivo se multiplicó por " + fmt(k(c0),1) + " (de " + fmt(c0.y2024) + " a " + fmt(c0.y2025) + ")."
+      : rm === "a" ? "En atenciones, la ruptura alcanza a los dos regímenes: se multiplicaron por " + fmt(k(c0),1) + " en el contributivo (de " + fmt(c0.a2024) + " a " + fmt(c0.a2025) + ") y por " + fmt(k(c1),1) + " en el subsidiado (de " + fmt(c1.a2024) + " a " + fmt(c1.a2025) + "). La serie del subsidiado no se rompe en personas, pero sí en atenciones."
+      : "Cada 100 personas del contributivo pasaron de " + fmt(M.f(c0,2024)) + " a " + fmt(M.f(c0,2025)) + " atenciones, y cada 100 del subsidiado, de " + fmt(M.f(c1,2024)) + " a " + fmt(M.f(c1,2025)) + ": en ambos se registra más atención por persona con el nuevo esquema.";
+    setReading(rd3, t + " Como las personas pueden aparecer en más de un régimen y faltan denominadores de afiliados verificados, no se calcula prevalencia por régimen.");
+  }
+  drawReg();
+  body.appendChild(sourceLine(C.panorama.regimenNota));
+  body.appendChild(el("h4",{class:"chart-title"},["¿Por qué las personas aumentan en el contributivo y no en el subsidiado?"]));
+  const hg = el("div",{class:"hyp-grid"});
+  C.panorama.hipotesis.forEach((hp,i)=> hg.appendChild(el("article",{class:"hyp-card" + (i===0 ? " hyp-main" : "")},[ el("span",{class:"hyp-k"},[hp.quien]), el("h4",null,[hp.t]), el("p",null,[hp.d]) ])));
+  body.appendChild(hg);
+  body.appendChild(el("p",{class:"muted small"},[C.panorama.hipotesisNota]));
+  body.appendChild(el("div",{class:"tag-row"},[confidenceTag("nota-autor"), confidenceTag("pendiente")]));
+}
+
+/* ================================================================= 03 TERRITORIO */
+function renderTerritorio(){
+  const body = document.getElementById("body-territorio");
+  body.appendChild(el("p",null,["La prevalencia se cuenta aquí de tres maneras al mismo tiempo, porque ninguna se entiende sola. La absoluta dice cuántas personas se atendieron; la relativa, cuántas por cada 100.000 habitantes, para comparar territorios de distinto tamaño; y la esperada, cuántas habría si 1 de cada 127 personas tuviera autismo (OMS). La comparación entre atendida y esperada orienta sobre la distancia que falta, sin medir la necesidad."]));
+  sub(body, "territorio-tres", "Las tres medidas, juntas", "País, 2024 (año de referencia) y 2025 (nuevo registro FEV-RIPS).");
+  const esp = DEP.reduce((a,d)=>a+d.esperados,0), p24 = DEP.reduce((a,d)=>a+d.pers24,0), p25 = DEP.reduce((a,d)=>a+d.pers25,0), P = DEP.reduce((a,d)=>a+d.pob,0);
+  const rows = [
+    ["Absoluta", "¿Cuántas personas se atendieron?", fmt(CUBO.p24) + " (" + fmt(p24) + " con residencia conocida)", fmt(CUBO.p25) + " (" + fmt(p25) + " con residencia conocida)"],
+    ["Relativa", "¿Cuántas por cada 100.000 habitantes?", fmt(p24/P*1e5,1), fmt(p25/P*1e5,1)],
+    ["Esperada", "¿Cuántas habría si 1 de cada 127 tuviera autismo?", fmt(esp) + " personas; " + fmt(esp/P*1e5,0) + " por 100.000", "Igual: se usa la población de 2024"],
+    ["Atendida ÷ esperada", "¿Qué parte de las esperadas se atendió?", "≈ " + fmt(100*p24/esp,0) + " %", "≈ " + fmt(100*p25/esp,0) + " %"]
+  ];
+  const tb = el("table",{class:"cmp-table"}), tbd = el("tbody");
+  tb.appendChild(el("thead",null,[ el("tr",null,["Prevalencia","Pregunta que responde","2024","2025"].map(x=> el("th",{scope:"col"},[x]))) ]));
+  rows.forEach(r=> tbd.appendChild(el("tr",null,[ el("th",{scope:"row"},[r[0]]), el("td",null,[r[1]]), el("td",null,[r[2]]), el("td",null,[r[3]]) ])));
+  tb.appendChild(tbd); body.appendChild(el("div",{class:"table-wrap"},[tb]));
+  body.appendChild(el("div",{class:"chart-box"},[ tresBarras(esp, p25, p24, P, "Prevalencia esperada y atendida, en personas y por 100.000 habitantes") ]));
+  const rd = reading(); body.appendChild(rd);
+  setReading(rd, "Cada barra muestra a la vez la medida absoluta (personas) y la relativa (por 100.000 habitantes). Se esperarían unas " + fmt(esp) + " personas con autismo (" + fmt(esp/P*1e5,0) + " por 100.000); el registro de 2024 muestra atendidas a " + fmt(p24) + " con residencia conocida (" + fmt(p24/P*1e5,1) + "), cerca de 12 de cada 100 esperadas, y el de 2025 a " + fmt(p25) + " (" + fmt(p25/P*1e5,1) + "), cerca de 25 de cada 100. Con el total del cubo nacional, que incluye a quienes no tienen departamento registrado, serían " + fmt(100*CUBO.p24/esp,0) + " y " + fmt(100*CUBO.p25/esp,0) + " de cada 100.");
+  body.appendChild(sourceLine("Fuente: SISPRO-RIPS (F84.0 a F84.9 como diagnóstico principal) 2024 y 2025; DANE (población 2024, usada también como denominador de 2025); OMS (1 de cada 127). Las tasas usan solo personas con departamento de residencia conocido; la conciliación de totales está en la sección " + SEC.metodologia.num + "."));
+  sub(body, "territorio-deptos", "Las tres medidas por departamento", "Absoluta y esperada a la izquierda; relativa y esperada a la derecha; al final, la parte de las esperadas que se atendió.");
+  tresMedidas(body);
+  sub(body, "territorio-mapa", "Mapa de la prevalencia relativa");
+  body.appendChild(howTo("el mapa usa la medida relativa, porque la absoluta solo mostraría qué departamentos son más grandes. El color indica el grupo (sextil) en que cae cada valor. Haz clic en un departamento para seleccionarlo: la selección se comparte con todos los gráficos."));
+  mapWidget(body, { inds:["tasa24","tasa25"], def:"tasa24", extra: ind=> ind === "tasa25" ? "En 2025 casi todos los departamentos suben con el nuevo registro; compárese el orden más que los valores." : "La esperada es la misma en todos: 787 por 100.000 habitantes. Ningún departamento pasa del 31 % de ella (Atlántico)." });
+  body.appendChild(sourceLine("Fuente: SISPRO-RIPS; DANE (población 2024). Límites: Marco Geoestadístico Nacional del DANE, simplificados."));
+  sub(body, "territorio-serie", "Serie nacional 2019-2025", "Elige la medida absoluta o la relativa.");
+  {
   let metric = "personas";
   body.appendChild(chips([{id:"personas",label:"Número de personas"},{id:"tasa",label:"Por 100.000 habitantes"}], metric, id=>{ metric = id; draw(); }, "Medida"));
   const box = el("div",{class:"chart-box"}); body.appendChild(box);
@@ -622,76 +724,61 @@ function renderNacional(){
     });
     box.innerHTML = ""; box.appendChild(s);
     const a = ser[0], b = ser[5], c20 = ser[1];
-    setReading(rd, "Entre 2019 y 2024 las personas atendidas pasaron de " + fmt(a.personas) + " a " + fmt(b.personas) + " (" + fmt(100*(b.personas/a.personas-1),0) + " % más) y la prevalencia atendida de " + fmt(a.tasa,1) + " a " + fmt(b.tasa,1) + " por 100.000 habitantes. El único descenso fue en 2020 (" + fmt(c20.personas) + ", " + fmt(100*(c20.personas/a.personas-1),0) + " % frente a 2019). La barra naranja de 2025 (" + fmt(ser[6].personas) + ") casi duplica a 2024. No es un aumento de casos: coincide con el cambio al RIPS como soporte de la factura electrónica y, según la hipótesis del equipo, es una medición más completa que se acerca al número real (ver «Régimen y ruptura de 2025»). 2024 sigue siendo el año de referencia porque es comparable con 2019-2023. El aumento sostenido puede reflejar más diagnóstico y registro, no necesariamente más TEA.");
+    setReading(rd, "Personas con residencia conocida. Entre 2019 y 2024 pasaron de " + fmt(a.personas) + " a " + fmt(b.personas) + " (" + fmt(100*(b.personas/a.personas-1),0) + " % más) y la prevalencia atendida de " + fmt(a.tasa,1) + " a " + fmt(b.tasa,1) + " por 100.000 habitantes. El único descenso fue en 2020 (" + fmt(c20.personas) + ", " + fmt(100*(c20.personas/a.personas-1),0) + " % frente a 2019). La barra naranja de 2025 (" + fmt(ser[6].personas) + ") casi duplica a 2024. No se interpreta como un aumento de casos: coincide con el cambio al RIPS como soporte de la factura electrónica y, según la hipótesis del equipo, sería una medición más completa, más cercana al número real (ver «Régimen y ruptura de 2025»). 2024 sigue siendo el año de referencia porque es comparable con 2019-2023. El aumento sostenido puede reflejar más diagnóstico y registro, no necesariamente más TEA.");
   }
   draw();
-
-  sub(body, "nacional-edad", "Edad y sexo de las personas atendidas en 2024");
-  const two = el("div",{class:"two-col"});
-  const ed = C.panorama.edad, w = 360, rowH = 40, h = ed.length*rowH + 16;
-  const s = svgEl(w, h, "", "Distribución por grupo de edad");
-  ed.forEach((e,i)=>{
-    const y = 8 + i*rowH, bw = (w-170) * e.pct / 60;
-    const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g");
-    g.innerHTML = '<text x="0" y="'+(y+22)+'" class="axis-lab">'+esc(e.grupo)+'</text><rect x="110" y="'+(y+6)+'" width="'+(w-170)+'" height="24" rx="5" class="bar-track"/><rect x="110" y="'+(y+6)+'" width="'+bw+'" height="24" rx="5" class="bar-fill'+(e.derivado?' bar-derived':'')+'"/><text x="'+(116+bw)+'" y="'+(y+23)+'" class="bar-val">'+fmt(e.pct,1)+' %</text>';
-    bindTip(g, ()=> "<h5>"+esc(e.grupo)+"</h5><p>"+fmt(e.pct,1)+" % de las personas atendidas"+(e.derivado?" (complemento de los otros grupos)":"")+"</p>");
-    s.appendChild(g);
-  });
-  two.appendChild(el("div",{class:"chart-box"},[ el("h4",{class:"chart-title"},["Grupo de edad"]), s ]));
-  const sx = C.panorama.sexo;
-  two.appendChild(el("div",{class:"chart-box"},[ el("h4",{class:"chart-title"},["Sexo"]),
-    el("div",{class:"split-bar", role:"img", "aria-label":"Hombres "+fmt(sx.hombres,1)+" %, mujeres "+fmt(sx.mujeres,1)+" %"},[
-      el("span",{class:"split-a", style:"width:"+sx.hombres+"%"},["Hombres "+fmt(sx.hombres,1)+" %"]), el("span",{class:"split-b", style:"width:"+sx.mujeres+"%"},[fmt(sx.mujeres,1)+" %"]) ]) ]));
-  body.appendChild(two);
-  const rd2 = reading(); body.appendChild(rd2);
-  setReading(rd2, "Más de la mitad de las personas atendidas (55,2 %) tiene entre 6 y 11 años y solo el 16,7 % tiene 5 años o menos, la etapa en la que el diagnóstico oportuno tiene más impacto. Como la edad es la de la atención y no la del diagnóstico, esto no mide directamente el retraso diagnóstico, pero es coherente con una atención que se concentra en la edad escolar. Por cada mujer se atendieron cerca de " + fmt(sx.hombres/sx.mujeres,1) + " hombres; la literatura internacional describe una razón cercana a 4 a 1 en la prevalencia.");
-  body.appendChild(sourceLine(C.panorama.edadNota));
-
-  sub(body, "nacional-regimen", "Régimen de afiliación y ruptura de la serie en 2025");
-  const rg = C.panorama.regimen, w2 = 560, h2 = 230, pad = { l:56, r:16, t:16, b:40 };
-  const s2 = svgEl(w2, h2, "", "Personas por régimen 2024 y 2025");
-  const mx = niceMax(Math.max(...rg.map(r=>r.y2025))), ih = h2 - pad.t - pad.b, iw = w2 - pad.l - pad.r;
-  let gs = "";
-  ticks(mx).forEach(t=>{ const y = pad.t + ih - ih*t/mx; gs += '<line x1="'+pad.l+'" x2="'+(w2-pad.r)+'" y1="'+y+'" y2="'+y+'" class="grid"/><text x="'+(pad.l-8)+'" y="'+(y+4)+'" class="axis-lab" text-anchor="end">'+fmt(t)+'</text>'; });
-  gs += '<text x="12" y="'+(pad.t+ih/2)+'" class="axis-title" text-anchor="middle" transform="rotate(-90 12 '+(pad.t+ih/2)+')">Personas atendidas</text>';
-  s2.innerHTML = gs;
-  const gw = iw / rg.length;
-  rg.forEach((r,i)=>{
-    [["2024", r.y2024, "bar-fill"],["2025", r.y2025, "bar-fill bar-alt"]].forEach((b,j)=>{
-      const bh = ih*b[1]/mx, x = pad.l + i*gw + gw*0.18 + j*gw*0.33, y = pad.t + ih - bh;
-      const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g");
-      g.innerHTML = '<rect x="'+x+'" y="'+y+'" width="'+(gw*0.3)+'" height="'+bh+'" rx="4" class="'+b[2]+'"/><text x="'+(x+gw*0.15)+'" y="'+(y-6)+'" class="bar-val" text-anchor="middle">'+fmt(b[1])+'</text>';
-      bindTip(g, ()=> "<h5>"+esc(r.nombre)+" · "+b[0]+"</h5><p>"+fmt(b[1])+" registros persona-régimen</p>");
-      s2.appendChild(g);
-    });
-    const t = document.createElementNS(SVGNS,"text"); t.setAttribute("x", pad.l + i*gw + gw/2); t.setAttribute("y", h2-14); t.setAttribute("class","axis-lab strong"); t.setAttribute("text-anchor","middle"); t.textContent = r.nombre; s2.appendChild(t);
-  });
-  body.appendChild(el("div",{class:"chart-box"},[ legend([["bar-fill","2024 (año de referencia)"],["bar-alt","2025 (FEV-RIPS)"]]), s2 ]));
-  const rd3 = reading(); body.appendChild(rd3);
-  setReading(rd3, "En 2024 el contributivo registró " + fmt(rg[0].y2024) + " personas y el subsidiado " + fmt(rg[1].y2024) + ". En 2025 el subsidiado casi no cambió (" + fmt(rg[1].y2025) + ") mientras que el contributivo se multiplicó por " + fmt(rg[0].y2025/rg[0].y2024,1) + ". Un salto concentrado en un solo régimen apunta a un cambio en el reporte y no en la frecuencia del TEA. La pregunta es por qué el cambio afectó a un régimen y no al otro; abajo, tres hipótesis. No se calculan tasas por régimen porque faltan denominadores de afiliados verificados.");
-  body.appendChild(sourceLine(C.panorama.regimenNota));
-  body.appendChild(el("h4",{class:"chart-title"},["¿Por qué el salto ocurre en el contributivo y no en el subsidiado?"]));
-  const hg = el("div",{class:"hyp-grid"});
-  C.panorama.hipotesis.forEach((hp,i)=> hg.appendChild(el("article",{class:"hyp-card" + (i===0 ? " hyp-main" : "")},[ el("span",{class:"hyp-k"},[hp.quien]), el("h4",null,[hp.t]), el("p",null,[hp.d]) ])));
-  body.appendChild(hg);
-  body.appendChild(el("p",{class:"muted small"},[C.panorama.hipotesisNota]));
-  body.appendChild(el("div",{class:"tag-row"},[confidenceTag("nota-autor"), confidenceTag("pendiente")]));
-}
-
-/* ================================================================= 03 TERRITORIO */
-function renderTerritorio(){
-  const body = document.getElementById("body-territorio");
-  body.appendChild(el("p",null,["Pasamos del total nacional a los 33 territorios con la prevalencia atendida: personas atendidas con F84 dividido por la población del departamento (DANE) y multiplicado por 100.000. Responde a cuántas personas llega el sistema. Sirve para dos cosas: comparar departamentos de tamaño muy distinto (Bogotá atendió a más personas que Atlántico, pero Atlántico llega al doble por habitante) y estimar la brecha frente a lo esperado. Si 1 de cada 127 personas tuviera autismo, lo esperado serían unos 787 por 100.000 habitantes; el país llega a 97,8."]));
-  sub(body, "territorio-mapa", "Mapa de la prevalencia atendida");
-  body.appendChild(howTo("cada departamento se colorea según el grupo (sextil) en que cae su valor. Pasa el cursor o el foco del teclado para ver sus cifras y haz clic para seleccionarlo: la selección se comparte con todos los gráficos de la app."));
-  mapWidget(body, { inds:["tasa24","tasa25"], def:"tasa24", extra: ind=> ind === "tasa25" ? "En 2025 casi todos los departamentos suben con el nuevo registro, que según la hipótesis del equipo se acerca más al número real; compárese el orden más que los valores." : "Frente a lo esperado según la OMS, el país atiende a cerca del 12 % de las personas con autismo y ningún departamento pasa del 31 % (Atlántico)." });
-  body.appendChild(sourceLine("Fuente: SISPRO-RIPS (F84 como diagnóstico principal); DANE (población 2024). Límites: Marco Geoestadístico Nacional del DANE, simplificados."));
-  sub(body, "territorio-ranking", "Ranking por región", "Filtra por región para comparar departamentos vecinos.");
-  rankingWidget(body, { def:"tasa24", extra:(ind, list, reg)=> reg === "todas" ? "Cinco de los seis departamentos con mayor prevalencia atendida son del Caribe u Oriente (Atlántico, Bolívar, San Andrés, Santander, Norte de Santander), mientras que las más bajas están en la Amazonía-Orinoquía y la Pacífica." : "" });
+  }
   sub(body, "territorio-evolucion", "Evolución 2019-2025 por departamento", "Cada línea fina es un departamento; la gruesa, el total nacional; la naranja, el departamento seleccionado.");
   trendWidget(body);
   sub(body, "territorio-tabla", "Tabla por departamento y descarga");
   body.appendChild(dataTable());
+}
+/* barras nacionales: la misma longitud expresa personas y personas por 100.000 (una sola población) */
+function tresBarras(esp, p25, p24, P, label, cls){
+  const rows = [["Esperada (1 de cada 127, OMS)", esp, "bar-nat"],["Atendida, registro de 2025", p25, "bar-fill bar-alt"],["Atendida, 2024", p24, "bar-fill"]];
+  const narrow = !!cls, w = narrow ? 400 : 580, rowH = narrow ? 84 : 58, h = rows.length*rowH + 10, sv = svgEl(w, h, cls || "", label); let g = "";
+  rows.forEach((r,i)=>{
+    const y = 10 + i*rowH, bw = Math.max(3, (w - (narrow ? 8 : 230))*r[1]/esp), val = fmt(r[1]) + ' personas · ' + fmt(r[1]/P*1e5, r[1]===esp?0:1) + ' por 100.000';
+    g += '<text x="0" y="'+(y+12)+'" class="axis-lab strong">'+esc(r[0])+'</text><rect x="0" y="'+(y+20)+'" width="'+bw+'" height="24" rx="4" class="'+r[2]+'"/><text x="'+(narrow ? 0 : bw+8)+'" y="'+(narrow ? y+60 : y+37)+'" class="bar-val">'+val+'</text>';
+  });
+  sv.innerHTML = g; return sv;
+}
+function tresMedidas(body){
+  let yr = "24", sort = "abs", reg = "todas";
+  body.appendChild(chips([{id:"24",label:"2024"},{id:"25",label:"2025 (FEV-RIPS)"}], yr, id=>{ yr = id; draw(); }, "Año"));
+  body.appendChild(chips([{id:"abs",label:"Ordenar por absoluta"},{id:"rel",label:"Ordenar por relativa"},{id:"esp",label:"Ordenar por esperada"}], sort, id=>{ sort = id; draw(); }, "Orden"));
+  body.appendChild(regionChips(id=>{ reg = id; draw(); }));
+  body.appendChild(howTo("la barra gris es lo esperado y la de color, lo atendido. A la izquierda, en personas; a la derecha, por 100.000 habitantes. La esperada relativa es igual en todos (787); por eso ordenar por la relativa es ordenar por la parte de las esperadas que se atendió."));
+  const box = el("div",{class:"chart-box"}); body.appendChild(box);
+  body.appendChild(legend([["bar-nat","Esperada"],["bar-fill","Atendida"]]));
+  const rd = reading(); body.appendChild(rd);
+  body.appendChild(sourceLine("Fuente: SISPRO-RIPS; DANE (población 2024); OMS. La esperada supone igual frecuencia en todo el país. Con pocas personas atendidas, un caso cambia mucho el porcentaje."));
+  function draw(){
+    const pk = "pers"+yr, rk = "tasa"+yr, ek = yr === "24" ? "pctEsp" : "pctEsp25";
+    const list = DEP.filter(d=> reg === "todas" || d.region === reg).sort((a,b)=> sort === "abs" ? b[pk]-a[pk] : sort === "rel" ? b[rk]-a[rk] : b.esperados-a.esperados);
+    const w = 760, rowH = 22, pad = { l:142, t:38 }, h = pad.t + list.length*rowH + 8, cA = 200, xB = pad.l + cA + 132, cB = 150;
+    const mxA = niceMax(Math.max(...list.map(d=> Math.max(d.esperados, d[pk])))), mxB = 1e5/127;
+    const s = svgEl(w, h, "tres-svg", "Prevalencia absoluta, relativa y esperada por departamento");
+    s.innerHTML = '<text x="'+pad.l+'" y="14" class="axis-title">Personas: atendidas de esperadas</text><text x="'+xB+'" y="14" class="axis-title">Por 100.000 hab. (esperada: 787)</text><text x="'+(w-4)+'" y="14" text-anchor="end" class="axis-title">% de esperada</text><line x1="'+(xB+cB)+'" x2="'+(xB+cB)+'" y1="'+(pad.t-8)+'" y2="'+(h-6)+'" class="ref-line"/>';
+    list.forEach((d,i)=>{
+      const y = pad.t + i*rowH, g = document.createElementNS(SVGNS,"g"); g.setAttribute("class","bar-g rank-row" + (d.cod === STATE.sel ? " sel" : "")); g.setAttribute("tabindex","0"); g.setAttribute("role","button");
+      g.setAttribute("aria-label", d.nombre + ": " + fmt(d[pk]) + " personas atendidas de " + fmt(d.esperados) + " esperadas; " + fmt(d[rk],1) + " por 100.000 habitantes; " + fmt(d[ek],0) + " % de la esperada");
+      const wE = Math.max(1, cA*d.esperados/mxA), wP = Math.max(1, cA*d[pk]/mxA), wR = Math.max(1, cB*d[rk]/mxB);
+      g.innerHTML = '<rect x="0" y="'+y+'" width="'+w+'" height="'+rowH+'" class="row-hit"/><text x="'+(pad.l-8)+'" y="'+(y+15)+'" text-anchor="end" class="axis-lab">'+esc(d.nombre)+'</text>' +
+        '<rect x="'+pad.l+'" y="'+(y+4)+'" width="'+wE+'" height="'+(rowH-8)+'" rx="2" class="bar-nat"/><rect x="'+pad.l+'" y="'+(y+7)+'" width="'+wP+'" height="'+(rowH-14)+'" rx="2" class="bar-fill"/><text x="'+(pad.l+cA+6)+'" y="'+(y+15)+'" class="axis-lab">'+fmt(d[pk])+' de '+fmt(d.esperados)+'</text>' +
+        '<rect x="'+xB+'" y="'+(y+4)+'" width="'+cB+'" height="'+(rowH-8)+'" rx="2" class="bar-nat"/><rect x="'+xB+'" y="'+(y+7)+'" width="'+Math.min(wR,cB)+'" height="'+(rowH-14)+'" rx="2" class="bar-fill"/><text x="'+(xB+cB+6)+'" y="'+(y+15)+'" class="bar-val">'+fmt(d[rk],1)+'</text><text x="'+(w-4)+'" y="'+(y+15)+'" text-anchor="end" class="bar-val">'+fmt(d[ek],0)+' %</text>';
+      bindTip(g, ()=> deptCardHTML(d)); g.addEventListener("click", ()=> selectDept(d.cod));
+      g.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); selectDept(d.cod); } });
+      s.appendChild(g);
+    });
+    box.innerHTML = ""; box.appendChild(s);
+    const P = list.reduce((a,d)=>a+d.pob,0), A = list.reduce((a,d)=>a+d[pk],0), E = list.reduce((a,d)=>a+d.esperados,0), hi = list.reduce((a,b)=> b[ek]>a[ek]?b:a), lo = list.reduce((a,b)=> b[ek]<a[ek]?b:a), abs = list.reduce((a,b)=> b[pk]>a[pk]?b:a), sd = BY[STATE.sel];
+    let t = "En " + scopeName(reg) + ", en 20" + yr + " se atendió a " + fmt(A) + " personas (absoluta), " + fmt(A/P*1e5,1) + " por 100.000 habitantes (relativa), frente a " + fmt(E) + " que se esperarían (" + fmt(100*A/E,0) + " %). ";
+    if(list.length > 1){ t += "Donde más personas se atienden es " + esc(abs.nombre) + " (" + fmt(abs[pk]) + "), pero la mayor parte de las esperadas se atiende en " + esc(hi.nombre) + " (" + fmt(hi[ek],0) + " %) y la menor en " + esc(lo.nombre) + " (" + fmt(lo[ek],0) + " %). "; if(abs.cod === hi.cod) t = t.replace(", pero la mayor", ", y también la mayor"); }
+    t += esc(sd.nombre) + " (seleccionado): " + fmt(sd[pk]) + " de " + fmt(sd.esperados) + " esperadas, " + fmt(sd[rk],1) + " por 100.000 (" + fmt(sd[ek],0) + " %).";
+    setReading(rd, t);
+  }
+  onSelect(draw); draw();
 }
 function trendWidget(body){
   let reg = "todas", show25 = true;
@@ -755,13 +842,44 @@ function trendWidget(body){
 /* ================================================================= 04 INTENSIDAD */
 function renderIntensidad(){
   const body = document.getElementById("body-intensidad");
-  body.appendChild(el("p",null,["Una persona atendida puede tener una o muchas atenciones en el año (consultas, terapias, procedimientos). La tasa de atención divide el número de atenciones a personas con F84 por el número de personas atendidas con F84 y lo expresa por cada 100: su denominador son las personas con TEA atendidas, no la población del departamento. En el país fue de 1.214 atenciones por cada 100 personas atendidas (unas 12 por persona). Mide intensidad de uso; la prevalencia atendida de la sección anterior mide cobertura. Un departamento puede atender a pocas personas con muchas atenciones cada una, o al revés."]));
-  sub(body, "intensidad-ranking", "Tasa de atención: atenciones por cada 100 personas atendidas, 2024");
-  rankingWidget(body, { def:"tasaAten", extra:(ind, list, reg)=> reg === "todas" ? "La intensidad varía más que la cobertura: las atenciones están más concentradas entre departamentos (Gini 0,486) que las personas atendidas (Gini 0,240)." : "" });
-  sub(body, "intensidad-cruce", "¿Donde se atiende a más personas también se les atiende más?", "Cruce entre cobertura (eje horizontal) e intensidad (eje vertical).");
-  body.appendChild(howTo("las líneas punteadas marcan los valores nacionales y dividen el gráfico en cuatro cuadrantes. Arriba a la derecha están los departamentos que atienden a más personas y con más atenciones por persona; abajo a la izquierda, los que están por debajo en ambos. El color indica la región."));
+  body.appendChild(el("p",null,["Después de saber a cuántas personas se atiende, la cobertura responde qué reciben. Se presenta en dos dimensiones. La frecuencia es la tasa de atención: atenciones a personas con F84 por cada 100 personas atendidas con F84. La cercanía es la oportunidad de atenderse cerca del lugar de residencia: qué parte de las atenciones se presta en el propio departamento y qué parte de las personas vive en un municipio con sede de neuropediatría. Los registros no traen tiempos de espera ni distancias."]));
+  const kp = el("div",{class:"stat-grid compact"});
+  [["1.214","atenciones por cada 100 personas atendidas","unas 12 por persona en 2024; 2.922 con el registro de 2025"],["88,6 %","de las atenciones en el propio departamento","11,4 % fuera o sin prestador registrado"],["80,1 %","de las personas en municipios con sede","19,9 % en municipios sin neuropediatría"]].forEach(k=> kp.appendChild(el("div",{class:"stat-card"},[ el("div",{class:"value"},[k[0]]), el("div",{class:"label"},[k[1]]), el("div",{class:"detail"},[k[2]]) ])));
+  body.appendChild(kp);
+  sub(body, "intensidad-ranking", "Frecuencia: atenciones por cada 100 personas atendidas, 2024");
+  rankingWidget(body, { def:"tasaAten", extra:(ind, list, reg)=> reg === "todas" ? "La frecuencia varía más que la prevalencia atendida: las atenciones están más concentradas entre departamentos (Gini 0,486) que las personas atendidas (Gini 0,240). Parte de la diferencia puede venir de la forma de registrar y facturar." : "" });
+  sub(body, "intensidad-cercania", "Cercanía: ¿se atienden cerca de donde viven?", "Más oscuro significa más cercanía. Cambia el indicador.");
+  mapWidget(body, { inds:["pctLocal","pctConSede"], def:"pctLocal", extra: ind=> ind === "pctLocal" ? "El resto de las atenciones se prestó en otro departamento o no tiene prestador registrado." : "En el país, 10.245 de 51.474 personas atendidas (19,9 %) viven en municipios sin sede." });
+  body.appendChild(sourceLine("Fuente: SISPRO-RIPS 2024 (matriz de residencia por prestador y cruce municipal con el REPS del 13/11/2026)."));
+  sub(body, "intensidad-ambas", "Frecuencia y cercanía a la vez", "Cada burbuja es un departamento.");
+  body.appendChild(howTo("más a la derecha, más atenciones se prestan en el propio departamento; más arriba, más atenciones recibe cada 100 personas atendidas. Las líneas punteadas son los valores del país. El tamaño es la población y el color, la región."));
+  scatterWidget(body, { x:"pctLocal", ys:["tasaAten"], colorBy:"region", labels:["08","13","05","11","94","99","97","25","41"],
+    quad:{ hh:"Más cerca y más frecuente", lh:"Más lejos, más frecuente", ll:"Más lejos y menos frecuente", hl:"Más cerca, menos frecuente" } });
+  body.appendChild(sourceLine("Fuente: SISPRO-RIPS 2024."));
+  sub(body, "movilidad-flujos", "¿Dónde se atienden los residentes de cada departamento?", "Elige un departamento de residencia.");
+  const ctr = el("div",{class:"control-row"}); ctr.appendChild(deptSelect("sel-flujos", "Residentes de", cod=> selectDept(cod))); body.appendChild(ctr);
+  const fbox = el("div",{class:"chart-box"}); body.appendChild(fbox);
+  body.appendChild(legend([["fl-local","Propio departamento"],["fl-out","Otro departamento"],["fl-na","Sin dato del prestador"]]));
+  const frd = reading(); body.appendChild(frd);
+  function drawFlows(){
+    fbox.innerHTML = ""; fbox.appendChild(flowChart(STATE.sel));
+    const d = BY[STATE.sel], row = D.flujos[d.cod], tot = d.aten24;
+    const dest = Object.keys(row).filter(k=> k!==d.cod && k!=="-1").sort((a,b)=> row[b]-row[a]);
+    const local = row[d.cod] || 0;
+    let t = esc(d.nombre) + ": de " + fmt(tot) + " atenciones de sus residentes, " + fmt(100*local/tot,1) + " % se prestó en el propio departamento y " + fmt(d.pctFuera,1) + " % fuera o sin prestador registrado.";
+    if(dest.length){ t += " El principal destino fue " + esc(BY[dest[0]].nombre) + " (" + fmt(row[dest[0]]) + "; " + fmt(100*row[dest[0]]/tot,1) + " %)"; t += dest.length > 1 ? ", seguido de " + esc(BY[dest[1]].nombre) + " (" + fmt(row[dest[1]]) + ")." : "."; }
+    t += d.sedes === 0 ? " El departamento no tiene sedes con neuropediatría." : " Tiene " + fmt(d.sedes) + " sedes con neuropediatría (" + fmt(d.sedes100k,2) + " por 100.000).";
+    setReading(frd, t);
+  }
+  onSelect(drawFlows); drawFlows();
+  sub(body, "movilidad-balance", "Departamentos receptores y emisores", "Saldo neto = atenciones prestadas por las IPS del departamento menos atenciones recibidas por sus residentes.");
+  body.appendChild(balanceChart());
+  const brd = reading(); body.appendChild(brd);
+  setReading(brd, "Bogotá D.C. es el gran receptor: sus IPS prestaron 20.703 atenciones más que las recibidas por sus residentes y el 29 % de lo que prestaron fue para personas de otros departamentos o con residencia desconocida. Atlántico y Valle del Cauca también reciben más de lo que envían. Entre los emisores netos están departamentos vecinos de esos polos (Cundinamarca y Boyacá cerca de Bogotá; Magdalena y Bolívar cerca de Atlántico; Risaralda cerca de Valle del Cauca), lo que sugiere que la cercanía geográfica pesa además de la falta de oferta.");
+  sub(body, "intensidad-cruce", "¿Donde se atiende a más personas también se les atiende más?", "Cruce entre la prevalencia relativa (eje horizontal) y la frecuencia (eje vertical).");
+  body.appendChild(howTo("las líneas punteadas marcan los valores nacionales y dividen el gráfico en cuatro cuadrantes. Arriba a la derecha están los departamentos que atienden a más personas por habitante y con más atenciones por persona."));
   scatterWidget(body, { x:"tasa24", ys:["tasaAten"], colorBy:"region", labels:["08","13","70","44","05","17","11"],
-    quad:{ hh:"Más cobertura y más intensidad", lh:"Menos cobertura, más intensidad", ll:"Menos cobertura y menos intensidad", hl:"Más cobertura, menos intensidad" } });
+    quad:{ hh:"Más personas y más frecuencia", lh:"Menos personas, más frecuencia", ll:"Menos personas y menos frecuencia", hl:"Más personas, menos frecuencia" } });
   body.appendChild(sourceLine("Fuente: SISPRO-RIPS 2024. Correlación calculada en el navegador para los departamentos filtrados; con los 33 territorios coincide con el cálculo del proyecto."));
 }
 
@@ -794,7 +912,7 @@ function renderOfertaAtencion(){
     el("h4",null,["Antes de sacar conclusiones"]),
     el("ul",null,[
       el("li",null,["Es una comparación entre departamentos (análisis ecológico): no dice nada de personas concretas ni prueba que la oferta cause la atención."]),
-      el("li",null,["«Posible necesidad no atendida» es una aproximación. Supone que el autismo es igual de frecuente en todos los departamentos y usa la estimación mundial de la OMS (1 de cada 127 personas), que no se ha medido en Colombia; el porcentaje sirve para comparar territorios, no como cifra exacta de cobertura."]),
+      el("li",null,["«Posible necesidad no atendida» es una aproximación. Supone que el autismo es igual de frecuente en todos los departamentos y usa la estimación mundial de la OMS (1 de cada 127 personas), que no se ha medido en Colombia; el porcentaje sirve para comparar territorios, no como cifra exacta de personas sin atender."]),
       el("li",null,["La oferta solo cuenta sedes con neuropediatría habilitadas (REPS 2026), no especialistas, horas ni otras disciplinas (psiquiatría infantil, psicología, fonoaudiología, terapia ocupacional)."]),
       el("li",null,["El número de atenciones depende también de cómo se registra y factura cada servicio, y del tamaño del departamento: por eso puedes cambiar el tamaño a atenciones por 100.000 habitantes."]),
       el("li",null,["Con pocos pacientes (Vaupés, Guainía, Vichada) un solo caso cambia mucho la prevalencia atendida."]),
@@ -802,6 +920,11 @@ function renderOfertaAtencion(){
     ])
   ]));
   body.appendChild(sourceLine("Fuente: SISPRO-RIPS 2024 y 2025; REPS 13/11/2026; DANE; OMS (prevalencia de referencia)."));
+  sub(body, "movilidad-cruce", "¿Hay menos desplazamiento donde hay más oferta?");
+  body.appendChild(howTo("eje horizontal: sedes por 100.000 habitantes; eje vertical: el indicador de movilidad elegido. Si la oferta local evita desplazamientos, los puntos deberían bajar hacia la derecha. El color indica la pobreza (IPM)."));
+  scatterWidget(body, { x:"sedes100k", ys:["pctFuera","pctSinSede"], colorBy:"ipm", labels:["94","99","97","25","15","70","11"],
+    quad:{ hh:"Más oferta y más desplazamiento", lh:"Menos oferta y más desplazamiento", ll:"Menos oferta y menos desplazamiento", hl:"Más oferta y menos desplazamiento" },
+    extra:(yk, reg)=> reg === "todas" && yk === "pctFuera" ? "Donde hay menos sedes, más atenciones se prestan fuera del departamento; y donde la gente debe salir, se atiende a menos personas por habitante." : "" });
 }
 
 /* ================================================================= 02 DIAGRAMA CAUSAL */
@@ -815,7 +938,7 @@ function renderCausal(){
 /* ---------------------------------------------------------------- diagrama causal */
 function causalDiagram(body){
   const K = C.causal;
-  body.appendChild(howTo("las flechas van de la causa al efecto; «+» indica que el factor tiende a aumentar lo que sigue y «−» que tiende a reducirlo. Los recuadros con borde continuo se miden en esta app; los punteados, no. Pasa el cursor o haz clic en un factor para ver qué se sabe de él."));
+  body.appendChild(howTo("las flechas van de la causa al efecto; «+» indica que el factor tiende a aumentar lo que sigue y «−» que tiende a reducirlo. Los recuadros con borde continuo se miden en este análisis; los punteados, no. Pasa el cursor o haz clic en un factor para ver qué se sabe de él."));
   const colX = [10, 200, 390, 580, 760], bw = 170, bh = 54, rowY = r=> 20 + r*76;
   const w = 940, h = 20 + 5*76;
   const s = svgEl(w, h, "causal-svg", "Diagrama causal del número de atenciones");
@@ -849,7 +972,7 @@ function causalDiagram(body){
       edgeEls.forEach(e=> e.classList.toggle("dim", e.dataset.de !== n.id && e.dataset.a !== n.id));
       const ins = K.aristas.filter(e=> e.a === n.id), outs = K.aristas.filter(e=> e.de === n.id);
       detail.innerHTML = "";
-      detail.appendChild(el("h4",null,[n.t + " · " + (n.m==="si"?"medido en esta app":n.m==="parcial"?"medido en parte":"sin dato en esta app")]));
+      detail.appendChild(el("h4",null,[n.t + " · " + (n.m==="si"?"medido en este análisis":n.m==="parcial"?"medido en parte":"sin dato en este análisis")]));
       detail.appendChild(el("p",null,[n.d]));
       if(ins.length) detail.appendChild(el("p",null,[ el("strong",null,["Lo afectan: "]), ins.map(e=> K.nodos.find(x=>x.id===e.de).t + " (" + e.s + ")").join("; ") + "." ]));
       if(outs.length) detail.appendChild(el("p",null,[ el("strong",null,["Afecta a: "]), outs.map(e=> K.nodos.find(x=>x.id===e.a).t + " (" + e.s + ")").join("; ") + "." ]));
@@ -861,7 +984,7 @@ function causalDiagram(body){
     s.appendChild(g); nodeEls[n.id] = g;
   });
   body.appendChild(el("div",{class:"diagram-wrap causal-wrap"},[s]));
-  body.appendChild(legend([["cn-si","Medido en esta app"],["cn-parcial","Medido en parte"],["cn-no","Sin dato (hipótesis)"],["ce-pos","Aumenta (+)"],["ce-neg","Reduce (−)"],["ce-mix","Depende (±)"]]));
+  body.appendChild(legend([["cn-si","Medido en este análisis"],["cn-parcial","Medido en parte"],["cn-no","Sin dato (hipótesis)"],["ce-pos","Aumenta (+)"],["ce-neg","Reduce (−)"],["ce-mix","Depende (±)"]]));
   body.appendChild(detail);
   setReading(detail, "Haz clic en un factor para ver qué lo afecta, a qué afecta y qué datos hay. En resumen: el número de atenciones es el número de personas atendidas multiplicado por la tasa de atención (atenciones por cada 100 atendidos, dividida por 100). La oferta, a su vez, sigue en buena parte a la demanda esperada. Con estos datos se miden la oferta, la pobreza, la movilidad, las personas atendidas y la intensidad, pero no la severidad, la edad al diagnóstico, la composición de los equipos ni las autorizaciones de las EPS: por eso las diferencias entre departamentos no se pueden atribuir solo a la oferta.");
   const lt = el("button",{class:"btn a11y-list-toggle", type:"button", "aria-expanded":"false"},["Ver el diagrama como lista"]);
@@ -882,30 +1005,29 @@ const CLAVES = {
   normativa: "La Ley 2628 crea derechos y fija plazos hasta agosto de 2027; su reglamentación puede precisar instrumentos, metas e indicadores.",
   paralelo: "La ley y la Política de Salud Mental se complementan en detección, atención, formación, información e inclusión, y pueden articularse en diagnóstico y coordinación.",
   instrumentos: "Hay herramientas validadas para detectar y diagnosticar el autismo en todas las edades, no solo en la primera infancia.",
-  nacional: "Las personas atendidas se duplicaron entre 2019 y 2024 y el nuevo registro de 2025 muestra casi el doble; la mayoría son niños en edad escolar.",
-  territorio: "El sistema llega a 20 veces más personas por habitante en unos departamentos que en otros.",
-  intensidad: "La atención que recibe cada persona atendida varía aún más que la cobertura: de unas 360 a unas 2.640 atenciones por cada 100 personas.",
+  nacional: "La mayoría son hombres y más de la mitad tiene entre 6 y 11 años; en 2025 las personas registradas aumentaron sobre todo en el contributivo, y las atenciones, en ambos regímenes.",
+  territorio: "En 2024 se atendió a 51.474 personas con residencia conocida (absoluta), 97,8 por 100.000 habitantes (relativa), frente a 414.282 esperadas: cerca del 12 %, y cerca del 25 % con el registro de 2025.",
+  intensidad: "Cada 100 personas atendidas recibieron 1.214 atenciones y el 88,6 % de ellas se prestó en su departamento; ambas cifras cambian mucho entre territorios.",
   oferta: "Las sedes de neuropediatría siguen a la demanda; lo que se aparta depende más de la región que de la pobreza.",
-  ofertaatencion: "Donde hay más oferta se atiende a más personas, y la mitad de los departamentos queda por debajo del país en ambas medidas.",
+  ofertaatencion: "Donde hay más oferta se atiende a más personas; cerca de la mitad de los departamentos queda por debajo del país en ambas medidas.",
   pobreza: "A igual oferta, más pobreza se asocia con menos personas atendidas.",
-  movilidad: "Una de cada cinco personas atendidas vive en un municipio sin sede, y Bogotá atiende a muchas personas de otros departamentos.",
   desigualdad: "La desigualdad entre departamentos es mayor en las atenciones que en las personas atendidas, y ocurre sobre todo dentro de las regiones.",
   huila: "El Huila atiende a menos personas por habitante que el país, con una tasa de atención similar a la nacional."
 };
 
 /* ---------------------------------------------------------------- relato con desplazamiento (scrollytelling) */
 const STORY = [
-  { t:"Por cada 100 personas con autismo que se esperarían, el registro de 2024 muestra unas 12 atendidas", d:"Si 1 de cada 127 personas tuviera autismo (estimación de la OMS), en Colombia habría unas 414.000. En 2024 el sistema registró 51.474 personas atendidas con diagnóstico de TEA y, con el nuevo registro de 2025, 102.066. No es una cifra exacta de necesidad, pero muestra el tamaño del reto.", sec:"ofertaatencion" },
-  { t:"El sistema llega a 20 veces más personas en Atlántico que en Guainía", d:"La prevalencia atendida va de 12 personas por 100.000 habitantes en Guainía a 240 en Atlántico. Los valores más altos están en el Caribe y el Oriente; los más bajos, en la Amazonía-Orinoquía y el Pacífico.", sec:"territorio" },
-  { t:"La atención que recibe cada persona cambia mucho de un departamento a otro", d:"La tasa de atención va de unas 360 atenciones por cada 100 personas atendidas en Antioquia a unas 2.640 en Atlántico. Parte de la diferencia puede venir de la intensidad de las terapias y parte de la forma de registrar.", sec:"intensidad" },
+  { t:"Absoluta, relativa y esperada: en 2024 se atendió a cerca de 12 de cada 100 personas esperadas", d:"Se atendió a 51.474 personas con residencia conocida (54.367 en total): 97,8 por 100.000 habitantes. Si 1 de cada 127 personas tuviera autismo (OMS), se esperarían 414.282, o 787 por 100.000. Con el registro de 2025 serían cerca de 25 de cada 100.", sec:"territorio" },
+  { t:"La distancia con lo esperado cambia mucho entre territorios", d:"La prevalencia relativa va de 12 por 100.000 habitantes en Guainía a 240 en Atlántico, frente a 787 esperadas en todos: de un 2 % a un 30 % de lo esperado.", sec:"territorio" },
+  { t:"Cobertura, frecuencia: cuánta atención recibe cada persona atendida", d:"Cada 100 personas atendidas recibieron 1.214 atenciones en el año. Va de 359 en Antioquia a 2.642 en Atlántico. Parte de la diferencia puede venir de la intensidad de las terapias y parte de la forma de registrar.", sec:"intensidad" },
+  { t:"Cobertura, cercanía: ocho de cada diez personas viven en un municipio con sede", d:"El 80,1 % de las personas atendidas vive en un municipio con sede de neuropediatría y el 88,6 % de las atenciones se presta en el departamento de residencia. La telemedicina, presente en el 15,9 % de las sedes, puede acercar el servicio donde falta.", sec:"intensidad" },
   { t:"Las sedes siguen a la demanda; el Caribe tiene más de las esperadas", d:"Donde se esperan más casos hay más sedes de neuropediatría (ρ = 0,80). Lo que se aparta de esa relación depende más de la región que de la pobreza: en el mapa, el naranja indica más sedes de las esperadas y el azul, menos.", sec:"oferta" },
   { t:"A igual oferta, más pobreza va con menos personas atendidas", d:"Según el modelo del proyecto, por cada 10 puntos más de pobreza multidimensional la prevalencia atendida es un 29 % menor, aun con la misma oferta. El acceso al diagnóstico parece depender de algo más que de las sedes.", sec:"pobreza" },
-  { t:"Una de cada cinco personas atendidas vive en un municipio sin neuropediatría", d:"El 19,9 % de las personas atendidas vive en municipios sin sede y el 11,4 % de las atenciones se presta fuera del departamento de residencia. La telemedicina, presente en el 15,9 % de las sedes, puede acercar el servicio.", sec:"movilidad" },
-  { t:"La Ley 2628 fija hitos para 2027 y estos datos pueden servir de línea de base", d:"La ley prevé reglamentar el Comité Nacional de Inclusión hacia febrero de 2027 y la política pública, la ruta de atención y la capacitación hacia agosto de 2027. Las cifras de esta app pueden apoyar el punto de partida de su seguimiento.", sec:"normativa" }
+  { t:"La Ley 2628 fija hitos para 2027 y estos datos pueden servir de línea de base", d:"La ley prevé reglamentar el Comité Nacional de Inclusión hacia febrero de 2027 y la política pública, la ruta de atención y la capacitación hacia agosto de 2027.", sec:"normativa" }
 ];
 function renderStory(body){
   const host = document.getElementById("sec-contexto"); if(host) host.classList.add("story-host");
-  sub(body, "contexto-relato", "¿Qué cuentan los datos? Un relato en siete pasos", "Desplázate: el gráfico cambia con cada paso y cada paso enlaza con su análisis completo.");
+  sub(body, "contexto-relato", "Los resultados, paso a paso", "Desplázate: el gráfico cambia con cada paso y cada paso enlaza con su análisis completo.");
   const M = D.mapa;
   const avg = a=> a.reduce((x,y)=>x+y,0)/a.length;
   const esp = DEP.reduce((a,d)=>a+d.esperados,0), p24 = DEP.reduce((a,d)=>a+d.pers24,0), p25 = DEP.reduce((a,d)=>a+d.pers25,0);
@@ -931,15 +1053,14 @@ function renderStory(body){
   const hiT = DEP.slice().sort((a,b)=> b.tasa24-a.tasa24)[0], loT = DEP.slice().sort((a,b)=> a.tasa24-b.tasa24)[0];
   const hiA = DEP.slice().sort((a,b)=> b.tasaAten-a.tasaAten)[0], loA = DEP.slice().sort((a,b)=> a.tasaAten-b.tasaAten)[0];
   const hiR = DEP.slice().sort((a,b)=> RES[b.cod]-RES[a.cod])[0], loR = DEP.slice().sort((a,b)=> RES[a.cod]-RES[b.cod])[0];
-  const hiS = DEP.slice().sort((a,b)=> b.pctSinSede-a.pctSinSede).slice(0,2);
   const dv = d=>{ const v = RES[d.cod]; return v < -0.6 ? "dv-n2" : v < -0.2 ? "dv-n1" : v <= 0.2 ? "dv-0" : v <= 0.6 ? "dv-p1" : "dv-p2"; };
   const FR = [
-    { cap:"Personas con autismo esperadas y atendidas", g: ()=> bars([["Esperadas si 1 de cada 127 tuviera autismo (OMS)", esp, "bar-nat"],["Atendidas con el registro de 2025", p25, "bar-fill bar-alt"],["Atendidas en 2024", p24, "bar-fill"]], "Personas esperadas y atendidas", v=> fmt(v)), note:"Fuente: SISPRO-RIPS 2024 y 2025; DANE; OMS. Aproximación: supone la misma frecuencia en todo el país." },
-    { cap:"Prevalencia atendida 2024 (personas por 100.000 habitantes)", g: ()=> miniMap(seqCls("tasa24"), [[hiT.cod, hiT.nombre + " " + fmt(hiT.tasa24,0)],[loT.cod, loT.nombre + " " + fmt(loT.tasa24,0)]], "Mapa de la prevalencia atendida"), legend: ()=> ramp("Menos", "Más"), note:"Colores por sextiles. Fuente: SISPRO-RIPS 2024; DANE." },
-    { cap:"Tasa de atención 2024 (atenciones por 100 personas atendidas)", g: ()=> miniMap(seqCls("tasaAten"), [[hiA.cod, hiA.nombre + " " + fmt(hiA.tasaAten,0)],[loA.cod, loA.nombre + " " + fmt(loA.tasaAten,0)]], "Mapa de la tasa de atención"), legend: ()=> ramp("Menos", "Más"), note:"Colores por sextiles. Fuente: SISPRO-RIPS 2024." },
-    { cap:"Sedes de neuropediatría frente a las esperadas por la demanda", g: ()=> miniMap(dv, [[hiR.cod, hiR.nombre],[loR.cod, loR.nombre]], "Mapa de sedes observadas frente a esperadas"), legend: ()=> el("div",{class:"story-ramp dv"},[ el("span",null,["Menos de las esperadas"]), el("i",{class:"dv-n2"}), el("i",{class:"dv-n1"}), el("i",{class:"dv-0"}), el("i",{class:"dv-p1"}), el("i",{class:"dv-p2"}), el("span",null,["Más"]) ]), note:"Demanda = población ÷ 127. Ajuste exploratorio de esta app. Fuente: REPS 13/11/2026; DANE." },
+    { cap:"Prevalencia absoluta, relativa y esperada", g: ()=> tresBarras(esp, p25, p24, DEP.reduce((a,d)=>a+d.pob,0), "Personas esperadas y atendidas, en número y por 100.000 habitantes", "story-svg"), note:"Personas con residencia conocida. Fuente: SISPRO-RIPS 2024 y 2025; DANE; OMS. Supone la misma frecuencia en todo el país." },
+    { cap:"Prevalencia relativa 2024 (por 100.000 habitantes; esperada: 787)", g: ()=> miniMap(seqCls("tasa24"), [[hiT.cod, hiT.nombre + " " + fmt(hiT.tasa24,0)],[loT.cod, loT.nombre + " " + fmt(loT.tasa24,0)]], "Mapa de la prevalencia atendida"), legend: ()=> ramp("Menos", "Más"), note:"Colores por sextiles. Fuente: SISPRO-RIPS 2024; DANE." },
+    { cap:"Frecuencia 2024 (atenciones por 100 personas atendidas)", g: ()=> miniMap(seqCls("tasaAten"), [[hiA.cod, hiA.nombre + " " + fmt(hiA.tasaAten,0)],[loA.cod, loA.nombre + " " + fmt(loA.tasaAten,0)]], "Mapa de la tasa de atención"), legend: ()=> ramp("Menos", "Más"), note:"Colores por sextiles. Fuente: SISPRO-RIPS 2024." },
+    { cap:"Personas atendidas que viven en municipios con sede (%)", pal:"teal", g: ()=> miniMap(seqCls("pctConSede"), [], "Mapa del porcentaje de personas en municipios con sede"), legend: ()=> ramp("Menos", "Más"), note:"Colores por sextiles. Fuente: SISPRO-RIPS 2024; REPS 13/11/2026." },
+    { cap:"Sedes de neuropediatría frente a las esperadas por la demanda", g: ()=> miniMap(dv, [[hiR.cod, hiR.nombre],[loR.cod, loR.nombre]], "Mapa de sedes observadas frente a esperadas"), legend: ()=> el("div",{class:"story-ramp dv"},[ el("span",null,["Menos de las esperadas"]), el("i",{class:"dv-n2"}), el("i",{class:"dv-n1"}), el("i",{class:"dv-0"}), el("i",{class:"dv-p1"}), el("i",{class:"dv-p2"}), el("span",null,["Más"]) ]), note:"Demanda = población ÷ 127. Ajuste exploratorio de este análisis. Fuente: REPS 13/11/2026; DANE." },
     { cap:"Prevalencia atendida relativa según la pobreza, a igual oferta", g: ()=> bars([10,20,30,40,50,60,70].map(v=> ["IPM de " + v + " %", 100*Math.pow(0.71, (v-10)/10), "bar-fill"]), "Prevalencia atendida relativa según el IPM", v=> fmt(v,0)), note:"Índice: 100 = departamento con IPM de 10 %. Cálculo con la razón de tasas del modelo cuasi-Poisson (0,71 por cada 10 puntos de IPM, ajustada por oferta)." },
-    { cap:"Personas atendidas que viven en municipios sin sede (%)", g: ()=> miniMap(seqCls("pctSinSede"), hiS.map(d=> [d.cod, d.nombre + " " + fmt(d.pctSinSede,0) + " %"]), "Mapa del porcentaje de personas en municipios sin sede"), legend: ()=> ramp("Menos", "Más"), note:"Colores por sextiles. Fuente: SISPRO-RIPS 2024; REPS." },
     { cap:"Hitos de la Ley 2628 de 2026", g: ()=>{
         const w = 560, h = 210, sv = svgEl(w, h, "story-svg", "Hitos de la Ley 2628"), x0 = 30, x1 = w-30, t0 = new Date(2026,7,26).getTime(), t1 = new Date(2027,7,26).getTime(), X = d=> x0 + (x1-x0)*(d.getTime()-t0)/(t1-t0);
         const hitos = [[new Date(2026,7,26),"Sanción","26 ago 2026"],[new Date(2027,1,26),"Comité Nacional de Inclusión","feb 2027"],[new Date(2027,7,26),"Política, ruta y capacitación","ago 2027"]];
@@ -950,7 +1071,7 @@ function renderStory(body){
   ];
   const wrap = el("div",{class:"story"});
   const gr = el("div",{class:"story-graphic", "aria-hidden":"true"});
-  const frames = FR.map((f,i)=>{ const fig = el("figure",{class:"story-frame" + (i===0?" on":"")},[ el("figcaption",{class:"story-cap"},[f.cap]) ]); fig.appendChild(f.g()); if(f.legend) fig.appendChild(f.legend()); fig.appendChild(el("p",{class:"story-note"},[f.note])); gr.appendChild(fig); return fig; });
+  const frames = FR.map((f,i)=>{ const fig = el("figure",{class:"story-frame" + (f.pal ? " pal-" + f.pal : "") + (i===0?" on":"")},[ el("figcaption",{class:"story-cap"},[f.cap]) ]); fig.appendChild(f.g()); if(f.legend) fig.appendChild(f.legend()); fig.appendChild(el("p",{class:"story-note"},[f.note])); gr.appendChild(fig); return fig; });
   const stepsBox = el("div",{class:"story-steps"});
   const steps = STORY.map((st,i)=>{
     const b = el("button",{type:"button", class:"finding-link"},["Ver el análisis completo"]);
@@ -995,7 +1116,7 @@ function demandWidget(body){
   sub(body, "oferta-residuo", "Lo que se aparta de la demanda: ¿riqueza o región?", "Segundo paso: para cada departamento, sedes que tiene frente a las que se esperarían por su demanda. Si la riqueza explicara la diferencia, los departamentos menos pobres estarían arriba.");
   const box2 = el("div",{class:"chart-box"}); body.appendChild(box2);
   const rd2 = reading(); body.appendChild(rd2);
-  body.appendChild(sourceLine("Fuente: REPS 13/11/2026; DANE 2024; SISPRO-RIPS 2024; OMS (1 de cada 127). Ajuste por mínimos cuadrados de ln(sedes + 0,5) sobre ln(demanda), calculado en el navegador; es un análisis exploratorio de esta app, no del libro del proyecto."));
+  body.appendChild(sourceLine("Fuente: REPS 13/11/2026; DANE 2024; SISPRO-RIPS 2024; OMS (1 de cada 127). Ajuste por mínimos cuadrados de ln(sedes + 0,5) sobre ln(demanda), calculado en el navegador; es un análisis exploratorio de este análisis, no del libro del proyecto."));
   body.appendChild(el("div",{class:"tag-row"},[confidenceTag("preliminar")]));
   const ipmBr = [10, 15, 20, 30];
   function fit(xs, ys){ const n = xs.length, mx = xs.reduce((a,b)=>a+b,0)/n, my = ys.reduce((a,b)=>a+b,0)/n; let sxy=0, sxx=0, syy=0; for(let i=0;i<n;i++){ sxy += (xs[i]-mx)*(ys[i]-my); sxx += (xs[i]-mx)**2; syy += (ys[i]-my)**2; } const b = sxy/sxx; return { a: my - b*mx, b: b, r2: sxy*sxy/(sxx*syy) }; }
@@ -1091,7 +1212,7 @@ function renderInstrumentos(){
   const w = 760, pad = { l:250, r:16, t:56 }, iw = w - pad.l - pad.r, rowH = 30, h = pad.t + I.items.length*rowH + 14;
   const AX = a=>{ for(let i=1;i<knots.length;i++){ if(a <= knots[i][0]){ const [a0,f0] = knots[i-1], [a1,f1] = knots[i]; return pad.l + iw*(f0 + (f1-f0)*(a-a0)/(a1-a0)); } } return pad.l + iw; };
   const s = svgEl(w, h, "life-svg", "Instrumentos de detección y diagnóstico según la edad");
-  const etapas = [ { a:0, b:6, t:"0 a 5 años", p:16.7 }, { a:6, b:12, t:"6 a 11 años", p:55.2 }, { a:12, b:18, t:"12 a 17 años", p:15.5 }, { a:18, b:65, t:"18 años o más", p:12.6 } ];
+  const etapas = [ { a:0, b:6, t:"0 a 5 años", p:16.7 }, { a:6, b:12, t:"6 a 11 años", p:55.2 }, { a:12, b:18, t:"12 a 17 años", p:15.4 }, { a:18, b:65, t:"18 años o más", p:12.6 } ];
   let g = "";
   etapas.forEach((e,i)=>{ g += '<rect x="'+AX(e.a)+'" y="'+(pad.t-46)+'" width="'+(AX(e.b)-AX(e.a))+'" height="'+(h-pad.t+46-8)+'" class="etapa e'+i+'"/><text x="'+((AX(e.a)+AX(e.b))/2)+'" y="'+(pad.t-32)+'" text-anchor="middle" class="axis-lab strong">'+e.t+'</text><text x="'+((AX(e.a)+AX(e.b))/2)+'" y="'+(pad.t-18)+'" text-anchor="middle" class="axis-lab">'+fmt(e.p,1)+' % de atendidos</text>'; });
   [0,1,2,3,4,6,12,18,30,65].forEach(a=>{ g += '<line x1="'+AX(a)+'" x2="'+AX(a)+'" y1="'+(pad.t-6)+'" y2="'+(h-8)+'" class="grid"/><text x="'+AX(a)+'" y="'+(pad.t-4)+'" text-anchor="middle" class="axis-lab small-lab">'+a+'</text>'; });
@@ -1118,7 +1239,7 @@ function renderInstrumentos(){
   body.appendChild(el("div",{class:"diagram-wrap life-wrap"},[s]));
   body.appendChild(legend([["tp-vig","Vigilancia del desarrollo"],["tp-tam","Tamizaje (detecta riesgo)"],["tp-apo","Apoyo al diagnóstico"],["tp-dia","Diagnóstico (lo confirma un equipo)"]]));
   body.appendChild(det);
-  setReading(det, "El cuestionario de tamizaje más usado en el mundo (M-CHAT-R/F) cubre de los 16 a los 30 meses, una franja estrecha frente al 83 % de las personas atendidas que tiene 6 años o más. Para escolares, adolescentes y adultos existen cuestionarios de tamizaje validados (SCQ, CAST, AQ en sus versiones) y para todas las edades instrumentos diagnósticos (ADOS-2, ADI-R) que debe aplicar un equipo entrenado. La reglamentación de la Ley 2628 es una oportunidad para definir qué herramienta usar en cada edad. Haz clic en una barra para ver el detalle.");
+  setReading(det, "El cuestionario de tamizaje M-CHAT-R/F cubre de los 16 a los 30 meses, una franja estrecha frente al 83 % de las personas atendidas que tiene 6 años o más. Para escolares, adolescentes y adultos existen cuestionarios de tamizaje validados (SCQ, CAST, AQ en sus versiones) y para todas las edades instrumentos diagnósticos (ADOS-2, ADI-R) que debe aplicar un equipo entrenado. La reglamentación de la Ley 2628 es una oportunidad para definir qué herramienta usar en cada edad. Haz clic en una barra para ver el detalle.");
   body.appendChild(el("p",{class:"muted small"},[I.nota]));
   body.appendChild(el("h4",{class:"chart-title"},["Guías de referencia"]));
   body.appendChild(el("ul",{class:"ref-list"}, I.guias.map(g=> el("li",null,[ el("a",{href:g.url, target:"_blank", rel:"noopener"},[g.label]) ]))));
@@ -1234,39 +1355,6 @@ function forestChart(body){
   body.appendChild(el("div",{class:"chart-box"},[ legend([["pt-sw","Razón de tasas (RR)"],["ci-sw","IC95 %"]]), fs ]));
 }
 
-/* ================================================================= 08 MOVILIDAD */
-function renderMovilidad(){
-  const body = document.getElementById("body-movilidad");
-  body.appendChild(el("p",null,["Tercer cruce: cuando no hay oferta cerca, las personas se desplazan. Dos indicadores lo aproximan: el porcentaje de atenciones que los residentes reciben en IPS de otro departamento y el porcentaje de personas atendidas que viven en municipios sin ninguna sede de neuropediatría."]));
-  sub(body, "movilidad-mapa", "Mapa de la movilidad");
-  mapWidget(body, { inds:["pctFuera","pctSinSede"], def:"pctFuera", extra: ind=> ind === "pctFuera" ? "Incluye las atenciones cuyo prestador no tiene departamento registrado." : "En el país, 10.245 de 51.474 personas atendidas (19,9 %) viven en municipios sin sede." });
-  body.appendChild(sourceLine("Fuente: SISPRO-RIPS 2024 (matriz residencia × IPS y cruce municipal con el REPS)."));
-  sub(body, "movilidad-flujos", "¿Dónde se atienden los residentes de cada departamento?", "Elige un departamento de residencia.");
-  const ctr = el("div",{class:"control-row"}); ctr.appendChild(deptSelect("sel-flujos", "Residentes de", cod=> selectDept(cod))); body.appendChild(ctr);
-  const fbox = el("div",{class:"chart-box"}); body.appendChild(fbox);
-  body.appendChild(legend([["fl-local","Propio departamento"],["fl-out","Otro departamento"],["fl-na","Sin dato del prestador"]]));
-  const frd = reading(); body.appendChild(frd);
-  function drawFlows(){
-    fbox.innerHTML = ""; fbox.appendChild(flowChart(STATE.sel));
-    const d = BY[STATE.sel], row = D.flujos[d.cod], tot = d.aten24;
-    const dest = Object.keys(row).filter(k=> k!==d.cod && k!=="-1").sort((a,b)=> row[b]-row[a]);
-    const local = row[d.cod] || 0;
-    let t = esc(d.nombre) + ": de " + fmt(tot) + " atenciones de sus residentes, " + fmt(100*local/tot,1) + " % se prestó en el propio departamento y " + fmt(d.pctFuera,1) + " % fuera o sin prestador registrado.";
-    if(dest.length){ t += " El principal destino fue " + esc(BY[dest[0]].nombre) + " (" + fmt(row[dest[0]]) + "; " + fmt(100*row[dest[0]]/tot,1) + " %)"; t += dest.length > 1 ? ", seguido de " + esc(BY[dest[1]].nombre) + " (" + fmt(row[dest[1]]) + ")." : "."; }
-    t += d.sedes === 0 ? " El departamento no tiene sedes con neuropediatría." : " Tiene " + fmt(d.sedes) + " sedes con neuropediatría (" + fmt(d.sedes100k,2) + " por 100.000).";
-    setReading(frd, t);
-  }
-  onSelect(drawFlows); drawFlows();
-  sub(body, "movilidad-balance", "Departamentos receptores y emisores", "Saldo neto = atenciones prestadas por las IPS del departamento menos atenciones recibidas por sus residentes.");
-  body.appendChild(balanceChart());
-  const brd = reading(); body.appendChild(brd);
-  setReading(brd, "Bogotá D.C. es el gran receptor: sus IPS prestaron 20.703 atenciones más que las recibidas por sus residentes y el 29 % de lo que prestaron fue para personas de otros departamentos o con residencia desconocida. Atlántico y Valle del Cauca también reciben más de lo que envían. Entre los emisores netos están departamentos vecinos de esos polos (Cundinamarca y Boyacá cerca de Bogotá; Magdalena y Bolívar cerca de Atlántico; Risaralda cerca de Valle del Cauca), lo que sugiere que la cercanía geográfica pesa además de la falta de oferta.");
-  sub(body, "movilidad-cruce", "¿Hay menos desplazamiento donde hay más oferta?");
-  body.appendChild(howTo("eje horizontal: sedes por 100.000 habitantes; eje vertical: el indicador de movilidad elegido. Si la oferta local evita desplazamientos, los puntos deberían bajar hacia la derecha. El color indica la pobreza (IPM)."));
-  scatterWidget(body, { x:"sedes100k", ys:["pctFuera","pctSinSede"], colorBy:"ipm", labels:["94","99","97","25","15","70","11"],
-    quad:{ hh:"Más oferta y más desplazamiento", lh:"Menos oferta y más desplazamiento", ll:"Menos oferta y menos desplazamiento", hl:"Más oferta y menos desplazamiento" },
-    extra:(yk, reg)=> reg === "todas" && yk === "pctFuera" ? "Donde hay menos sedes, más atenciones se prestan fuera del departamento; y donde la gente debe salir, se atiende a menos personas por habitante." : "" });
-}
 
 function dataTable(){
   const cols = [
@@ -1509,7 +1597,7 @@ function renderDesigualdad(){
   setReading(erd, "Entre 2019 y 2024 la desigualdad entre departamentos (Gini y Theil) subió y bajó sin una tendencia clara y fue la más baja en 2024. Lo que sí cambió es la ventaja de los departamentos menos pobres: en 2019-2020 concentraban más la atención y desde 2022 esa ventaja es casi nula, porque la atención creció en todo el país. El punto naranja de 2025 no se compara por el cambio en la forma de reportar.");
 
   sub(body, "desigualdad-cruces", "Resumen de los cruces", "Correlaciones de Spearman entre departamentos (n = 33) de los cruces de la segunda parte. Haz clic en una barra para ir a su análisis.");
-  const cr = C.correlaciones.map((c,i)=> Object.assign({ sec: ["ofertaatencion","intensidad","pobreza","pobreza","pobreza","movilidad","movilidad"][i] }, c));
+  const cr = C.correlaciones.map((c,i)=> Object.assign({ sec: ["ofertaatencion","intensidad","pobreza","pobreza","pobreza","intensidad","ofertaatencion"][i] }, c));
   const cw = 640, cH = 28, cpad = { l:330, r:60, t:8 }, ch = cpad.t + cr.length*cH + 6, ciw = cw - cpad.l - cpad.r, cx0 = cpad.l + ciw/2;
   const cs = svgEl(cw, ch, "", "Correlaciones de Spearman");
   cs.innerHTML = '<line x1="'+cx0+'" x2="'+cx0+'" y1="'+cpad.t+'" y2="'+ch+'" class="axis"/>';
@@ -1563,7 +1651,7 @@ function renderHuila(){
 /* ================================================================= 14 GLOSARIO y 15 REFERENCIAS */
 function renderGlosario(){
   const body = document.getElementById("body-glosario");
-  body.appendChild(el("p",null,["Definiciones breves de los términos que aparecen en la app. En el texto, los términos subrayados con puntos muestran esta definición al pasar el cursor o el foco del teclado."]));
+  body.appendChild(el("p",null,["Definiciones breves de los términos que aparecen en el documento. En el texto, los términos subrayados con puntos muestran esta definición al pasar el cursor o el foco del teclado."]));
   const dl = el("dl",{class:"glossary"});
   C.glosario.slice().sort((a,b)=> a.t.localeCompare(b.t,"es")).forEach(g=>{
     dl.appendChild(el("dt",{id:"glos-"+g.id},[g.t]));
@@ -1635,7 +1723,7 @@ function renderNormativa(){
 
   sub(body, "normativa-ruta", "Del tamizaje al diagnóstico: dónde interviene cada norma", "Esquema de lectura del equipo del proyecto. Pasa el cursor o el foco por cada paso.");
   const steps = [
-    { t:"Tamizaje", s:"Según la edad", d:"Ninguna de las normas revisadas define con qué herramienta tamizar ni a qué edades; el artículo 12 de la ley solo pide propender por la detección temprana (ver «Herramientas por edad»).", norma:"Sin norma específica" },
+    { t:"Tamizaje", s:"Según la edad", d:"El artículo 12 de la Ley 2628 orienta la detección temprana; la ley no detalla instrumentos ni edades (ver «Herramientas por edad»).", norma:"Ley 2628, art. 12" },
     { t:"Remisión", s:"Evaluaciones pediátricas", d:"Ley 2628, art. 12: se propenderá por la detección y atención temprana mediante la remisión de los profesionales en las evaluaciones pediátricas periódicas.", norma:"Ley 2628, art. 12" },
     { t:"Diagnóstico", s:"Equipo interdisciplinario", d:"Ley 2628, arts. 6 y 9: actualizar el protocolo clínico de diagnóstico, tratamiento y ruta de atención de niños, niñas y adolescentes con TEA. Los adultos no tienen una ruta diagnóstica explícita.", norma:"Ley 2628, arts. 6 y 9" },
     { t:"Certificación", s:"2 meses (voluntaria)", d:"Ley 2628, art. 7: Certificado Único de Trastorno del Neurodesarrollo en dos meses desde que la EPS recibe el diagnóstico; no puede usarse como barrera de acceso.", norma:"Ley 2628, art. 7" },
@@ -1713,7 +1801,7 @@ function renderNormativa(){
     });
   }
   drawArts();
-  body.appendChild(callout("¿Por qué importan los datos de esta app para la ley? La ruta de atención (art. 13), la capacitación del personal de atención primaria (art. 14) y el seguimiento estadístico (art. 8) necesitan saber dónde y con qué oferta se atiende hoy el TEA. El 19,9 % de las personas atendidas vive en municipios sin sede de neuropediatría y solo el 15,9 % de las sedes ofrece telemedicina.", "callout-info"));
+  body.appendChild(callout("¿Por qué importan los datos de este análisis para la ley? La ruta de atención (art. 13), la capacitación del personal de atención primaria (art. 14) y el seguimiento estadístico (art. 8) necesitan saber dónde y con qué oferta se atiende hoy el TEA. El 19,9 % de las personas atendidas vive en municipios sin sede de neuropediatría y solo el 15,9 % de las sedes ofrece telemedicina.", "callout-info"));
 
   const P = N.pnsm;
   body = document.getElementById("body-paralelo");
@@ -1787,7 +1875,13 @@ function renderMetodologia(){
   body.appendChild(g);
   body.appendChild(el("p",null,[ el("strong",null,["Diseño. "]), M.unidad ]));
   body.appendChild(el("h4",{class:"chart-title", id:"metodologia-codigos"},["¿Qué cuenta el código F84?"]));
+  body.appendChild(cie10List());
   body.appendChild(el("p",null,[M.codigos]));
+  body.appendChild(el("h4",{class:"chart-title", id:"metodologia-totales"},["¿Por qué hay varios totales?"]));
+  const tt = el("table",{class:"cmp-table"}), ttb = el("tbody");
+  tt.appendChild(el("thead",null,[ el("tr",null,["Total","Cifra","¿Para qué se usa?"].map(x=> el("th",{scope:"col"},[x]))) ]));
+  M.totales.forEach(x=> ttb.appendChild(el("tr",null,[ el("th",{scope:"row"},[x.k]), el("td",null,[x.v]), el("td",null,[x.d]) ]))); tt.appendChild(ttb);
+  body.appendChild(el("div",{class:"table-wrap"},[tt]));
   body.appendChild(el("h4",{class:"chart-title", id:"metodologia-definiciones"},["¿Cómo se calcula cada medida?"]));
   const dt = el("table",{class:"cmp-table def-table"});
   dt.appendChild(el("thead",null,[ el("tr",null,[ el("th",{scope:"col"},["Medida"]), el("th",{scope:"col"},["Fórmula"]), el("th",{scope:"col"},["¿Qué indica?"]) ]) ]));
@@ -1799,7 +1893,7 @@ function renderMetodologia(){
   M.limitaciones.forEach(l=> ul.appendChild(el("li",null,[ el("span",null,[l]) ])));
   body.appendChild(ul);
   body.appendChild(el("h4",{class:"chart-title"},["Reproducibilidad"]));
-  body.appendChild(el("p",null,["Las cifras por departamento de esta app se generan con scripts/build_data.py directamente desde el libro de cálculo del proyecto, sin digitación. Los índices, modelos e intervalos provienen del código de Python del proyecto (pandas, SciPy, statsmodels; semilla del bootstrap 20261113). El informe sigue la guía RECORD para estudios con datos rutinarios y PRISMA 2020 para la revisión."]));
+  body.appendChild(el("p",null,["Las cifras por departamento de este análisis se generan con scripts/build_data.py directamente desde el libro de cálculo del proyecto, sin digitación. Los índices, modelos e intervalos provienen del código de Python del proyecto (pandas, SciPy, statsmodels; semilla del bootstrap 20261113). El informe sigue la guía RECORD para estudios con datos rutinarios y PRISMA 2020 para la revisión."]));
   body.appendChild(el("p",null,["Uso de los datos: solo datos agregados por departamento, de acceso público, sin variables que identifiquen a personas ni a profesionales (investigación sin riesgo, artículo 11 de la Resolución 8430 de 1993)."]));
   body.appendChild(el("h4",{class:"chart-title", id:"metodologia-equipo"},["Equipo del proyecto"]));
   body.appendChild(el("p",null,["Proyecto «" + C.meta.proyecto + "», " + C.meta.institucion + ". Análisis preliminar de datos públicos y del marco normativo; la revisión sistemática está en curso."]));
@@ -1856,7 +1950,8 @@ function buildSearchIndex(){
     (s.subs||[]).forEach(su=> idx.push({ type:"Subsección", label:su.label, detail:s.title, sec:s.id, anchor:su.id })); });
   DEP.forEach(d=> idx.push({ type:"Departamento", label:d.nombre, detail:d.region + " · prevalencia atendida 2024 " + fmt(d.tasa24,1) + " por 100.000 · " + fmt(d.sedes) + " sedes", sec:"territorio", anchor:"territorio-mapa", dept:d.cod }));
   INDICATORS.forEach(i=> idx.push({ type:"Indicador", label:i.label, detail:"Indicador por departamento", sec:"territorio", anchor:"territorio-tabla" }));
-  C.hallazgos.forEach(h=> idx.push({ type:"Hallazgo", label:h.t, detail:h.d, sec:h.sec, anchor:"sec-"+h.sec }));
+  C.cie10.forEach(x=> idx.push({ type:"CIE-10", label:x.c + " " + x.n, detail:"Código incluido en las consultas", sec:"contexto", anchor:"resumen-metodos" }));
+  C.hallazgos.forEach(h=> idx.push({ type:"Resultado", label:h.t, detail:h.d, sec:h.sec, anchor:"sec-"+h.sec }));
   C.glosario.forEach(g=> idx.push({ type:"Glosario", label:g.t, detail:g.d, sec:"glosario", anchor:"glos-"+g.id }));
   C.normativa.ley2628.articulos.forEach(a=> idx.push({ type:"Ley 2628", label:a.art + " · " + a.tema, detail:a.d, sec:"normativa", anchor:"normativa-ley" }));
   C.normativa.pnsm.ejes.forEach(e=> idx.push({ type:"Política de Salud Mental", label:"Eje " + e.n + ". " + e.nombre, detail:"PNSM 2024-2033", sec:"paralelo", anchor:"normativa-pnsm" }));
@@ -1976,8 +2071,8 @@ function initScrollTop(){
 }
 function renderFooter(){
   document.getElementById("year").textContent = "2026";
-  document.getElementById("footer-disclaimer").textContent = C.aviso + " Esta app describe datos administrativos agregados; no ofrece orientación clínica individual.";
-  document.getElementById("footer-author").innerHTML = "Equipo: " + C.equipo.map(p=> "<strong>" + esc(p.nombre) + "</strong> (" + esc(p.rol) + ")").join(", ") + ". App: " + esc(C.meta.autor) + ", " + esc(C.meta.autorCred.charAt(0).toLowerCase() + C.meta.autorCred.slice(1)) + " (<a href='" + C.meta.orcid + "' target='_blank' rel='noopener'>ORCID</a>). Proyecto: " + esc(C.meta.proyecto) + ", <a href='" + C.meta.uninavarraUrl + "' target='_blank' rel='noopener'>" + esc(C.meta.institucion) + "</a>.";
+  document.getElementById("footer-disclaimer").textContent = C.aviso + " Este análisis describe datos administrativos agregados; no ofrece orientación clínica individual.";
+  document.getElementById("footer-author").innerHTML = "Equipo: " + C.equipo.map(p=> "<strong>" + esc(p.nombre) + "</strong> (" + esc(p.rol) + ")").join(", ") + ". Elaboración: " + esc(C.meta.autor) + ", " + esc(C.meta.autorCred.charAt(0).toLowerCase() + C.meta.autorCred.slice(1)) + " (<a href='" + C.meta.orcid + "' target='_blank' rel='noopener'>ORCID</a>). Proyecto: " + esc(C.meta.proyecto) + ", <a href='" + C.meta.uninavarraUrl + "' target='_blank' rel='noopener'>" + esc(C.meta.institucion) + "</a>.";
   const cc = document.getElementById("cc-badge");
   cc.href = "https://creativecommons.org/publicdomain/zero/1.0/deed.es"; cc.textContent = "CC0 1.0";
   document.getElementById("footer-license-text").textContent = "Textos, gráficos y código bajo dedicación al dominio público CC0 1.0 Universal; se agradece citar la fuente. Los datos de origen pertenecen a sus fuentes oficiales (SISPRO, REPS, DANE).";
@@ -1989,13 +2084,12 @@ function boot(){
   buildAccordion();
   renderContexto();
   renderCausal();
-  renderNacional();
   renderTerritorio();
   renderIntensidad();
+  renderNacional();
   renderOferta();
   renderOfertaAtencion();
   renderPobreza();
-  renderMovilidad();
   renderDesigualdad();
   renderHuila();
   renderInstrumentos();
