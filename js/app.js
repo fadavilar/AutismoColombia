@@ -34,6 +34,10 @@ function fmt(n, dec){
   const d = dec === undefined ? 0 : dec;
   return Number(n).toLocaleString("es-CO", { minimumFractionDigits: d, maximumFractionDigits: d }).replace(/^-/, "−");
 }
+/* Los gráficos se dibujan a la medida de la pantalla: VW(escritorio, móvil) elige dimensiones. */
+const MOB = ()=> window.innerWidth <= 640;
+const VW = (d, m)=> MOB() ? m : d;
+function compact(v){ return v >= 1e6 ? fmt(v/1e6,1) + " M" : v >= 1e4 ? fmt(v/1e3,0) + " mil" : fmt(v); }
 function svgEl(w, h, cls, label){
   const s = document.createElementNS(SVGNS, "svg");
   s.setAttribute("viewBox", "0 0 " + w + " " + h);
@@ -90,27 +94,50 @@ function downloadCSV(filename, header, rows){
 /* ---------------------------------------------------------------- tooltip compartido */
 const tip = el("div",{ class:"chart-tip", role:"tooltip", hidden:"" });
 document.body.appendChild(tip);
+let lastPointer = "mouse";
+document.addEventListener("pointerdown", e=>{ lastPointer = e.pointerType || "mouse"; if(!tip.hidden && tip.classList.contains("sheet") && !tip.contains(e.target) && !(e.target.closest && e.target.closest("[data-tip]"))) closeTip(); }, true);
+const useSheet = ()=> lastPointer === "touch" || MOB();
 function showTip(html, evt, anchor){
+  if(tip.classList.contains("sheet")) return;
   tip.innerHTML = html; tip.hidden = false;
   let x, y;
   if(evt && evt.clientX !== undefined && evt.type !== "focus"){ x = evt.clientX; y = evt.clientY; }
   else if(anchor){ const r = anchor.getBoundingClientRect(); x = r.left + r.width/2; y = r.top; }
   else return;
   const tw = tip.offsetWidth, th = tip.offsetHeight;
-  let left = x + 14, top = y - th - 12;
-  if(left + tw > window.innerWidth - 8) left = x - tw - 14;
+  let left = x + 16, top = y - th - 14;
+  if(left + tw > window.innerWidth - 8) left = x - tw - 16;
   if(left < 8) left = 8;
-  if(top < 8) top = y + 18;
+  if(top < 8) top = Math.min(y + 20, window.innerHeight - th - 8);
   tip.style.left = left + "px"; tip.style.top = top + "px";
 }
-function hideTip(){ tip.hidden = true; }
+/* En pantallas táctiles la ficha se fija abajo y no se cierra al desplazarse ni al redibujar el gráfico. */
+function pinTip(html){
+  tip.classList.add("sheet"); tip.style.left = ""; tip.style.top = "";
+  tip.innerHTML = html; tip.hidden = false;
+  const b = el("button",{type:"button", class:"tip-close", "aria-label":"Cerrar la ficha"},["×"]);
+  b.addEventListener("click", closeTip); tip.appendChild(b);
+}
+function closeTip(){ tip.classList.remove("sheet"); tip.hidden = true; }
+function hideTip(){ if(!tip.classList.contains("sheet")) tip.hidden = true; }
 function bindTip(node, htmlFn){
-  node.addEventListener("mousemove", e=> showTip(htmlFn(), e));
+  node.setAttribute("data-tip","1");
+  node.addEventListener("mousemove", e=>{ if(lastPointer !== "touch" && !MOB()) showTip(htmlFn(), e); });
   node.addEventListener("mouseleave", hideTip);
-  node.addEventListener("focus", e=> showTip(htmlFn(), e, node));
+  node.addEventListener("focus", e=>{ if(node.matches(":focus-visible") && lastPointer !== "touch" && !MOB()) showTip(htmlFn(), e, node); });
   node.addEventListener("blur", hideTip);
+  node.addEventListener("click", e=>{ if(useSheet()) setTimeout(()=> pinTip(htmlFn()), 0); else setTimeout(()=> showTip(htmlFn(), e), 0); });
 }
 window.addEventListener("scroll", hideTip, { passive:true });
+/* Resaltado conjunto: al pasar por un departamento se destaca en todos los gráficos visibles. */
+let hovCod = null;
+function hoverDept(cod){
+  if(cod === hovCod) return;
+  if(hovCod) document.querySelectorAll('.hov').forEach(n=> n.classList.remove("hov"));
+  hovCod = cod;
+  if(cod) document.querySelectorAll('[data-cod="'+cod+'"]').forEach(n=> n.classList.add("hov"));
+}
+document.addEventListener("mouseover", e=>{ const t = e.target.closest && e.target.closest("[data-cod]"); hoverDept(t ? t.getAttribute("data-cod") : null); });
 
 /* ---------------------------------------------------------------- estado compartido */
 const STATE = { sel: "41", listeners: [] };
@@ -260,7 +287,12 @@ function spearman(x, y){ return pearson(ranks(x), ranks(y)); }
 function strength(r){ const a = Math.abs(r); return a >= 0.6 ? "fuerte" : a >= 0.4 ? "moderada" : a >= 0.2 ? "débil" : "prácticamente nula"; }
 function joinNames(arr){ if(arr.length <= 1) return arr.join(""); return arr.slice(0,-1).join(", ") + " y " + arr[arr.length-1]; }
 function reading(){ return el("div",{class:"reading", "aria-live":"polite"}); }
-function setReading(node, html){ node.innerHTML = '<span class="reading-k">Lectura del gráfico</span><p>' + html + '</p>'; }
+function setReading(node, html){
+  // una idea por párrafo: la primera frase es la conclusión y las demás se agrupan de a dos
+  const fr = html.replace(/([.?!])\s+(?=[A-ZÁÉÍÓÚÑ¿«])/g, "$1\u0001").split("\u0001"), rest = [];
+  for(let i=1;i<fr.length;i+=2) rest.push(fr.slice(i,i+2).join(" "));
+  node.innerHTML = '<span class="reading-k">Lectura del gráfico</span><p class="lead">' + fr[0] + '</p>' + (rest.length ? '<div class="reading-body' + (rest.length < 2 ? ' one' : '') + '">' + rest.map(x=> "<p>" + x + "</p>").join("") + "</div>" : "");
+}
 function howTo(text){ return el("p",{class:"howto"},[ el("strong",null,["¿Cómo leerlo? "]), text.charAt(0).toUpperCase() + text.slice(1) ]); }
 function legend(items){ return el("div",{class:"legend"}, items.map(i=> el("span",{class:"legend-item"},[ el("span",{class:"legend-sw " + i[0]}), i[1] ]))); }
 function regionChips(onPick, label){ return chips([{id:"todas",label:"Todas las regiones"}].concat(REGION_ORDER.map(r=>({id:r,label:r}))), "todas", onPick, label || "Filtrar por región"); }
@@ -287,6 +319,7 @@ function quantileBreaks(vals, k){
   for(let i=1;i<k;i++) out.push(v[Math.min(v.length-1, Math.floor(i*v.length/k))]);
   return out;
 }
+function pathCenter(path){ const n = path.match(/-?\d+(\.\d+)?/g).map(Number); let x = 0, y = 0, k = 0; for(let i=0;i+1<n.length;i+=2){ x += n[i]; y += n[i+1]; k++; } return [x/k, y/k]; }
 function classOf(v, br){ if(v === null || v === undefined) return -1; let c = 0; while(c < br.length && v >= br[c]) c++; return c; }
 function deptCardHTML(d, extra){
   return "<h5>"+esc(d.nombre)+"</h5><p class='tip-region'>"+esc(d.region)+" · IPM "+fmt(d.ipm,1)+" %</p>" +
@@ -311,8 +344,10 @@ function renderHero(){
     strip.appendChild(el("li",null,[b]));
   });
   document.getElementById("hero-lede").after(strip);
+  const top = el("div",{class:"hero-top"}), left = el("div",{class:"hero-left"}), right = el("div",{class:"hero-right"}), h1 = document.getElementById("hero-title");
+  h1.before(top); left.appendChild(h1); left.appendChild(document.getElementById("hero-lede")); right.appendChild(document.querySelector(".wip-banner")); right.appendChild(document.getElementById("byline")); top.appendChild(left); top.appendChild(right);
   document.getElementById("hero-period").textContent = m.corte;
-  document.getElementById("byline").innerHTML = "<strong>Equipo UNINAVARRA:</strong> " + C.equipo.map(p=> esc(p.nombre) + " <span class='role'>(" + esc(p.rol) + ")</span>").join(" · ") + "<br>" + esc(m.institucion) + " · " + esc(m.version);
+  document.getElementById("byline").innerHTML = "<strong>Equipo UNINAVARRA</strong><ul class='byline-list'>" + C.equipo.map(p=> "<li>" + esc(p.nombre) + "<span class='role'>" + esc(p.rol) + "</span></li>").join("") + "</ul><span class='byline-inst'>" + esc(m.institucion) + " · " + esc(m.version) + "</span>";
   document.getElementById("wip-text").textContent = C.aviso;
   const g = document.getElementById("stat-grid");
   C.stats.forEach(s=> g.appendChild(el("div",{class:"stat-card"},[ el("div",{class:"value"},[s.value]), el("div",{class:"label"},[s.label]), el("div",{class:"detail"},[s.detail]) ])));
@@ -331,13 +366,14 @@ function mapWidget(body, opts){
   const shapes = {};
   DEP.forEach(d=>{
     const p = document.createElementNS(SVGNS,"path");
-    p.setAttribute("d", M.paths[d.cod]); p.setAttribute("class","dpto"); p.setAttribute("tabindex","0");
+    p.setAttribute("d", M.paths[d.cod]); p.setAttribute("data-cod", d.cod); p.setAttribute("class","dpto"); p.setAttribute("tabindex","0");
     p.setAttribute("role","button"); p.setAttribute("aria-label", d.nombre);
     bindTip(p, ()=> deptCardHTML(d, "<p class='tip-ind'>"+esc(IND[ind].label)+": <b>"+vfmt(d,ind)+"</b> · puesto "+rankOf(d.cod,ind)+" de "+DEP.filter(x=>x[ind]!==null).length+"</p>"));
     p.addEventListener("click", ()=> selectDept(d.cod));
     p.addEventListener("keydown", e=>{ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); selectDept(d.cod); } });
     svg.appendChild(p); shapes[d.cod] = p;
   });
+  const labG = document.createElementNS(SVGNS,"g"); labG.setAttribute("class","map-labels"); svg.appendChild(labG);
   mapBox.appendChild(svg);
   const leg = el("div",{class:"map-legend"}); mapBox.appendChild(leg);
   wrap.appendChild(mapBox);
@@ -357,12 +393,15 @@ function mapWidget(body, opts){
     for(let i=0;i<6;i++) row.appendChild(el("span",{class:"legend-step"},[ el("span",{class:"legend-sw q"+i}), fmt(edges[i], I.dec) + "–" + fmt(edges[i+1], I.dec) ]));
     leg.appendChild(row);
     leg.appendChild(el("span",{class:"legend-nac"},["Colores por sextiles: 6 grupos con igual número de departamentos; la escala va de valores bajos (izquierda) a altos (derecha)." + (I.nac !== undefined ? " Nacional: " + fmt(I.nac, I.dec) + I.unit + "." : "")]));
+    // rótulos: mayor, menor y seleccionado
+    const mk = [list.reduce((a,b)=> b[ind] > a[ind] ? b : a), list.reduce((a,b)=> b[ind] < a[ind] ? b : a), BY[STATE.sel]].filter((d,i,a)=> d[ind] !== null && a.indexOf(d) === i);
+    labG.innerHTML = mk.map(d=>{ const c = pathCenter(M.paths[d.cod]), x = Math.max(70, Math.min(M.w-70, c[0])); return '<text x="'+x.toFixed(1)+'" y="'+c[1].toFixed(1)+'" text-anchor="middle" class="map-lab">'+esc(d.nombre)+'</text><text x="'+x.toFixed(1)+'" y="'+(c[1]+VW(19,27)).toFixed(1)+'" text-anchor="middle" class="map-lab map-val">'+fmt(d[ind], I.dec)+'</text>'; }).join("");
     // lectura
     const hi = list.reduce((a,b)=> b[ind] > a[ind] ? b : a), lo = list.reduce((a,b)=> b[ind] < a[ind] ? b : a);
     const top = list.filter(d=> classOf(d[ind], br) === 5).sort((a,b)=> b[ind]-a[ind]);
     const regs = {}; top.forEach(d=> regs[d.region] = (regs[d.region]||0) + 1);
     const regTxt = Object.keys(regs).sort((a,b)=> regs[b]-regs[a]).map(r=> r + " (" + regs[r] + ")");
-    let t = "<b>" + esc(I.label) + ".</b> El valor más alto es el de " + esc(hi.nombre) + " (" + vfmt(hi,ind) + ") y el más bajo el de " + esc(lo.nombre) + " (" + vfmt(lo,ind) + ")";
+    let t = "<b>" + esc(I.label) + ":</b> el valor más alto es el de " + esc(hi.nombre) + " (" + vfmt(hi,ind) + ") y el más bajo el de " + esc(lo.nombre) + " (" + vfmt(lo,ind) + ")";
     if(lo[ind] > 0) t += ", una razón de " + fmt(hi[ind]/lo[ind],1) + " veces";
     t += ". La mediana de los departamentos es " + fmt(median(list.map(d=>d[ind])), I.dec) + I.unit;
     if(I.nac !== undefined){ const n = list.filter(d=> d[ind] > I.nac).length; t += " y " + n + " de " + list.length + " superan el valor nacional (" + fmt(I.nac, I.dec) + I.unit + ")"; }
@@ -383,7 +422,7 @@ function mapWidget(body, opts){
       ["% en municipios sin sede", fmt(d.pctSinSede,1) + " %"], ["IPM 2024", fmt(d.ipm,1) + " %"]
     ];
     const dl = el("dl",{class:"kv"});
-    rows.forEach(r=>{ dl.appendChild(el("dt",null,[r[0]])); dl.appendChild(el("dd",null,[r[1]])); });
+    rows.forEach(r=> dl.appendChild(el("div",{class:"kv-item"},[ el("dt",null,[r[0]]), el("dd",null,[r[1]]) ])));
     card.appendChild(dl);
     if(d.sedes === 0) card.appendChild(callout("Sin sedes con neuropediatría habilitadas en el REPS.", "callout-warn"));
     if(d.pers24 < 30) card.appendChild(el("p",{class:"muted small"},["Conteo pequeño: interpretar las tasas con cautela."]));
@@ -405,18 +444,18 @@ function rankingWidget(body, opts){
   function draw(){
     const I = IND[ind];
     const list = DEP.filter(d=> (reg === "todas" || d.region === reg) && d[ind] !== null).sort((a,b)=> b[ind]-a[ind]);
-    const w = 640, rowH = 22, pad = { l:150, r:58, t:22, b:8 }, h = pad.t + list.length*rowH + pad.b;
+    const w = VW(760,400), rowH = VW(26,34), pad = { l:VW(160,158), r:VW(66,60), t:VW(46,42), b:8 }, h = pad.t + list.length*rowH + pad.b;
     const mx = niceMax(Math.max(...list.map(d=>d[ind]), I.nac || 0)), iw = w - pad.l - pad.r;
     const s = svgEl(w, h, "rank-svg", "Ranking por " + I.label);
     let bg = "";
-    ticks(mx).forEach(t=>{ const x = pad.l + iw*t/mx; bg += '<line x1="'+x+'" x2="'+x+'" y1="'+(pad.t-6)+'" y2="'+(h-pad.b)+'" class="grid"/><text x="'+x+'" y="'+(pad.t-10)+'" class="axis-lab" text-anchor="middle">'+fmt(t, mx<10?1:0)+'</text>'; });
-    bg += '<text x="'+(pad.l + iw/2)+'" y="9" class="axis-title" text-anchor="middle">'+esc(I.label)+'</text>';
+    ticks(mx).filter((t,i)=> !MOB() || i%2===0).forEach(t=>{ const x = pad.l + iw*t/mx; bg += '<line x1="'+x+'" x2="'+x+'" y1="'+(pad.t-6)+'" y2="'+(h-pad.b)+'" class="grid"/><text x="'+x+'" y="'+(pad.t-10)+'" class="axis-lab" text-anchor="middle">'+fmt(t, mx<10?1:0)+'</text>'; });
+    bg += '<text x="'+(VW(pad.l + iw/2, w/2))+'" y="13" class="axis-title" text-anchor="middle">'+esc(VW(I.label, I.short.charAt(0).toUpperCase()+I.short.slice(1)))+'</text>';
     s.innerHTML = bg; bars = {};
     list.forEach((d,i)=>{
       const y = pad.t + i*rowH, bw = iw * d[ind]/mx;
-      const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g rank-row" + (STATE.sel===d.cod?" sel":"")); g.setAttribute("role","button"); g.setAttribute("aria-label", d.nombre + ": " + vfmt(d,ind));
-      g.innerHTML = '<rect x="0" y="'+y+'" width="'+w+'" height="'+rowH+'" class="row-hit"/><text x="'+(pad.l-8)+'" y="'+(y+15)+'" class="axis-lab" text-anchor="end">'+esc(d.nombre)+'</text>' +
-        '<rect x="'+pad.l+'" y="'+(y+4)+'" width="'+Math.max(bw,1)+'" height="'+(rowH-8)+'" rx="3" class="rg-bar '+REGION_CLASS[d.region]+'"/><text x="'+(pad.l+bw+5)+'" y="'+(y+15)+'" class="bar-val">'+fmt(d[ind], I.dec)+'</text>';
+      const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("data-cod", d.cod); g.setAttribute("class","bar-g rank-row" + (STATE.sel===d.cod?" sel":"")); g.setAttribute("role","button"); g.setAttribute("aria-label", d.nombre + ": " + vfmt(d,ind));
+      g.innerHTML = '<rect x="0" y="'+y+'" width="'+w+'" height="'+rowH+'" class="row-hit"/><text x="'+(pad.l-8)+'" y="'+(y+rowH/2+5)+'" class="axis-lab" text-anchor="end">'+esc(d.nombre)+'</text>' +
+        '<rect x="'+pad.l+'" y="'+(y+4)+'" width="'+Math.max(bw,1)+'" height="'+(rowH-8)+'" rx="3" class="rg-bar '+REGION_CLASS[d.region]+'"/><text x="'+(pad.l+bw+5)+'" y="'+(y+rowH/2+5)+'" class="bar-val">'+fmt(d[ind], I.dec)+'</text>';
       bindTip(g, ()=> deptCardHTML(d));
       g.addEventListener("click", ()=> selectDept(d.cod));
       g.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); selectDept(d.cod); } });
@@ -449,11 +488,10 @@ const SIZES = {
 };
 function niceRef(v){ const p = Math.pow(10, Math.floor(Math.log10(v))); const m = v/p; return (m>=5?5:m>=2?2:1)*p; }
 function sizeLegendFor(key, maxV, rFn){
-  const S = SIZES[key], vals = [niceRef(maxV/12), niceRef(maxV/3), niceRef(maxV)].filter((v,i,a)=> a.indexOf(v)===i);
-  const w = 360, h = 58;
-  const s = svgEl(w, h, "size-legend", "Tamaño de las burbujas: " + S.label);
-  let g = '<text x="0" y="12" class="axis-lab strong">Tamaño de la burbuja = '+esc(S.label)+'</text>', x = 6;
-  vals.forEach(v=>{ const r = rFn(v); g += '<circle cx="'+(x+r)+'" cy="'+(50-r)+'" r="'+r+'" class="size-ref"/><text x="'+(x+2*r+4)+'" y="48" class="axis-lab">'+esc(S.f(v))+'</text>'; x += 2*r + 8 + S.f(v).length*5.6; });
+  const S = SIZES[key], vals = VW([niceRef(maxV/12), niceRef(maxV/3), niceRef(maxV)], [niceRef(maxV/6), niceRef(maxV)]).filter((v,i,a)=> a.indexOf(v)===i), cw = VW(8,9);
+  let g = '<text x="0" y="15" class="axis-lab strong">Tamaño = '+esc(S.label)+'</text>', x = 4;
+  vals.forEach(v=>{ const r = rFn(v); g += '<circle cx="'+(x+r)+'" cy="'+(82-r)+'" r="'+r+'" class="size-ref"/><text x="'+(x+2*r+6)+'" y="80" class="axis-lab">'+esc(S.f(v))+'</text>'; x += 2*r + 22 + S.f(v).length*cw; });
+  const s = svgEl(Math.max(VW(440,400), x), 88, "size-legend", "Tamaño de las burbujas: " + S.label);
   s.innerHTML = g;
   return s;
 }
@@ -482,12 +520,12 @@ function scatterWidget(body, o){
     const all = DEP.filter(d=> d[o.x] !== null && d[yk] !== null);
     const inR = d=> reg === "todas" || d.region === reg;
     const maxS = Math.max(...all.map(SZ.val));
-    const rFn = v=> Math.max(2.5, 24*Math.sqrt(v/maxS));
+    const rFn = v=> Math.max(VW(4,4), VW(27,17)*Math.sqrt(v/maxS));
     slw.innerHTML = ""; slw.appendChild(sizeLegendFor(sk, maxS, rFn));
     const refX = X.nac !== undefined ? X.nac : median(all.map(d=>d[o.x])), refY = Y.nac !== undefined ? Y.nac : median(all.map(d=>d[yk]));
     const refXLab = X.nac !== undefined ? "nacional " + fmt(refX, X.dec) : "mediana " + fmt(refX, X.dec);
     const refYLab = Y.nac !== undefined ? "nacional " + fmt(refY, Y.dec) : "mediana " + fmt(refY, Y.dec);
-    const w = 680, h = o.std ? 440 : 420, pad = { l: o.std ? 70 : 58, r:24, t:22, b: o.std ? 62 : 46 }, iw = w-pad.l-pad.r, ih = h-pad.t-pad.b;
+    const w = VW(820,400), h = VW(540,430), pad = { l: VW(o.std ? 84 : 66, o.std ? 88 : 62), r:VW(24,14), t:22, b: VW(o.std ? 64 : 50, o.std ? 70 : 54) }, iw = w-pad.l-pad.r, ih = h-pad.t-pad.b;
     let PX, PY, zX = null, zY = null;
     const s = svgEl(w, h, "scatter-svg", "Dispersión de " + X.short + " y " + Y.short);
     let g = "";
@@ -499,26 +537,27 @@ function scatterWidget(body, o){
       const cl = z=> Math.max(-L*0.985, Math.min(L*0.985, z));
       PX = v => pad.l + iw*(cl(zX(v))+L)/(2*L); PY = v => pad.t + ih - ih*(cl(zY(v))+L)/(2*L);
       for(let k=-L;k<=L;k++){
+        if(MOB() && k%2 !== 0) continue;
         const rx = refX + k*sX, ry = refY + k*sY, xk = pad.l + iw*(k+L)/(2*L), yk2 = pad.t + ih - ih*(k+L)/(2*L);
         const kl = k === 0 ? "nacional" : (k>0?"+":"−") + Math.abs(k) + " DE";
-        g += '<line x1="'+xk+'" x2="'+xk+'" y1="'+pad.t+'" y2="'+(h-pad.b)+'" class="grid"/><text x="'+xk+'" y="'+(h-pad.b+15)+'" class="axis-lab" text-anchor="middle">'+(rx >= 0 ? fmt(rx, X.dec) : "")+'</text><text x="'+xk+'" y="'+(h-pad.b+28)+'" class="axis-lab small-lab" text-anchor="middle">'+kl+'</text>';
-        g += '<line x1="'+pad.l+'" x2="'+(w-pad.r)+'" y1="'+yk2+'" y2="'+yk2+'" class="grid"/><text x="'+(pad.l-8)+'" y="'+(yk2+1)+'" class="axis-lab" text-anchor="end">'+(ry >= 0 ? fmt(ry, Y.dec) : "")+'</text><text x="'+(pad.l-8)+'" y="'+(yk2+12)+'" class="axis-lab small-lab" text-anchor="end">'+kl+'</text>';
+        g += '<line x1="'+xk+'" x2="'+xk+'" y1="'+pad.t+'" y2="'+(h-pad.b)+'" class="grid"/><text x="'+xk+'" y="'+(h-pad.b+15)+'" class="axis-lab" text-anchor="middle">'+(rx >= 0 ? fmt(rx, X.dec) : "")+'</text><text x="'+xk+'" y="'+(h-pad.b+VW(31,33))+'" class="axis-lab small-lab" text-anchor="middle">'+kl+'</text>';
+        g += '<line x1="'+pad.l+'" x2="'+(w-pad.r)+'" y1="'+yk2+'" y2="'+yk2+'" class="grid"/><text x="'+(pad.l-8)+'" y="'+(yk2+1)+'" class="axis-lab" text-anchor="end">'+(ry >= 0 ? fmt(ry, Y.dec) : "")+'</text><text x="'+(pad.l-8)+'" y="'+(yk2+VW(16,17))+'" class="axis-lab small-lab" text-anchor="end">'+kl+'</text>';
       }
-      g += '<text x="'+(pad.l+iw/2)+'" y="'+(h-6)+'" class="axis-title" text-anchor="middle">'+esc(X.label)+'</text>';
-      g += '<text transform="translate(12,'+(pad.t+ih/2)+') rotate(-90)" class="axis-title" text-anchor="middle">'+esc(Y.label)+'</text>';
+      g += '<text x="'+(pad.l+iw/2)+'" y="'+(h-6)+'" class="axis-title" text-anchor="middle">'+esc(VW(X.label, X.short.charAt(0).toUpperCase()+X.short.slice(1)))+'</text>';
+      g += '<text transform="translate(12,'+(pad.t+ih/2)+') rotate(-90)" class="axis-title" text-anchor="middle">'+esc(VW(Y.label, Y.short.charAt(0).toUpperCase()+Y.short.slice(1)))+'</text>';
     } else {
       const mxX = niceMax(Math.max(...all.map(d=>d[o.x]))), mxY = niceMax(Math.max(...all.map(d=>d[yk])));
       PX = v => pad.l + iw*v/mxX; PY = v => pad.t + ih - ih*v/mxY;
       ticks(mxY).forEach(t=>{ g += '<line x1="'+pad.l+'" x2="'+(w-pad.r)+'" y1="'+PY(t)+'" y2="'+PY(t)+'" class="grid"/><text x="'+(pad.l-8)+'" y="'+(PY(t)+4)+'" class="axis-lab" text-anchor="end">'+fmt(t, mxY<10?1:0)+'</text>'; });
       ticks(mxX).forEach(t=>{ g += '<line x1="'+PX(t)+'" x2="'+PX(t)+'" y1="'+pad.t+'" y2="'+(h-pad.b)+'" class="grid"/><text x="'+PX(t)+'" y="'+(h-pad.b+16)+'" class="axis-lab" text-anchor="middle">'+fmt(t, mxX<10?1:0)+'</text>'; });
-      g += '<text x="'+(pad.l+iw/2)+'" y="'+(h-6)+'" class="axis-title" text-anchor="middle">'+esc(X.label)+'</text>';
-      g += '<text transform="translate(14,'+(pad.t+ih/2)+') rotate(-90)" class="axis-title" text-anchor="middle">'+esc(Y.label)+'</text>';
+      g += '<text x="'+(pad.l+iw/2)+'" y="'+(h-6)+'" class="axis-title" text-anchor="middle">'+esc(VW(X.label, X.short.charAt(0).toUpperCase()+X.short.slice(1)))+'</text>';
+      g += '<text transform="translate(14,'+(pad.t+ih/2)+') rotate(-90)" class="axis-title" text-anchor="middle">'+esc(VW(Y.label, Y.short.charAt(0).toUpperCase()+Y.short.slice(1)))+'</text>';
     }
     g += '<line x1="'+PX(refX)+'" x2="'+PX(refX)+'" y1="'+pad.t+'" y2="'+(h-pad.b)+'" class="ref-line"/><line x1="'+pad.l+'" x2="'+(w-pad.r)+'" y1="'+PY(refY)+'" y2="'+PY(refY)+'" class="ref-line"/>';
-    if(!o.std) g += '<text x="'+(PX(refX)+4)+'" y="'+(pad.t+10)+'" class="axis-lab">'+refXLab+'</text><text x="'+(w-pad.r-4)+'" y="'+(PY(refY)-5)+'" class="axis-lab" text-anchor="end">'+refYLab+'</text>';
+    if(!o.std && !MOB()) g += '<text x="'+(PX(refX)+4)+'" y="'+(pad.t+10)+'" class="axis-lab">'+refXLab+'</text><text x="'+(w-pad.r-4)+'" y="'+(PY(refY)-5)+'" class="axis-lab" text-anchor="end">'+refYLab+'</text>';
     const q = o.quad;
-    g += '<text x="'+(w-pad.r-6)+'" y="'+(pad.t+26)+'" class="quad-lab" text-anchor="end">'+esc(q.hh)+'</text><text x="'+(pad.l+6)+'" y="'+(pad.t+26)+'" class="quad-lab">'+esc(q.lh)+'</text>';
-    g += '<text x="'+(pad.l+6)+'" y="'+(h-pad.b-8)+'" class="quad-lab'+(o.flagLL?' quad-flag':'')+'">'+esc(q.ll)+'</text><text x="'+(w-pad.r-6)+'" y="'+(h-pad.b-8)+'" class="quad-lab" text-anchor="end">'+esc(q.hl)+'</text>';
+    if(!MOB()) g += '<text x="'+(w-pad.r-6)+'" y="'+(pad.t+26)+'" class="quad-lab" text-anchor="end">'+esc(q.hh)+'</text><text x="'+(pad.l+6)+'" y="'+(pad.t+26)+'" class="quad-lab">'+esc(q.lh)+'</text>';
+    if(!MOB()) g += '<text x="'+(pad.l+6)+'" y="'+(h-pad.b-8)+'" class="quad-lab'+(o.flagLL?' quad-flag':'')+'">'+esc(q.ll)+'</text><text x="'+(w-pad.r-6)+'" y="'+(h-pad.b-8)+'" class="quad-lab" text-anchor="end">'+esc(q.hl)+'</text>';
     s.innerHTML = g;
     all.slice().sort((a,b)=> SZ.val(b)-SZ.val(a)).forEach(d=>{
       const r = rFn(SZ.val(d));
@@ -532,16 +571,18 @@ function scatterWidget(body, o){
       const brecha = (o.need ? "<p class='tip-ind'>Personas esperadas si 1 de cada 127 tuviera autismo: ~" + fmt(d.pob*OMS_PREV) + "; atendidas: " + fmt(d.pers24) + " (≈ " + fmt(100*d.pers24/(d.pob*OMS_PREV),0) + " %; " + fmt(100*d.pers25/(d.pob*OMS_PREV),0) + " % con el registro de 2025)</p>" : "") +
         (o.std ? "<p class='muted'>Posición en el gráfico: " + fmt(zX(d[o.x]),1) + " DE en el eje horizontal y " + fmt(zY(d[yk]),1) + " DE en el vertical respecto al valor nacional" + (clipped ? " (fuera de escala: se dibuja en el borde)" : "") + ".</p>" : "");
       bindTip(c, ()=> "<h5>"+esc(d.nombre)+"</h5><p class='tip-region'>"+esc(d.region)+" · IPM "+fmt(d.ipm,1)+" %</p><p>"+esc(X.label)+": <b>"+vfmt(d,o.x)+"</b><br>"+esc(Y.label)+": <b>"+vfmt(d,yk)+"</b><br>Tamaño ("+esc(SZ.label)+"): <b>"+esc(SZ.f(SZ.val(d)))+"</b></p><p class='tip-ind'>Cuadrante: "+esc(quadName.toLowerCase())+"</p>" + brecha);
+      c.setAttribute("data-cod", d.cod);
       c.addEventListener("click", ()=> selectDept(d.cod));
       c.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); selectDept(d.cod); } });
       s.appendChild(c);
     });
-    all.filter(d=> inR(d) && (reg !== "todas" || (o.labels||[]).includes(d.cod) || d.cod === STATE.sel)).forEach(d=>{
+    all.filter(d=> inR(d) && (reg !== "todas" || (MOB() ? (o.labels||[]).slice(0,4) : (o.labels||[])).includes(d.cod) || d.cod === STATE.sel)).forEach(d=>{
       const r = rFn(SZ.val(d));
-      const t = document.createElementNS(SVGNS,"text"); const atEnd = PX(d[o.x]) + r + 6 + d.nombre.length*6 > w; t.setAttribute("x", PX(d[o.x]) + (atEnd ? -r - 4 : r + 3)); if(atEnd) t.setAttribute("text-anchor","end"); t.setAttribute("y", PY(d[yk]) + 4);
+      const t = document.createElementNS(SVGNS,"text"); const atEnd = PX(d[o.x]) + r + 6 + d.nombre.length*VW(8,9) > w; t.setAttribute("x", PX(d[o.x]) + (atEnd ? -r - 4 : r + 3)); if(atEnd) t.setAttribute("text-anchor","end"); t.setAttribute("y", PY(d[yk]) + 4);
       t.setAttribute("class","pt-lab" + (d.cod === STATE.sel ? " sel-pt-lab" : "")); t.textContent = d.nombre.replace(" D.C.",""); s.appendChild(t);
     });
     box.innerHTML = ""; box.appendChild(s);
+    if(MOB()) box.appendChild(el("ul",{class:"quad-key"}, [["↖",q.lh],["↗",q.hh],["↙",q.ll],["↘",q.hl]].map(x=> el("li",null,[ el("strong",null,[x[0]+" "]), x[1] ]))));
     // lectura dinámica en lenguaje llano
     const sub = all.filter(inR);
     const cnt = { hh:[], hl:[], lh:[], ll:[] };
@@ -640,10 +681,10 @@ function renderNacional(){
   body.appendChild(legend([["bar-fill","2024 (año de referencia)"],["bar-alt","2025 (FEV-RIPS)"]]));
   const rd3 = reading(); body.appendChild(rd3);
   function drawReg(){
-    const rg = C.panorama.regimen, M = RM[rm], w2 = 580, h2 = 240, pad = { l:78, r:16, t:20, b:40 };
+    const rg = C.panorama.regimen, M = RM[rm], w2 = VW(760,400), h2 = VW(330,320), pad = { l:VW(84,64), r:12, t:26, b:42 };
     const s2 = svgEl(w2, h2, "", M.t + " por régimen, 2024 y 2025"), mx = niceMax(Math.max(...rg.map(r=> Math.max(M.f(r,2024), M.f(r,2025))))), ih = h2-pad.t-pad.b, iw = w2-pad.l-pad.r;
     let gs = "";
-    ticks(mx).forEach(t=>{ const y = pad.t + ih - ih*t/mx; gs += '<line x1="'+pad.l+'" x2="'+(w2-pad.r)+'" y1="'+y+'" y2="'+y+'" class="grid"/><text x="'+(pad.l-8)+'" y="'+(y+4)+'" class="axis-lab" text-anchor="end">'+fmt(t)+'</text>'; });
+    ticks(mx).forEach(t=>{ const y = pad.t + ih - ih*t/mx; gs += '<line x1="'+pad.l+'" x2="'+(w2-pad.r)+'" y1="'+y+'" y2="'+y+'" class="grid"/><text x="'+(pad.l-8)+'" y="'+(y+4)+'" class="axis-lab" text-anchor="end">'+VW(fmt(t), compact(t))+'</text>'; });
     gs += '<text x="12" y="'+(pad.t+ih/2)+'" class="axis-title" text-anchor="middle" transform="rotate(-90 12 '+(pad.t+ih/2)+')">'+M.u.charAt(0).toUpperCase()+M.u.slice(1)+'</text>';
     s2.innerHTML = gs;
     const gw = iw/rg.length;
@@ -651,7 +692,7 @@ function renderNacional(){
       [[2024,"bar-fill"],[2025,"bar-fill bar-alt"]].forEach((b,j)=>{
         const v = M.f(r,b[0]), bh = ih*v/mx, x = pad.l + i*gw + gw*0.18 + j*gw*0.33, y = pad.t + ih - bh, g = document.createElementNS(SVGNS,"g");
         g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g");
-        g.innerHTML = '<rect x="'+x+'" y="'+y+'" width="'+(gw*0.3)+'" height="'+bh+'" rx="4" class="'+b[1]+'"/><text x="'+(x+gw*0.15)+'" y="'+(y-6)+'" class="bar-val" text-anchor="middle">'+fmt(v)+'</text>';
+        g.innerHTML = '<rect x="'+x+'" y="'+y+'" width="'+(gw*0.3)+'" height="'+bh+'" rx="4" class="'+b[1]+'"/><text x="'+(x+gw*0.15)+'" y="'+(y-6)+'" class="bar-val" text-anchor="middle">'+VW(fmt(v), compact(v))+'</text>';
         bindTip(g, ()=> "<h5>"+esc(r.nombre)+" · "+b[0]+"</h5><p>"+fmt(v)+" "+M.u+"</p>");
         s2.appendChild(g);
       });
@@ -694,7 +735,7 @@ function renderTerritorio(){
   const rd = reading(); body.appendChild(rd);
   setReading(rd, "Cada barra muestra a la vez la medida absoluta (personas) y la relativa (por 100.000 habitantes). Se esperarían unas " + fmt(esp) + " personas con autismo (" + fmt(esp/P*1e5,0) + " por 100.000); el registro de 2024 muestra atendidas a " + fmt(p24) + " con residencia conocida (" + fmt(p24/P*1e5,1) + "), cerca de 12 de cada 100 esperadas, y el de 2025 a " + fmt(p25) + " (" + fmt(p25/P*1e5,1) + "), cerca de 25 de cada 100. Con el total del cubo nacional, que incluye a quienes no tienen departamento registrado, serían " + fmt(100*CUBO.p24/esp,0) + " y " + fmt(100*CUBO.p25/esp,0) + " de cada 100.");
   body.appendChild(sourceLine("Fuente: SISPRO-RIPS (F84.0 a F84.9 como diagnóstico principal) 2024 y 2025; DANE (población 2024, usada también como denominador de 2025); OMS (1 de cada 127). Las tasas usan solo personas con departamento de residencia conocido; la conciliación de totales está en la sección " + SEC.metodologia.num + "."));
-  sub(body, "territorio-deptos", "Las tres medidas por departamento", "Absoluta y esperada a la izquierda; relativa y esperada a la derecha; al final, la parte de las esperadas que se atendió.");
+  sub(body, "territorio-deptos", "Las tres medidas por departamento", "Cuántas personas se atienden frente a las esperadas, en número y por 100.000 habitantes, y qué parte de las esperadas se atendió.");
   tresMedidas(body);
   sub(body, "territorio-mapa", "Mapa de la prevalencia relativa");
   body.appendChild(howTo("el mapa usa la medida relativa, porque la absoluta solo mostraría qué departamentos son más grandes. El color indica el grupo (sextil) en que cae cada valor. Haz clic en un departamento para seleccionarlo: la selección se comparte con todos los gráficos."));
@@ -708,17 +749,17 @@ function renderTerritorio(){
   const rd = reading(); body.appendChild(rd);
   body.appendChild(sourceLine(C.serieNota + " Fuente: SISPRO-RIPS; DANE."));
   function draw(){
-    const ser = C.serieNacional, w = 640, h = 280, pad = { l:62, r:16, t:22, b:30 }, iw = w-pad.l-pad.r, ih = h-pad.t-pad.b;
+    const ser = C.serieNacional, w = VW(760,400), h = VW(340,320), pad = { l:VW(66,50), r:12, t:26, b:34 }, iw = w-pad.l-pad.r, ih = h-pad.t-pad.b;
     const mx = niceMax(Math.max(...ser.map(s=> s[metric]))), bw = iw/ser.length;
     const s = svgEl(w, h, "", "Serie nacional");
     let g = "";
-    ticks(mx).forEach(t=>{ const y = pad.t + ih - ih*t/mx; g += '<line x1="'+pad.l+'" x2="'+(w-pad.r)+'" y1="'+y+'" y2="'+y+'" class="grid"/><text x="'+(pad.l-8)+'" y="'+(y+4)+'" class="axis-lab" text-anchor="end">'+fmt(t)+'</text>'; });
-    g += '<text x="12" y="'+(pad.t+ih/2)+'" class="axis-title" text-anchor="middle" transform="rotate(-90 12 '+(pad.t+ih/2)+')">'+(metric==="tasa" ? "Personas por 100.000 hab." : "Personas atendidas")+'</text>';
+    ticks(mx).forEach(t=>{ const y = pad.t + ih - ih*t/mx; g += '<line x1="'+pad.l+'" x2="'+(w-pad.r)+'" y1="'+y+'" y2="'+y+'" class="grid"/><text x="'+(pad.l-8)+'" y="'+(y+4)+'" class="axis-lab" text-anchor="end">'+VW(fmt(t), metric==="tasa" ? fmt(t) : fmt(t/1000))+'</text>'; });
+    g += '<text x="12" y="'+(pad.t+ih/2)+'" class="axis-title" text-anchor="middle" transform="rotate(-90 12 '+(pad.t+ih/2)+')">'+(metric==="tasa" ? "Personas por 100.000 hab." : VW("Personas atendidas","Miles de personas"))+'</text>';
     s.innerHTML = g;
     ser.forEach((v,i)=>{
       const bh = ih*v[metric]/mx, x = pad.l + i*bw + bw*0.18, y = pad.t + ih - bh;
       const gg = document.createElementNS(SVGNS,"g"); gg.setAttribute("tabindex","0"); gg.setAttribute("class","bar-g");
-      gg.innerHTML = '<rect x="'+x+'" y="'+y+'" width="'+(bw*0.64)+'" height="'+bh+'" rx="4" class="bar-fill'+(i===6?' bar-alt':'')+'"/><text x="'+(x+bw*0.32)+'" y="'+(y-6)+'" class="bar-val" text-anchor="middle">'+fmt(v[metric], metric==="tasa"?1:0)+'</text><text x="'+(x+bw*0.32)+'" y="'+(h-10)+'" class="axis-lab" text-anchor="middle">'+v.anio+'</text>';
+      gg.innerHTML = '<rect x="'+x+'" y="'+y+'" width="'+(bw*0.64)+'" height="'+bh+'" rx="4" class="bar-fill'+(i===6?' bar-alt':'')+'"/><text x="'+(x+bw*0.32)+'" y="'+(y-6)+'" class="bar-val" text-anchor="middle">'+(MOB() && metric !== "tasa" ? fmt(v[metric]/1000,1) : fmt(v[metric], metric==="tasa"?1:0))+'</text><text x="'+(x+bw*0.32)+'" y="'+(h-10)+'" class="axis-lab" text-anchor="middle">'+v.anio+'</text>';
       bindTip(gg, ()=> "<h5>"+v.anio+"</h5><p>"+fmt(v.personas)+" personas · "+fmt(v.tasa,1)+" por 100.000</p>"+(i===6?"<p class='muted'>Cambio de reporte (FEV-RIPS): no comparable.</p>":""));
       s.appendChild(gg);
     });
@@ -736,19 +777,22 @@ function renderTerritorio(){
 /* barras nacionales: la misma longitud expresa personas y personas por 100.000 (una sola población) */
 function tresBarras(esp, p25, p24, P, label, cls){
   const rows = [["Esperada (1 de cada 127, OMS)", esp, "bar-nat"],["Atendida, registro de 2025", p25, "bar-fill bar-alt"],["Atendida, 2024", p24, "bar-fill"]];
-  const narrow = !!cls, w = narrow ? 400 : 580, rowH = narrow ? 84 : 58, h = rows.length*rowH + 10, sv = svgEl(w, h, cls || "", label); let g = "";
+  const narrow = !!cls || MOB(), w = narrow ? 400 : 700, rowH = narrow ? 92 : 66, h = rows.length*rowH + 10, sv = svgEl(w, h, cls || "", label);
   rows.forEach((r,i)=>{
-    const y = 10 + i*rowH, bw = Math.max(3, (w - (narrow ? 8 : 230))*r[1]/esp), val = fmt(r[1]) + ' personas · ' + fmt(r[1]/P*1e5, r[1]===esp?0:1) + ' por 100.000';
-    g += '<text x="0" y="'+(y+12)+'" class="axis-lab strong">'+esc(r[0])+'</text><rect x="0" y="'+(y+20)+'" width="'+bw+'" height="24" rx="4" class="'+r[2]+'"/><text x="'+(narrow ? 0 : bw+8)+'" y="'+(narrow ? y+60 : y+37)+'" class="bar-val">'+val+'</text>';
+    const y = 10 + i*rowH, bw = Math.max(3, (w - (narrow ? 8 : 280))*r[1]/esp), val = fmt(r[1]) + ' personas · ' + fmt(r[1]/P*1e5, r[1]===esp?0:1) + ' por 100.000';
+    const g = document.createElementNS(SVGNS,"g"); g.setAttribute("class","bar-g"); g.setAttribute("tabindex","0"); g.setAttribute("role","img"); g.setAttribute("aria-label", r[0] + ": " + val);
+    g.innerHTML = '<rect x="0" y="'+y+'" width="'+w+'" height="'+(rowH-6)+'" class="row-hit"/><text x="0" y="'+(y+14)+'" class="axis-lab strong">'+esc(r[0])+'</text><rect x="0" y="'+(y+22)+'" width="'+bw+'" height="28" rx="4" class="'+r[2]+'"/><text x="'+(narrow ? 0 : bw+10)+'" y="'+(narrow ? y+70 : y+41)+'" class="bar-val">'+val+'</text>';
+    bindTip(g, ()=> "<h5>"+esc(r[0])+"</h5><p>Absoluta: <b>"+fmt(r[1])+"</b> personas<br>Relativa: <b>"+fmt(r[1]/P*1e5,1)+"</b> por 100.000 habitantes<br>Frente a la esperada: <b>"+fmt(100*r[1]/esp,0)+" %</b></p>");
+    sv.appendChild(g);
   });
-  sv.innerHTML = g; return sv;
+  return sv;
 }
 function tresMedidas(body){
   let yr = "24", sort = "abs", reg = "todas";
   body.appendChild(chips([{id:"24",label:"2024"},{id:"25",label:"2025 (FEV-RIPS)"}], yr, id=>{ yr = id; draw(); }, "Año"));
   body.appendChild(chips([{id:"abs",label:"Ordenar por absoluta"},{id:"rel",label:"Ordenar por relativa"},{id:"esp",label:"Ordenar por esperada"}], sort, id=>{ sort = id; draw(); }, "Orden"));
   body.appendChild(regionChips(id=>{ reg = id; draw(); }));
-  body.appendChild(howTo("la barra gris es lo esperado y la de color, lo atendido. A la izquierda, en personas; a la derecha, por 100.000 habitantes. La esperada relativa es igual en todos (787); por eso ordenar por la relativa es ordenar por la parte de las esperadas que se atendió."));
+  body.appendChild(howTo("la barra gris es lo esperado y la de color, lo atendido. " + VW("A la izquierda, en personas; a la derecha, por 100.000 habitantes.", "En cada departamento, la primera barra está en personas y la segunda, por 100.000 habitantes.") + " La esperada relativa es igual en todos (787); por eso ordenar por la relativa es ordenar por la parte de las esperadas que se atendió."));
   const box = el("div",{class:"chart-box"}); body.appendChild(box);
   body.appendChild(legend([["bar-nat","Esperada"],["bar-fill","Atendida"]]));
   const rd = reading(); body.appendChild(rd);
@@ -756,17 +800,20 @@ function tresMedidas(body){
   function draw(){
     const pk = "pers"+yr, rk = "tasa"+yr, ek = yr === "24" ? "pctEsp" : "pctEsp25";
     const list = DEP.filter(d=> reg === "todas" || d.region === reg).sort((a,b)=> sort === "abs" ? b[pk]-a[pk] : sort === "rel" ? b[rk]-a[rk] : b.esperados-a.esperados);
-    const w = 760, rowH = 22, pad = { l:142, t:38 }, h = pad.t + list.length*rowH + 8, cA = 200, xB = pad.l + cA + 132, cB = 150;
+    const M = MOB(), w = VW(960,400), rowH = VW(28,86), pad = { l:VW(160,2), t:VW(40,10) }, h = pad.t + list.length*rowH + 8, cA = VW(260,232), xB = M ? pad.l : pad.l + cA + 148, cB = VW(200,232);
     const mxA = niceMax(Math.max(...list.map(d=> Math.max(d.esperados, d[pk])))), mxB = 1e5/127;
     const s = svgEl(w, h, "tres-svg", "Prevalencia absoluta, relativa y esperada por departamento");
-    s.innerHTML = '<text x="'+pad.l+'" y="14" class="axis-title">Personas: atendidas de esperadas</text><text x="'+xB+'" y="14" class="axis-title">Por 100.000 hab. (esperada: 787)</text><text x="'+(w-4)+'" y="14" text-anchor="end" class="axis-title">% de esperada</text><line x1="'+(xB+cB)+'" x2="'+(xB+cB)+'" y1="'+(pad.t-8)+'" y2="'+(h-6)+'" class="ref-line"/>';
+    s.innerHTML = M ? '' : '<text x="'+pad.l+'" y="14" class="axis-title">Personas: atendidas de esperadas</text><text x="'+xB+'" y="14" class="axis-title">Por 100.000 hab. (esperada: 787)</text><text x="'+(w-4)+'" y="14" text-anchor="end" class="axis-title">% de esperada</text><line x1="'+(xB+cB)+'" x2="'+(xB+cB)+'" y1="'+(pad.t-8)+'" y2="'+(h-6)+'" class="ref-line"/>';
     list.forEach((d,i)=>{
-      const y = pad.t + i*rowH, g = document.createElementNS(SVGNS,"g"); g.setAttribute("class","bar-g rank-row" + (d.cod === STATE.sel ? " sel" : "")); g.setAttribute("tabindex","0"); g.setAttribute("role","button");
+      const y = pad.t + i*rowH, g = document.createElementNS(SVGNS,"g"); g.setAttribute("data-cod", d.cod); g.setAttribute("class","bar-g rank-row" + (d.cod === STATE.sel ? " sel" : "")); g.setAttribute("tabindex","0"); g.setAttribute("role","button");
       g.setAttribute("aria-label", d.nombre + ": " + fmt(d[pk]) + " personas atendidas de " + fmt(d.esperados) + " esperadas; " + fmt(d[rk],1) + " por 100.000 habitantes; " + fmt(d[ek],0) + " % de la esperada");
       const wE = Math.max(1, cA*d.esperados/mxA), wP = Math.max(1, cA*d[pk]/mxA), wR = Math.max(1, cB*d[rk]/mxB);
-      g.innerHTML = '<rect x="0" y="'+y+'" width="'+w+'" height="'+rowH+'" class="row-hit"/><text x="'+(pad.l-8)+'" y="'+(y+15)+'" text-anchor="end" class="axis-lab">'+esc(d.nombre)+'</text>' +
-        '<rect x="'+pad.l+'" y="'+(y+4)+'" width="'+wE+'" height="'+(rowH-8)+'" rx="2" class="bar-nat"/><rect x="'+pad.l+'" y="'+(y+7)+'" width="'+wP+'" height="'+(rowH-14)+'" rx="2" class="bar-fill"/><text x="'+(pad.l+cA+6)+'" y="'+(y+15)+'" class="axis-lab">'+fmt(d[pk])+' de '+fmt(d.esperados)+'</text>' +
-        '<rect x="'+xB+'" y="'+(y+4)+'" width="'+cB+'" height="'+(rowH-8)+'" rx="2" class="bar-nat"/><rect x="'+xB+'" y="'+(y+7)+'" width="'+Math.min(wR,cB)+'" height="'+(rowH-14)+'" rx="2" class="bar-fill"/><text x="'+(xB+cB+6)+'" y="'+(y+15)+'" class="bar-val">'+fmt(d[rk],1)+'</text><text x="'+(w-4)+'" y="'+(y+15)+'" text-anchor="end" class="bar-val">'+fmt(d[ek],0)+' %</text>';
+      if(M) g.innerHTML = '<rect x="0" y="'+y+'" width="'+w+'" height="'+(rowH-4)+'" class="row-hit"/><text x="2" y="'+(y+18)+'" class="axis-lab strong">'+esc(d.nombre)+'</text><text x="'+(w-2)+'" y="'+(y+18)+'" text-anchor="end" class="bar-val">'+fmt(d[ek],0)+' % de la esperada</text>' +
+        '<rect x="2" y="'+(y+27)+'" width="'+wE+'" height="18" rx="2" class="bar-nat"/><rect x="2" y="'+(y+31)+'" width="'+wP+'" height="10" rx="2" class="bar-fill"/><text x="'+(cA+10)+'" y="'+(y+41)+'" class="axis-lab">'+fmt(d[pk])+' de '+fmt(d.esperados)+'</text>' +
+        '<rect x="2" y="'+(y+51)+'" width="'+cB+'" height="18" rx="2" class="bar-nat"/><rect x="2" y="'+(y+55)+'" width="'+Math.min(wR,cB)+'" height="10" rx="2" class="bar-fill"/><text x="'+(cB+10)+'" y="'+(y+65)+'" class="axis-lab">'+fmt(d[rk],1)+' de 787</text>';
+      else g.innerHTML = '<rect x="0" y="'+y+'" width="'+w+'" height="'+rowH+'" class="row-hit"/><text x="'+(pad.l-8)+'" y="'+(y+18)+'" text-anchor="end" class="axis-lab">'+esc(d.nombre)+'</text>' +
+        '<rect x="'+pad.l+'" y="'+(y+4)+'" width="'+wE+'" height="'+(rowH-8)+'" rx="2" class="bar-nat"/><rect x="'+pad.l+'" y="'+(y+7)+'" width="'+wP+'" height="'+(rowH-15)+'" rx="2" class="bar-fill"/><text x="'+(pad.l+cA+6)+'" y="'+(y+18)+'" class="axis-lab">'+fmt(d[pk])+' de '+fmt(d.esperados)+'</text>' +
+        '<rect x="'+xB+'" y="'+(y+4)+'" width="'+cB+'" height="'+(rowH-8)+'" rx="2" class="bar-nat"/><rect x="'+xB+'" y="'+(y+7)+'" width="'+Math.min(wR,cB)+'" height="'+(rowH-15)+'" rx="2" class="bar-fill"/><text x="'+(xB+cB+6)+'" y="'+(y+18)+'" class="bar-val">'+fmt(d[rk],1)+'</text><text x="'+(w-4)+'" y="'+(y+18)+'" text-anchor="end" class="bar-val">'+fmt(d[ek],0)+' %</text>';
       bindTip(g, ()=> deptCardHTML(d)); g.addEventListener("click", ()=> selectDept(d.cod));
       g.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); selectDept(d.cod); } });
       s.appendChild(g);
@@ -796,7 +843,7 @@ function trendWidget(body){
     const yrs = show25 ? YEARS : YEARS.slice(0,6), n = yrs.length;
     const list = DEP.filter(d=> reg === "todas" || d.region === reg || d.cod === STATE.sel);
     const mx = niceMax(Math.max(...list.map(d=> Math.max(...d.serie.slice(0,n).map((v,i)=> rate(d,i)))), ...C.serieNacional.slice(0,n).map(s=>s.tasa)));
-    const w = 680, h = 340, pad = { l:52, r:110, t:14, b:32 }, iw = w-pad.l-pad.r, ih = h-pad.t-pad.b;
+    const w = VW(900,400), h = VW(480,380), pad = { l:VW(62,50), r:VW(150,16), t:16, b:36 }, iw = w-pad.l-pad.r, ih = h-pad.t-pad.b;
     const X = i => pad.l + iw * i/(n-1), Y = v => pad.t + ih - ih*v/mx;
     const s = svgEl(w, h, "line-svg", "Serie de tasas por departamento");
     let g = "";
@@ -815,17 +862,17 @@ function trendWidget(body){
       if(d.cod === STATE.sel) return;
       const p = document.createElementNS(SVGNS,"path");
       p.setAttribute("d", d.serie.slice(0,n).map((v,i)=> (i?"L":"M") + X(i).toFixed(1) + "," + Y(rate(d,i)).toFixed(1)).join(""));
-      p.setAttribute("class","spag " + (reg === "todas" ? "spag-ctx" : REGION_CLASS[d.region])); p.setAttribute("tabindex","0");
+      p.setAttribute("data-cod", d.cod); p.setAttribute("class","spag " + (reg === "todas" ? "spag-ctx" : REGION_CLASS[d.region])); p.setAttribute("tabindex","0");
       bindTip(p, ()=> "<h5>"+esc(d.nombre)+"</h5><p>"+yrs.map((y,i)=> y+": "+fmt(rate(d,i),1)).join("<br>")+"</p><p class='muted'>Clic para resaltar</p>");
       p.addEventListener("click", ()=> selectDept(d.cod));
       s.appendChild(p);
     });
     const nat = document.createElementNS(SVGNS,"g");
-    nat.innerHTML = '<path d="'+C.serieNacional.slice(0,n).map((v,i)=> (i?"L":"M")+X(i)+","+Y(v.tasa)).join("")+'" class="nat-line"/><text x="'+(X(n-1)+6)+'" y="'+(Y(C.serieNacional[n-1].tasa)+4)+'" class="line-lab strong">Nacional</text>';
+    nat.innerHTML = '<path d="'+C.serieNacional.slice(0,n).map((v,i)=> (i?"L":"M")+X(i)+","+Y(v.tasa)).join("")+'" class="nat-line"/><text x="'+(X(n-1)+VW(6,-8))+'" y="'+(Y(C.serieNacional[n-1].tasa)+VW(4,-10))+'" text-anchor="'+VW('start','end')+'" class="line-lab strong">Nacional</text>';
     s.appendChild(nat);
     const hl = document.createElementNS(SVGNS,"g"); let pts = "";
     sel.serie.slice(0,n).forEach((v,i)=>{ pts += '<circle cx="'+X(i)+'" cy="'+Y(rate(sel,i))+'" r="3.6" class="sel-dot"/>'; });
-    hl.innerHTML = '<path d="'+sel.serie.slice(0,n).map((v,i)=> (i?"L":"M")+X(i)+","+Y(rate(sel,i))).join("")+'" class="sel-line"/>' + pts + '<text x="'+(X(n-1)+6)+'" y="'+(Y(rate(sel,n-1))+14)+'" class="line-lab sel-lab">'+esc(sel.nombre)+'</text>';
+    hl.innerHTML = '<path d="'+sel.serie.slice(0,n).map((v,i)=> (i?"L":"M")+X(i)+","+Y(rate(sel,i))).join("")+'" class="sel-line"/>' + pts + '<text x="'+(X(n-1)+VW(6,-8))+'" y="'+(Y(rate(sel,n-1))+VW(14,22))+'" text-anchor="'+VW('start','end')+'" class="line-lab sel-lab">'+esc(sel.nombre)+'</text>';
     s.appendChild(hl);
     box.innerHTML = ""; box.appendChild(s);
     const grp = DEP.filter(d=> reg === "todas" || d.region === reg);
@@ -939,12 +986,12 @@ function renderCausal(){
 function causalDiagram(body){
   const K = C.causal;
   body.appendChild(howTo("las flechas van de la causa al efecto; «+» indica que el factor tiende a aumentar lo que sigue y «−» que tiende a reducirlo. Los recuadros con borde continuo se miden en este análisis; los punteados, no. Pasa el cursor o haz clic en un factor para ver qué se sabe de él."));
-  const colX = [10, 200, 390, 580, 760], bw = 170, bh = 54, rowY = r=> 20 + r*76;
-  const w = 940, h = 20 + 5*76;
+  const colX = [10, 200, 390, 580, 760], bw = 172, bh = 72, rowY = r=> 26 + r*92;
+  const w = 940, h = 26 + 5*92;
   const s = svgEl(w, h, "causal-svg", "Diagrama causal del número de atenciones");
   s.innerHTML = '<defs><marker id="carr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="arrow-head"/></marker></defs>';
   const pos = {};
-  K.nodos.forEach(n=>{ const y = n.id === "atenciones" ? rowY(2) - 8 : rowY(n.row); pos[n.id] = { x: colX[n.col], y: y, w: n.id === "atenciones" ? 160 : bw, h: n.id === "atenciones" ? 70 : bh }; });
+  K.nodos.forEach(n=>{ const y = n.id === "atenciones" ? rowY(2) - 8 : rowY(n.row); pos[n.id] = { x: colX[n.col], y: y, w: n.id === "atenciones" ? 160 : bw, h: n.id === "atenciones" ? 88 : bh }; });
   const edgeEls = [];
   const cols = ["Contexto y determinantes", "Detección y oferta", "Personas y su condición", "Intensidad y registro", "Resultado"];
   colX.forEach((x,i)=>{ const t = document.createElementNS(SVGNS,"text"); t.setAttribute("x", x); t.setAttribute("y", 12); t.setAttribute("class","causal-col"); t.textContent = cols[i]; s.appendChild(t); });
@@ -962,9 +1009,9 @@ function causalDiagram(body){
   K.nodos.forEach(n=>{
     const p = pos[n.id];
     const g = document.createElementNS(SVGNS,"g"); g.setAttribute("class","cnode m-" + n.m + (n.id === "atenciones" ? " cnode-out" : "")); g.setAttribute("tabindex","0"); g.setAttribute("role","button");
-    const lines = wrapText(n.t, n.id === "atenciones" ? 18 : 24);
-    g.innerHTML = '<rect x="'+p.x+'" y="'+p.y+'" width="'+p.w+'" height="'+p.h+'" rx="9"/>' + lines.map((l,i)=>'<text x="'+(p.x+p.w/2)+'" y="'+(p.y + p.h/2 - (lines.length-1)*7 + i*14 + 4)+'" text-anchor="middle">'+esc(l)+'</text>').join("") +
-      '<text x="'+(p.x+p.w-6)+'" y="'+(p.y+11)+'" text-anchor="end" class="cnode-badge">'+(n.m==="si"?"medido":n.m==="parcial"?"en parte":"sin dato")+'</text>';
+    const lines = wrapText(n.t, n.id === "atenciones" ? 18 : 25);
+    g.innerHTML = '<rect x="'+p.x+'" y="'+p.y+'" width="'+p.w+'" height="'+p.h+'" rx="9"/>' + lines.map((l,i)=>'<text x="'+(p.x+p.w/2)+'" y="'+(p.y + p.h/2 - (lines.length-1)*8 + i*16 + 11)+'" text-anchor="middle">'+esc(l)+'</text>').join("") +
+      '<text x="'+(p.x+p.w-6)+'" y="'+(p.y+14)+'" text-anchor="end" class="cnode-badge">'+(n.m==="si"?"medido":n.m==="parcial"?"en parte":"sin dato")+'</text>';
     bindTip(g, ()=> "<h5>"+esc(n.t)+"</h5><p>"+esc(n.d)+"</p>");
     const pick = ()=>{
       Object.values(nodeEls).forEach(x=> x.classList.remove("on"));
@@ -995,7 +1042,7 @@ function causalDiagram(body){
   body.appendChild(sourceLine(K.nota));
   body.appendChild(el("div",{class:"tag-row"},[confidenceTag("nota-autor")]));
 }
-function wrapText(t, n){ const words = t.split(" "), out = []; let cur = ""; words.forEach(w=>{ if((cur + " " + w).trim().length > n && cur){ out.push(cur); cur = w; } else cur = (cur + " " + w).trim(); }); if(cur) out.push(cur); return out.slice(0,3); }
+function wrapText(t, n){ const words = t.split(" "), out = []; let cur = ""; words.forEach(w=>{ if((cur + " " + w).trim().length > n && cur){ out.push(cur); cur = w; } else cur = (cur + " " + w).trim(); }); if(cur) out.push(cur); return out.slice(0,4); }
 
 
 
@@ -1027,7 +1074,7 @@ const STORY = [
 ];
 function renderStory(body){
   const host = document.getElementById("sec-contexto"); if(host) host.classList.add("story-host");
-  sub(body, "contexto-relato", "Los resultados, paso a paso", "Desplázate: el gráfico cambia con cada paso y cada paso enlaza con su análisis completo.");
+  sub(body, "contexto-relato", "Los resultados, paso a paso", VW("Desplázate: el gráfico cambia con cada paso. Pasa el cursor por el gráfico para ver los datos.", "Cada paso trae su gráfico: tócalo para ver los datos."));
   const M = D.mapa;
   const avg = a=> a.reduce((x,y)=>x+y,0)/a.length;
   const esp = DEP.reduce((a,d)=>a+d.esperados,0), p24 = DEP.reduce((a,d)=>a+d.pers24,0), p25 = DEP.reduce((a,d)=>a+d.pers25,0);
@@ -1035,20 +1082,24 @@ function renderStory(body){
   let sxy = 0, sxx = 0; lx.forEach((x,i)=>{ sxy += (x-mx)*(ly[i]-my); sxx += (x-mx)*(x-mx); });
   const bb = sxy/sxx, aa = my - bb*mx, RES = {}; DEP.forEach((d,i)=> RES[d.cod] = ly[i] - (aa + bb*lx[i]));
   function centroid(path){ const n = path.match(/-?\d+(\.\d+)?/g).map(Number); let x = 0, y = 0, k = 0; for(let i=0;i+1<n.length;i+=2){ x += n[i]; y += n[i+1]; k++; } return [x/k, y/k]; }
-  function miniMap(cls, labels, label){
+  function miniMap(cls, labels, label, extra){
     const sv = svgEl(M.w, M.h, "map-svg story-svg", label);
     let g = '<rect x="'+M.inset.x+'" y="'+M.inset.y+'" width="'+M.inset.w+'" height="'+M.inset.h+'" rx="6" class="map-inset"/>';
-    DEP.forEach(d=>{ g += '<path d="'+M.paths[d.cod]+'" class="dpto '+cls(d)+'"/>'; });
+    DEP.forEach(d=>{ g += '<path d="'+M.paths[d.cod]+'" data-cod="'+d.cod+'" tabindex="-1" class="dpto '+cls(d)+'"/>'; });
     labels.forEach(l=>{ const c = centroid(M.paths[l[0]]); g += '<text x="'+c[0].toFixed(1)+'" y="'+c[1].toFixed(1)+'" text-anchor="middle" class="pt-lab story-lab">'+esc(l[1])+'</text>'; });
-    sv.innerHTML = g; return sv;
+    sv.innerHTML = g;
+    sv.querySelectorAll("path[data-cod]").forEach(p=>{ const d = BY[p.getAttribute("data-cod")]; bindTip(p, ()=> deptCardHTML(d, extra ? "<p class='tip-ind'>" + extra(d) + "</p>" : "")); p.addEventListener("click", ()=> selectDept(d.cod)); });
+    return sv;
   }
   function seqCls(key){ const list = DEP.filter(d=> d[key] !== null), br = quantileBreaks(list.map(d=>d[key]), 6); return d=> d[key] === null ? "q-na" : "q" + classOf(d[key], br); }
   function ramp(lo, hi){ return el("div",{class:"story-ramp"},[ el("span",null,[lo]) ].concat([0,1,2,3,4,5].map(i=> el("i",{class:"q"+i}))).concat([ el("span",null,[hi]) ])); }
   function bars(rows, label, fmtv){
-    const w = 560, rowH = 58, h = rows.length*rowH + 10, mxv = Math.max(...rows.map(r=>r[1]));
+    const w = 400, rowH = 46, h = rows.length*rowH + 10, mxv = Math.max(...rows.map(r=>r[1]));
     const sv = svgEl(w, h, "story-svg", label); let g = "";
-    rows.forEach((r,i)=>{ const y = 10 + i*rowH, bw = Math.max(3, (w-130)*r[1]/mxv); g += '<text x="0" y="'+(y+12)+'" class="axis-lab strong">'+esc(r[0])+'</text><rect x="0" y="'+(y+20)+'" width="'+bw+'" height="24" rx="4" class="'+(r[2]||"bar-fill")+'"/><text x="'+(bw+8)+'" y="'+(y+37)+'" class="bar-val">'+esc(fmtv(r[1]))+'</text>'; });
-    sv.innerHTML = g; return sv;
+    rows.forEach((r,i)=>{ const y = 10 + i*rowH, bw = Math.max(3, (w-170)*r[1]/mxv); g += '<g class="bar-g" tabindex="-1" data-i="'+i+'"><rect x="0" y="'+y+'" width="'+w+'" height="'+rowH+'" class="row-hit"/><text x="0" y="'+(y+24)+'" class="axis-lab strong">'+esc(r[0])+'</text><rect x="110" y="'+(y+6)+'" width="'+bw+'" height="28" rx="4" class="'+(r[2]||"bar-fill")+'"/><text x="'+(118+bw)+'" y="'+(y+25)+'" class="bar-val">'+esc(fmtv(r[1]))+'</text></g>'; });
+    sv.innerHTML = g;
+    sv.querySelectorAll("g[data-i]").forEach(n=>{ const r = rows[+n.getAttribute("data-i")]; bindTip(n, ()=> "<h5>"+esc(r[0])+"</h5><p>Índice: <b>"+esc(fmtv(r[1]))+"</b> (100 = departamento con IPM de 10 %, a igual oferta). Es un valor calculado con el modelo, no observado.</p>"); });
+    return sv;
   }
   const hiT = DEP.slice().sort((a,b)=> b.tasa24-a.tasa24)[0], loT = DEP.slice().sort((a,b)=> a.tasa24-b.tasa24)[0];
   const hiA = DEP.slice().sort((a,b)=> b.tasaAten-a.tasaAten)[0], loA = DEP.slice().sort((a,b)=> a.tasaAten-b.tasaAten)[0];
@@ -1058,19 +1109,18 @@ function renderStory(body){
     { cap:"Prevalencia absoluta, relativa y esperada", g: ()=> tresBarras(esp, p25, p24, DEP.reduce((a,d)=>a+d.pob,0), "Personas esperadas y atendidas, en número y por 100.000 habitantes", "story-svg"), note:"Personas con residencia conocida. Fuente: SISPRO-RIPS 2024 y 2025; DANE; OMS. Supone la misma frecuencia en todo el país." },
     { cap:"Prevalencia relativa 2024 (por 100.000 habitantes; esperada: 787)", g: ()=> miniMap(seqCls("tasa24"), [[hiT.cod, hiT.nombre + " " + fmt(hiT.tasa24,0)],[loT.cod, loT.nombre + " " + fmt(loT.tasa24,0)]], "Mapa de la prevalencia atendida"), legend: ()=> ramp("Menos", "Más"), note:"Colores por sextiles. Fuente: SISPRO-RIPS 2024; DANE." },
     { cap:"Frecuencia 2024 (atenciones por 100 personas atendidas)", g: ()=> miniMap(seqCls("tasaAten"), [[hiA.cod, hiA.nombre + " " + fmt(hiA.tasaAten,0)],[loA.cod, loA.nombre + " " + fmt(loA.tasaAten,0)]], "Mapa de la tasa de atención"), legend: ()=> ramp("Menos", "Más"), note:"Colores por sextiles. Fuente: SISPRO-RIPS 2024." },
-    { cap:"Personas atendidas que viven en municipios con sede (%)", pal:"teal", g: ()=> miniMap(seqCls("pctConSede"), [], "Mapa del porcentaje de personas en municipios con sede"), legend: ()=> ramp("Menos", "Más"), note:"Colores por sextiles. Fuente: SISPRO-RIPS 2024; REPS 13/11/2026." },
-    { cap:"Sedes de neuropediatría frente a las esperadas por la demanda", g: ()=> miniMap(dv, [[hiR.cod, hiR.nombre],[loR.cod, loR.nombre]], "Mapa de sedes observadas frente a esperadas"), legend: ()=> el("div",{class:"story-ramp dv"},[ el("span",null,["Menos de las esperadas"]), el("i",{class:"dv-n2"}), el("i",{class:"dv-n1"}), el("i",{class:"dv-0"}), el("i",{class:"dv-p1"}), el("i",{class:"dv-p2"}), el("span",null,["Más"]) ]), note:"Demanda = población ÷ 127. Ajuste exploratorio de este análisis. Fuente: REPS 13/11/2026; DANE." },
+    { cap:"Personas atendidas que viven en municipios con sede (%)", pal:"teal", g: ()=> miniMap(seqCls("pctConSede"), [], "Mapa del porcentaje de personas en municipios con sede", d=> "Personas en municipios con sede: <b>" + fmt(d.pctConSede,1) + " %</b>"), legend: ()=> ramp("Menos", "Más"), note:"Colores por sextiles. Fuente: SISPRO-RIPS 2024; REPS 13/11/2026." },
+    { cap:"Sedes de neuropediatría frente a las esperadas por la demanda", g: ()=> miniMap(dv, [[hiR.cod, hiR.nombre],[loR.cod, loR.nombre]], "Mapa de sedes observadas frente a esperadas", d=> "Sedes: <b>" + fmt(d.sedes) + "</b>; esperadas por su demanda: <b>" + fmt(Math.max(0, Math.exp(aa + bb*Math.log(d.esperados)) - 0.5),1) + "</b>"), legend: ()=> el("div",{class:"story-ramp dv"},[ el("span",null,["Menos de las esperadas"]), el("i",{class:"dv-n2"}), el("i",{class:"dv-n1"}), el("i",{class:"dv-0"}), el("i",{class:"dv-p1"}), el("i",{class:"dv-p2"}), el("span",null,["Más"]) ]), note:"Demanda = población ÷ 127. Ajuste exploratorio de este análisis. Fuente: REPS 13/11/2026; DANE." },
     { cap:"Prevalencia atendida relativa según la pobreza, a igual oferta", g: ()=> bars([10,20,30,40,50,60,70].map(v=> ["IPM de " + v + " %", 100*Math.pow(0.71, (v-10)/10), "bar-fill"]), "Prevalencia atendida relativa según el IPM", v=> fmt(v,0)), note:"Índice: 100 = departamento con IPM de 10 %. Cálculo con la razón de tasas del modelo cuasi-Poisson (0,71 por cada 10 puntos de IPM, ajustada por oferta)." },
     { cap:"Hitos de la Ley 2628 de 2026", g: ()=>{
-        const w = 560, h = 210, sv = svgEl(w, h, "story-svg", "Hitos de la Ley 2628"), x0 = 30, x1 = w-30, t0 = new Date(2026,7,26).getTime(), t1 = new Date(2027,7,26).getTime(), X = d=> x0 + (x1-x0)*(d.getTime()-t0)/(t1-t0);
-        const hitos = [[new Date(2026,7,26),"Sanción","26 ago 2026"],[new Date(2027,1,26),"Comité Nacional de Inclusión","feb 2027"],[new Date(2027,7,26),"Política, ruta y capacitación","ago 2027"]];
-        let g = '<line x1="'+x0+'" x2="'+x1+'" y1="90" y2="90" class="tl-axis"/>';
-        hitos.forEach((hh,i)=>{ const x = X(hh[0]), anc = i === 0 ? "start" : i === 2 ? "end" : "middle"; g += '<circle cx="'+x+'" cy="90" r="9" class="tl-dot"/><text x="'+x+'" y="60" text-anchor="'+anc+'" class="axis-lab strong">'+esc(hh[1])+'</text><text x="'+x+'" y="124" text-anchor="'+anc+'" class="axis-lab">'+esc(hh[2])+'</text>'; });
-        const hoy = new Date(); if(hoy.getTime() > t0 && hoy.getTime() < t1){ const x = X(hoy); g += '<line x1="'+x+'" x2="'+x+'" y1="72" y2="150" class="tl-today"/><text x="'+(x+4)+'" y="164" class="axis-lab tl-today-lab">Hoy</text>'; }
-        sv.innerHTML = g; return sv; }, note:"Plazos contados desde la sanción (26/08/2026). Fuente: Ley 2628 de 2026." }
+        const w = 400, h = 330, sv = svgEl(w, h, "story-svg", "Hitos de la Ley 2628");
+        const hitos = [["26 de agosto de 2026","Sanción de la ley","Entra en vigor la Ley 2628."],["Febrero de 2027","Comité Nacional de Inclusión","Plazo de 6 meses para reglamentarlo (art. 10)."],["Agosto de 2027","Política, ruta y capacitación","Plazo de 12 meses (arts. 4, 7 y 14)."]];
+        let g = '<line x1="24" x2="24" y1="40" y2="280" class="tl-axis"/>';
+        hitos.forEach((x,i)=>{ const y = 40 + i*120; g += '<g class="tl-mark" tabindex="-1" data-h="'+i+'"><rect x="0" y="'+(y-36)+'" width="400" height="84" class="row-hit"/><circle cx="24" cy="'+y+'" r="12" class="tl-dot"/><text x="52" y="'+(y-4)+'" class="axis-lab strong">'+esc(x[1])+'</text><text x="52" y="'+(y+18)+'" class="axis-lab">'+esc(x[0])+'</text></g>'; });
+        sv.innerHTML = g; sv.querySelectorAll("g[data-h]").forEach(n=>{ const x = hitos[+n.getAttribute("data-h")]; bindTip(n, ()=> "<h5>"+esc(x[1])+"</h5><p>"+esc(x[0])+". "+esc(x[2])+"</p>"); }); return sv; }, note:"Plazos contados desde la sanción (26/08/2026). Fuente: Ley 2628 de 2026." }
   ];
   const wrap = el("div",{class:"story"});
-  const gr = el("div",{class:"story-graphic", "aria-hidden":"true"});
+  const gr = el("div",{class:"story-graphic", role:"group", "aria-label":"Gráfico del paso activo"});
   const frames = FR.map((f,i)=>{ const fig = el("figure",{class:"story-frame" + (f.pal ? " pal-" + f.pal : "") + (i===0?" on":"")},[ el("figcaption",{class:"story-cap"},[f.cap]) ]); fig.appendChild(f.g()); if(f.legend) fig.appendChild(f.legend()); fig.appendChild(el("p",{class:"story-note"},[f.note])); gr.appendChild(fig); return fig; });
   const stepsBox = el("div",{class:"story-steps"});
   const steps = STORY.map((st,i)=>{
@@ -1079,6 +1129,13 @@ function renderStory(body){
     const sec = el("section",{class:"story-step" + (i===0?" on":""), "data-i":String(i), "aria-label":"Paso " + (i+1) + " de " + STORY.length},[ el("div",{class:"story-card"},[ el("span",{class:"story-n"},["Paso " + (i+1) + " de " + STORY.length]), el("h4",null,[st.t]), el("p",null,[st.d]), b ]) ]);
     stepsBox.appendChild(sec); return sec;
   });
+  if(MOB()){
+    // en el celular cada paso lleva su gráfico debajo del texto, para poder tocarlo
+    wrap.classList.add("story-stack");
+    steps.forEach((st,i)=>{ frames[i].classList.add("on"); st.classList.add("on"); st.appendChild(frames[i]); });
+    wrap.appendChild(stepsBox); body.appendChild(wrap);
+    return;
+  }
   wrap.appendChild(gr); wrap.appendChild(stepsBox); body.appendChild(wrap);
   const setActive = i=>{ frames.forEach((f,j)=> f.classList.toggle("on", j===i)); steps.forEach((s,j)=> s.classList.toggle("on", j===i)); };
   if("IntersectionObserver" in window){
@@ -1086,6 +1143,68 @@ function renderStory(body){
     steps.forEach(st=> io.observe(st));
   }
   steps.forEach(st=> st.addEventListener("focusin", ()=> setActive(+st.dataset.i)));
+}
+
+
+/* ---------------------------------------------------------------- herramientas de cada gráfico: ayuda y ampliación */
+function zoomDialog(){
+  let dlg = document.getElementById("zoom-dlg"); if(dlg) return dlg;
+  dlg = el("dialog",{id:"zoom-dlg", class:"zoom-dlg", "aria-label":"Gráfico ampliado"});
+  const close = el("button",{type:"button", class:"btn zoom-close"},["Cerrar"]);
+  dlg.appendChild(el("div",{class:"zoom-head"},[ el("strong",{id:"zoom-title"},[""]), close ]));
+  dlg.appendChild(el("div",{class:"zoom-body", id:"zoom-body"}));
+  close.addEventListener("click", ()=> dlg.close());
+  dlg.addEventListener("click", e=>{ if(e.target === dlg) dlg.close(); });
+  dlg.addEventListener("close", ()=>{ if(dlg._home){ dlg._home.after(dlg._box); dlg._home.remove(); dlg._home = null; } closeTip(); document.body.appendChild(tip); if(dlg._btn) dlg._btn.focus(); });
+  document.body.appendChild(dlg); return dlg;
+}
+function titleFor(node){
+  let n = node;
+  while(n && !(n.classList && n.classList.contains("acc-body"))){
+    let p = n.previousElementSibling;
+    while(p){ if(p.matches && p.matches(".subsection-title, h4.chart-title")) return p.textContent; p = p.previousElementSibling; }
+    n = n.parentElement;
+  }
+  const it = node.closest(".acc-item"); return it ? it.querySelector("h3").textContent : "Gráfico";
+}
+function addChartTools(){
+  document.querySelectorAll("#accordion .chart-box, #accordion .diagram-wrap").forEach(box=>{
+    if(!box.querySelector("svg.chart-svg")) return;
+    const dept = !!box.querySelector("[data-cod]"), any = !!box.querySelector("[data-tip]");
+    const hint = any ? (MOB() ? (dept ? "Toca un departamento para ver sus datos" : "Toca un elemento para ver sus datos") : (dept ? "Pasa el cursor para ver los datos; haz clic para seleccionar el departamento en todos los gráficos" : "Pasa el cursor por cada elemento para ver sus datos")) : "";
+    const b = el("button",{type:"button", class:"btn zoom-btn"},["Ampliar"]);
+    const wrap = el("div",{class:"chart-wrap"}), tools = el("div",{class:"chart-tools"},[ el("span",{class:"chart-hint"},[hint]), b ]);
+    box.replaceWith(wrap); wrap.appendChild(tools); wrap.appendChild(box);
+    b.addEventListener("click", ()=>{
+      const dlg = zoomDialog(); dlg._box = box; dlg._btn = b; dlg._home = document.createComment("gráfico");
+      const ph = el("span",{hidden:""}); box.before(ph); dlg._home = ph;
+      document.getElementById("zoom-title").textContent = titleFor(wrap);
+      const zb = document.getElementById("zoom-body"); zb.innerHTML = ""; zb.appendChild(box);
+      dlg.appendChild(tip); closeTip(); dlg.showModal();
+    });
+  });
+}
+/* Al cruzar el ancho de móvil se vuelven a dibujar los gráficos con sus medidas, conservando lo abierto. */
+function renderSections(){
+  buildAccordion();
+  renderContexto(); renderCausal(); renderTerritorio(); renderIntensidad(); renderNacional(); renderOferta(); renderOfertaAtencion(); renderPobreza();
+  renderDesigualdad(); renderHuila(); renderInstrumentos(); renderNormativa(); renderNormativaExtras(); renderRevision(); renderMetodologia(); renderGlosario(); renderReferencias();
+  addSectionNav(); addChartTools(); renderTOC();
+  decorate(document.getElementById("accordion"));
+  observeReadings();
+}
+let wasMob = null;
+function watchBreakpoint(){
+  wasMob = MOB(); let t = null;
+  window.addEventListener("resize", ()=>{ clearTimeout(t); t = setTimeout(()=>{
+    if(MOB() === wasMob) return; wasMob = MOB();
+    const open = [...document.querySelectorAll(".acc-item.open")].map(x=> x.id.slice(4)), cur = [...document.querySelectorAll(".acc-item")].find(x=> x.getBoundingClientRect().bottom > 120);
+    const dlg = document.getElementById("zoom-dlg"); if(dlg && dlg.open) dlg.close();
+    closeTip(); STATE.listeners = []; document.getElementById("accordion").innerHTML = ""; document.getElementById("toc").innerHTML = "";
+    renderSections();
+    document.querySelectorAll(".acc-item").forEach(i=> toggleSection(i, i.querySelector(".acc-header"), open.includes(i.id.slice(4))));
+    if(cur && window.scrollY > 600) scrollSoon(cur.id);
+  }, 180); });
 }
 
 /* ---------------------------------------------------------------- tamaño del texto */
@@ -1127,30 +1246,30 @@ function demandWidget(body){
     const lx = DEP.map(d=> Math.log(M.val(d))), ly = DEP.map(d=> Math.log(d.sedes + 0.5));
     const F = fit(lx, ly), res = DEP.map((d,i)=> ly[i] - (F.a + F.b*lx[i]));
     DEP.forEach((d,i)=>{ d._res = res[i]; d._espSedes = Math.max(0, Math.exp(F.a + F.b*lx[i]) - 0.5); });
-    const w = 680, h = 400, pad = { l:58, r:24, t:18, b:46 }, iw = w-pad.l-pad.r, ih = h-pad.t-pad.b;
+    const w = VW(820,400), h = VW(500,430), pad = { l:VW(60,52), r:VW(24,14), t:18, b:54 }, iw = w-pad.l-pad.r, ih = h-pad.t-pad.b;
     const xmin = Math.log(Math.min(...DEP.map(M.val))*0.8), xmax = Math.log(Math.max(...DEP.map(M.val))*1.2), ymin = Math.log(0.5), ymax = Math.log(100.5);
     const PX = v=> pad.l + iw*(Math.log(v)-xmin)/(xmax-xmin), PYl = l=> pad.t + ih - ih*(l-ymin)/(ymax-ymin), PY = n=> PYl(Math.log(n + 0.5));
     const s = svgEl(w, h, "scatter-svg", "Sedes de neuropediatría frente a la demanda");
     let g = "";
     [0,1,2,5,10,20,50,100].forEach(t=>{ g += '<line x1="'+pad.l+'" x2="'+(w-pad.r)+'" y1="'+PY(t)+'" y2="'+PY(t)+'" class="grid"/><text x="'+(pad.l-8)+'" y="'+(PY(t)+4)+'" class="axis-lab" text-anchor="end">'+t+'</text>'; });
-    [10,30,100,300,1000,3000,10000,30000,60000].forEach(t=>{ if(Math.log(t) < xmin || Math.log(t) > xmax) return; g += '<line x1="'+PX(t)+'" x2="'+PX(t)+'" y1="'+pad.t+'" y2="'+(h-pad.b)+'" class="grid"/><text x="'+PX(t)+'" y="'+(h-pad.b+16)+'" class="axis-lab" text-anchor="middle">'+fmt(t)+'</text>'; });
-    g += '<text x="'+(pad.l+iw/2)+'" y="'+(h-6)+'" class="axis-title" text-anchor="middle">'+esc(M.label)+' (escala logarítmica)</text>';
-    g += '<text transform="translate(14,'+(pad.t+ih/2)+') rotate(-90)" class="axis-title" text-anchor="middle">Sedes con neuropediatría (escala logarítmica)</text>';
+    VW([10,30,100,300,1000,3000,10000,30000,60000],[10,100,1000,10000]).forEach(t=>{ if(Math.log(t) < xmin || Math.log(t) > xmax) return; g += '<line x1="'+PX(t)+'" x2="'+PX(t)+'" y1="'+pad.t+'" y2="'+(h-pad.b)+'" class="grid"/><text x="'+PX(t)+'" y="'+(h-pad.b+16)+'" class="axis-lab" text-anchor="middle">'+fmt(t)+'</text>'; });
+    g += '<text x="'+(pad.l+iw/2)+'" y="'+(h-6)+'" class="axis-title" text-anchor="middle">'+esc(VW(M.label + ' (escala logarítmica)', M.short.charAt(0).toUpperCase() + M.short.slice(1) + ' (escala log.)'))+'</text>';
+    g += '<text transform="translate(14,'+(pad.t+ih/2)+') rotate(-90)" class="axis-title" text-anchor="middle">Sedes con neuropediatría'+VW(" (escala logarítmica)","")+'</text>';
     const x0 = Math.exp(xmin), x1 = Math.exp(xmax);
     g += '<line x1="'+PX(x0)+'" y1="'+PYl(F.a+F.b*xmin)+'" x2="'+PX(x1)+'" y2="'+PYl(F.a+F.b*xmax)+'" class="fit-line"/>';
-    g += '<text x="'+(w-pad.r-6)+'" y="'+(pad.t+14)+'" class="quad-lab" text-anchor="end">Más sedes de las esperadas</text><text x="'+(w-pad.r-6)+'" y="'+(h-pad.b-8)+'" class="quad-lab" text-anchor="end">Menos sedes de las esperadas</text>';
+    if(!MOB()) g += '<text x="'+(pad.l+8)+'" y="'+(pad.t+16)+'" class="quad-lab">Más sedes de las esperadas</text><text x="'+(w-pad.r-6)+'" y="'+(h-pad.b-8)+'" class="quad-lab" text-anchor="end">Menos sedes de las esperadas</text>';
     s.innerHTML = g;
     DEP.forEach(d=>{
       const c = document.createElementNS(SVGNS,"circle");
-      c.setAttribute("cx", PX(M.val(d))); c.setAttribute("cy", PY(d.sedes)); c.setAttribute("r", 6);
+      c.setAttribute("cx", PX(M.val(d))); c.setAttribute("cy", PY(d.sedes)); c.setAttribute("r", VW(8,9)); c.setAttribute("data-cod", d.cod);
       c.setAttribute("class", cls(d) + (d.cod === STATE.sel ? " sel" : "")); c.setAttribute("tabindex","0"); c.setAttribute("role","button");
       c.setAttribute("aria-label", d.nombre + ": " + fmt(d.sedes) + " sedes; " + M.short + " " + fmt(M.val(d)));
       bindTip(c, ()=> "<h5>"+esc(d.nombre)+"</h5><p class='tip-region'>"+esc(d.region)+" · IPM "+fmt(d.ipm,1)+" %</p><p>Sedes: <b>"+fmt(d.sedes)+"</b><br>"+esc(M.label)+": <b>"+fmt(M.val(d))+"</b><br>Sedes esperadas por su demanda: <b>"+fmt(d._espSedes,1)+"</b></p>");
       c.addEventListener("click", ()=> selectDept(d.cod));
       s.appendChild(c);
     });
-    DEP.filter(d=> ["11","05","08","70","25","99","27","19","23"].includes(d.cod) || d.cod === STATE.sel).forEach(d=>{
-      const t = document.createElementNS(SVGNS,"text"); t.setAttribute("x", PX(M.val(d)) + 8); t.setAttribute("y", PY(d.sedes) + 4);
+    DEP.filter(d=> VW(["11","08","70","25","99","27","19"],["11","70","25","99"]).includes(d.cod) || d.cod === STATE.sel).forEach(d=>{
+      const t = document.createElementNS(SVGNS,"text"); const atEnd = PX(M.val(d)) + 14 + d.nombre.length*VW(8,9) > w; t.setAttribute("x", PX(M.val(d)) + (atEnd ? -11 : 11)); if(atEnd) t.setAttribute("text-anchor","end"); t.setAttribute("y", PY(d.sedes) + VW(4,-8));
       t.setAttribute("class","pt-lab" + (d.cod === STATE.sel ? " sel-pt-lab" : "")); t.textContent = d.nombre.replace(" D.C.",""); s.appendChild(t);
     });
     box.innerHTML = ""; box.appendChild(s);
@@ -1159,16 +1278,16 @@ function demandWidget(body){
     setReading(rd, "La oferta sí sigue a la demanda: los departamentos con más " + esc(M.short) + " tienen más sedes (ρ = " + fmt(rho,2) + "). En escala logarítmica, el tamaño de la demanda explica cerca del " + fmt(100*F.r2,0) + " % de las diferencias en el número de sedes, y la pendiente (" + fmt(F.b,2) + ") indica que " + (F.b > 0.85 ? "las sedes crecen casi en proporción a la demanda" : "las sedes crecen algo menos que la demanda: los departamentos grandes tienen menos sedes por caso") + ". " + (dem === "per" ? "Ojo: las personas atendidas dependen a su vez de la oferta, así que esta comparación exagera el ajuste; la de casos esperados es la más limpia." : "Los casos esperados suponen la misma frecuencia de autismo en todo el país (1 de cada 127)."));
     // residuos
     const list = DEP.slice().sort((a,b)=> b._res - a._res);
-    const w2 = 680, rowH = 17, pad2 = { l:150, r:150, t:24 }, h2 = pad2.t + list.length*rowH + 8, iw2 = w2 - pad2.l - pad2.r, cx = pad2.l + iw2/2;
+    const w2 = VW(860,400), rowH = VW(25,34), pad2 = { l:VW(160,158), r:VW(185,92), t:30 }, h2 = pad2.t + list.length*rowH + 8, iw2 = w2 - pad2.l - pad2.r, cx = pad2.l + iw2/2;
     const mxr = Math.max(...list.map(d=> Math.abs(d._res)));
     const s2 = svgEl(w2, h2, "", "Sedes observadas frente a esperadas por departamento");
-    let g2 = '<line x1="'+cx+'" x2="'+cx+'" y1="'+(pad2.t-6)+'" y2="'+h2+'" class="axis"/><text x="'+(cx-6)+'" y="12" class="axis-lab" text-anchor="end">Menos sedes de las esperadas</text><text x="'+(cx+6)+'" y="12" class="axis-lab">Más sedes de las esperadas</text>';
+    let g2 = '<line x1="'+cx+'" x2="'+cx+'" y1="'+(pad2.t-6)+'" y2="'+h2+'" class="axis"/><text x="'+(cx-6)+'" y="12" class="axis-lab" text-anchor="end">'+VW("Menos sedes de las esperadas","Menos")+'</text><text x="'+(cx+6)+'" y="14" class="axis-lab">'+VW("Más sedes de las esperadas","Más")+'</text>';
     s2.innerHTML = g2;
     list.forEach((d,i)=>{
       const y = pad2.t + i*rowH, bw = (iw2/2)*Math.abs(d._res)/mxr, pos = d._res >= 0;
-      const gg = document.createElementNS(SVGNS,"g"); gg.setAttribute("class","bar-g rank-row" + (d.cod === STATE.sel ? " sel" : "")); gg.setAttribute("tabindex","0");
+      const gg = document.createElementNS(SVGNS,"g"); gg.setAttribute("data-cod", d.cod); gg.setAttribute("class","bar-g rank-row" + (d.cod === STATE.sel ? " sel" : "")); gg.setAttribute("tabindex","0");
       const fill = colorBy === "ipm" ? "bub ipm" + classOf(d.ipm, ipmBr) : "bub rgb " + REGION_CLASS[d.region];
-      gg.innerHTML = '<rect x="0" y="'+y+'" width="'+w2+'" height="'+rowH+'" class="row-hit"/><text x="'+(pad2.l-8)+'" y="'+(y+12)+'" class="axis-lab" text-anchor="end">'+esc(d.nombre)+'</text><rect x="'+(pos?cx:cx-bw)+'" y="'+(y+3)+'" width="'+Math.max(bw,1)+'" height="'+(rowH-6)+'" rx="2" class="'+fill+'"/><text x="'+(w2-pad2.r+8)+'" y="'+(y+12)+'" class="axis-lab">'+fmt(d.sedes)+' de '+fmt(d._espSedes, d._espSedes < 10 ? 1 : 0)+' esperadas</text>';
+      gg.innerHTML = '<rect x="0" y="'+y+'" width="'+w2+'" height="'+rowH+'" class="row-hit"/><text x="'+(pad2.l-8)+'" y="'+(y+rowH/2+5)+'" class="axis-lab" text-anchor="end">'+esc(d.nombre)+'</text><rect x="'+(pos?cx:cx-bw)+'" y="'+(y+3)+'" width="'+Math.max(bw,1)+'" height="'+(rowH-6)+'" rx="2" class="'+fill+'"/><text x="'+(w2-pad2.r+8)+'" y="'+(y+rowH/2+5)+'" class="axis-lab">'+fmt(d.sedes)+' de '+fmt(d._espSedes, d._espSedes < 10 ? 1 : 0)+VW(" esperadas","")+'</text>';
       bindTip(gg, ()=> "<h5>"+esc(d.nombre)+"</h5><p class='tip-region'>"+esc(d.region)+" · IPM "+fmt(d.ipm,1)+" %</p><p>Tiene <b>"+fmt(d.sedes)+"</b> sedes; por su demanda se esperarían <b>"+fmt(d._espSedes,1)+"</b>.</p>");
       gg.addEventListener("click", ()=> selectDept(d.cod));
       s2.appendChild(gg);
@@ -1209,20 +1328,20 @@ function renderInstrumentos(){
   const tipos = ["Vigilancia","Tamizaje","Apoyo al diagnóstico","Diagnóstico"], tcls = { "Vigilancia":"tp-vig", "Tamizaje":"tp-tam", "Apoyo al diagnóstico":"tp-apo", "Diagnóstico":"tp-dia" };
   // escala por tramos: la primera infancia necesita más espacio que la adultez
   const knots = [[0,0],[3,0.25],[6,0.38],[12,0.56],[18,0.72],[65,1]];
-  const w = 760, pad = { l:250, r:16, t:56 }, iw = w - pad.l - pad.r, rowH = 30, h = pad.t + I.items.length*rowH + 14;
+  const M = MOB(), w = VW(960,400), pad = { l:VW(330,6), r:VW(16,10), t:VW(64,64) }, iw = w - pad.l - pad.r, rowH = VW(36,58), h = pad.t + I.items.length*rowH + 14;
   const AX = a=>{ for(let i=1;i<knots.length;i++){ if(a <= knots[i][0]){ const [a0,f0] = knots[i-1], [a1,f1] = knots[i]; return pad.l + iw*(f0 + (f1-f0)*(a-a0)/(a1-a0)); } } return pad.l + iw; };
   const s = svgEl(w, h, "life-svg", "Instrumentos de detección y diagnóstico según la edad");
   const etapas = [ { a:0, b:6, t:"0 a 5 años", p:16.7 }, { a:6, b:12, t:"6 a 11 años", p:55.2 }, { a:12, b:18, t:"12 a 17 años", p:15.4 }, { a:18, b:65, t:"18 años o más", p:12.6 } ];
   let g = "";
-  etapas.forEach((e,i)=>{ g += '<rect x="'+AX(e.a)+'" y="'+(pad.t-46)+'" width="'+(AX(e.b)-AX(e.a))+'" height="'+(h-pad.t+46-8)+'" class="etapa e'+i+'"/><text x="'+((AX(e.a)+AX(e.b))/2)+'" y="'+(pad.t-32)+'" text-anchor="middle" class="axis-lab strong">'+e.t+'</text><text x="'+((AX(e.a)+AX(e.b))/2)+'" y="'+(pad.t-18)+'" text-anchor="middle" class="axis-lab">'+fmt(e.p,1)+' % de atendidos</text>'; });
-  [0,1,2,3,4,6,12,18,30,65].forEach(a=>{ g += '<line x1="'+AX(a)+'" x2="'+AX(a)+'" y1="'+(pad.t-6)+'" y2="'+(h-8)+'" class="grid"/><text x="'+AX(a)+'" y="'+(pad.t-4)+'" text-anchor="middle" class="axis-lab small-lab">'+a+'</text>'; });
-  g += '<text x="'+(pad.l-8)+'" y="'+(pad.t-4)+'" text-anchor="end" class="axis-title">Edad (años)</text>';
+  etapas.forEach((e,i)=>{ g += '<rect x="'+AX(e.a)+'" y="'+(pad.t-46)+'" width="'+(AX(e.b)-AX(e.a))+'" height="'+(h-pad.t+46-8)+'" class="etapa e'+i+'"/><text x="'+((AX(e.a)+AX(e.b))/2)+'" y="'+(pad.t-32)+'" text-anchor="middle" class="axis-lab strong">'+(M ? ['0-5','6-11','12-17','18+'][i] : e.t)+'</text><text x="'+((AX(e.a)+AX(e.b))/2)+'" y="'+(pad.t-18)+'" text-anchor="middle" class="axis-lab">'+fmt(e.p, M ? 0 : 1)+' %</text>'; });
+  VW([0,1,2,3,4,6,12,18,30,65],[0,2,4,6,12,18,65]).forEach(a=>{ g += '<line x1="'+AX(a)+'" x2="'+AX(a)+'" y1="'+(pad.t-6)+'" y2="'+(h-8)+'" class="grid"/><text x="'+AX(a)+'" y="'+(pad.t-4)+'" text-anchor="middle" class="axis-lab small-lab">'+a+'</text>'; });
+  if(!M) g += '<text x="'+(pad.l-8)+'" y="'+(pad.t-4)+'" text-anchor="end" class="axis-title">Edad (años)</text>';
   s.innerHTML = g;
   const det = el("div",{class:"reading causal-detail", "aria-live":"polite"});
   I.items.forEach((it,i)=>{
     const y = pad.t + i*rowH + 4, x1 = AX(it.desde), x2 = AX(it.hasta);
     const gg = document.createElementNS(SVGNS,"g"); gg.setAttribute("class","bar-g life-row"); gg.setAttribute("tabindex","0"); gg.setAttribute("role","button");
-    gg.innerHTML = '<rect x="0" y="'+(y-3)+'" width="'+w+'" height="'+rowH+'" class="row-hit"/><text x="'+(pad.l-8)+'" y="'+(y+15)+'" text-anchor="end" class="axis-lab">'+esc(it.nombre)+'</text><rect x="'+x1+'" y="'+(y+3)+'" width="'+Math.max(x2-x1,4)+'" height="'+(rowH-12)+'" rx="5" class="'+tcls[it.tipo]+'"/>' + (it.norma ? '<text x="'+(x2+6)+'" y="'+(y+15)+'" class="axis-lab strong">'+esc(it.norma)+'</text>' : "");
+    gg.innerHTML = '<rect x="0" y="'+(y-3)+'" width="'+w+'" height="'+rowH+'" class="row-hit"/><text x="'+(M ? 4 : pad.l-8)+'" y="'+(M ? y+14 : y+19)+'" text-anchor="'+(M ? 'start' : 'end')+'" class="axis-lab'+(M ? ' strong' : '')+'">'+esc(it.nombre)+'</text><rect x="'+x1+'" y="'+(M ? y+22 : y+3)+'" width="'+Math.max(x2-x1,4)+'" height="'+(M ? 22 : rowH-12)+'" rx="5" class="'+tcls[it.tipo]+'"/>' + (it.norma ? '<text x="'+(x2+6)+'" y="'+(M ? y+38 : y+19)+'" class="axis-lab strong">'+esc(it.norma)+'</text>' : "");
     const html = ()=> "<h5>"+esc(it.nombre)+" · "+esc(it.tipo)+"</h5><p>Edades: "+(it.edadTxt ? esc(it.edadTxt) : fmt(it.desde,it.desde%1?1:0)+" a "+(it.hasta>=65?"adultez":fmt(it.hasta,it.hasta%1?1:0)+" años"))+"<br>Responde: "+esc(it.quien)+"</p><p>"+esc(it.d)+"</p>";
     bindTip(gg, html);
     const pick = ()=>{
@@ -1284,7 +1403,7 @@ function renderNormativaExtras(){
   f2.appendChild(el("p",{class:"muted small"},["Resumen del equipo a partir de los dos textos; para efectos legales consulte los documentos oficiales."]));
   f2.appendChild(el("h3",{id:"normativa-paralelo", class:"subsection-title"},["La ley y la política, frente a frente"]));
   f2.appendChild(el("p",{class:"subsection-subtitle"},["Así se corresponden sus contenidos, punto por punto."]));
-  const P = C.paralelo, w = 820, rowH = 64, pad = 26, h2 = pad + P.length*rowH, lw = 300, rx = w - lw;
+  const P = C.paralelo, w = 820, rowH = 80, pad = 30, h2 = pad + P.length*rowH, lw = 310, rx = w - lw;
   const s = svgEl(w, h2, "par-svg", "Paralelo entre la Ley 2628 y la Política Nacional de Salud Mental");
   let g = '<text x="'+(lw/2)+'" y="16" text-anchor="middle" class="axis-title">Ley 2628 de 2026</text><text x="'+(rx+lw/2)+'" y="16" text-anchor="middle" class="axis-title">Política Nacional de Salud Mental 2024-2033</text>';
   s.innerHTML = g;
@@ -1298,14 +1417,15 @@ function renderNormativaExtras(){
     bindTip(gg, ()=> "<h5>"+esc(r.ley)+"</h5><p>"+esc(r.d)+"</p>");
     s.appendChild(gg);
   });
-  f2.appendChild(el("div",{class:"diagram-wrap par-wrap"},[s]));
+  if(!MOB()) f2.appendChild(el("div",{class:"diagram-wrap par-wrap"},[s]));
   f2.appendChild(legend([["rel-coincide-sw","Se complementan"],["rel-vacio-sw","Por articular"],["rel-solo-sw","Solo en la ley"]]));
   const rd = reading(); f2.appendChild(rd);
   setReading(rd, "La ley y la política coinciden en detectar a tiempo, definir rutas de atención, formar al personal, medir y promover la inclusión. Hay dos temas por articular: el diagnóstico (la ley se centra en niños, niñas y adolescentes y la política tiene un enfoque general) y la coordinación (cada una tiene sus propias instancias). Pasa el cursor por cada fila para ver el detalle.");
-  const lst = el("ul",{class:"a11y-list"}); lst.hidden = true;
+  const lst = el("ul",{class:"a11y-list"}); lst.hidden = !MOB();
   P.forEach(r=> lst.appendChild(el("li",null,[ el("div",{class:"a11y-title"},[r.ley + " ↔ " + r.pnsm]), el("div",{class:"a11y-meta"},[r.d]) ])));
   const lt = el("button",{class:"btn a11y-list-toggle", type:"button", "aria-expanded":"false"},["Ver el paralelo como lista"]);
   lt.addEventListener("click", ()=>{ lst.hidden = !lst.hidden; lt.setAttribute("aria-expanded", lst.hidden?"false":"true"); lt.textContent = lst.hidden ? "Ver el paralelo como lista" : "Ocultar la lista"; });
+  if(MOB()) lt.hidden = true;
   f2.appendChild(lt); f2.appendChild(lst);
   bodyP.insertBefore(f2, document.getElementById("normativa-pnsm"));
 }
@@ -1338,17 +1458,17 @@ function renderPobreza(){
 }
 function forestChart(body){
   const ms = C.modelos;
-  const fw = 640, fH = 34, fpad = { l:250, r:110, t:24, b:10 }, fh = fpad.t + ms.length*fH + fpad.b, fiw = fw - fpad.l - fpad.r;
+  const M = MOB(), fw = VW(820,400), fH = VW(44,84), fpad = { l:VW(310,26), r:VW(150,26), t:VW(50,44), b:10 }, fh = fpad.t + ms.length*fH + fpad.b, fiw = fw - fpad.l - fpad.r;
   const lmin = Math.log(0.4), lmax = Math.log(2), FX = v => fpad.l + fiw*(Math.log(v)-lmin)/(lmax-lmin);
   const fs = svgEl(fw, fh, "", "Razones de tasas del modelo cuasi-Poisson");
   let fg = "";
   [0.5,0.75,1,1.5,2].forEach(t=>{ fg += '<line x1="'+FX(t)+'" x2="'+FX(t)+'" y1="'+(fpad.t-6)+'" y2="'+(fh-fpad.b)+'" class="grid'+(t===1?' zero':'')+'"/><text x="'+FX(t)+'" y="'+(fpad.t-10)+'" class="axis-lab" text-anchor="middle">'+fmt(t,2)+'</text>'; });
-  fg += '<text x="'+FX(1)+'" y="9" class="axis-title" text-anchor="middle">Razón de tasas (RR, escala logarítmica)</text>';
+  fg += '<text x="'+FX(1)+'" y="14" class="axis-title" text-anchor="middle">Razón de tasas (RR, escala logarítmica)</text>';
   fs.innerHTML = fg;
   ms.forEach((m,i)=>{
-    const y = fpad.t + i*fH + fH/2;
+    const y = fpad.t + i*fH + fH/2 + (M ? 2 : 0);
     const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g");
-    g.innerHTML = '<text x="'+(fpad.l-10)+'" y="'+(y+4)+'" class="axis-lab" text-anchor="end">'+esc(m.modelo+". "+m.var)+'</text><line x1="'+FX(m.lo)+'" x2="'+FX(m.hi)+'" y1="'+y+'" y2="'+y+'" class="ci-line"/><rect x="'+(FX(m.rr)-5)+'" y="'+(y-5)+'" width="10" height="10" class="pt-sq"/><text x="'+(fw-fpad.r+8)+'" y="'+(y+4)+'" class="bar-val">'+fmt(m.rr,2)+' ('+fmt(m.lo,2)+'–'+fmt(m.hi,2)+')</text>';
+    g.innerHTML = '<rect x="0" y="'+(y-fH/2)+'" width="'+fw+'" height="'+fH+'" class="row-hit"/><text x="'+(M ? 2 : fpad.l-10)+'" y="'+(M ? y-20 : y+4)+'" class="axis-lab" text-anchor="'+(M ? 'start' : 'end')+'">'+esc(m.modelo+". "+m.var)+'</text><line x1="'+FX(m.lo)+'" x2="'+FX(m.hi)+'" y1="'+y+'" y2="'+y+'" class="ci-line"/><rect x="'+(FX(m.rr)-5)+'" y="'+(y-5)+'" width="10" height="10" class="pt-sq"/><text x="'+(M ? FX(m.rr) : fw-fpad.r+8)+'" y="'+(M ? y+28 : y+4)+'" text-anchor="'+(M ? 'middle' : 'start')+'" class="bar-val">'+fmt(m.rr,2)+' ('+fmt(m.lo,2)+'–'+fmt(m.hi,2)+')</text>';
     bindTip(g, ()=> "<h5>"+esc(m.var)+"</h5><p>RR "+fmt(m.rr,2)+" · IC95 % "+fmt(m.lo,2)+" a "+fmt(m.hi,2)+" · p "+m.p+"</p>"+(m.hi<1||m.lo>1?"<p>El IC no incluye 1: asociación compatible con los datos.</p>":"<p>El IC incluye 1: sin evidencia de asociación.</p>"));
     fs.appendChild(g);
   });
@@ -1414,15 +1534,16 @@ function flowChart(cod){
     .concat(top.map(i=>({ lab: BY[i.k].nombre, n:i.n, cls:"fl-out", cod:i.k })))
     .concat(rest.length ? [{ lab: "Otros " + rest.length + " departamentos", n: rest.reduce((s,i)=>s+i.n,0), cls:"fl-out" }] : [])
     .concat(na.map(i=>({ lab:"Sin dato del prestador", n:i.n, cls:"fl-na" })));
-  const w = 640, rowH = 26, pad = { l:170, r:110, t:6, b:6 }, h = pad.t + rows.length*rowH + pad.b, iw = w-pad.l-pad.r;
+  const M = MOB(), w = VW(760,400), rowH = VW(32,56), pad = { l:VW(180,0), r:VW(120,0), t:6, b:6 }, h = pad.t + rows.length*rowH + pad.b, iw = w-pad.l-pad.r;
   const s = svgEl(w, h, "", "Destino de las atenciones de " + d.nombre);
   rows.forEach((r,i)=>{
     const y = pad.t + i*rowH, bw = Math.max(1, iw * r.n/tot);
     const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g");
-    g.innerHTML = '<text x="'+(pad.l-8)+'" y="'+(y+17)+'" class="axis-lab" text-anchor="end">'+esc(r.lab)+'</text>' +
+    if(r.cod) g.setAttribute("data-cod", r.cod);
+    g.innerHTML = M ? '<text x="0" y="'+(y+16)+'" class="axis-lab">'+esc(r.lab)+'</text><text x="'+w+'" y="'+(y+16)+'" text-anchor="end" class="bar-val">'+fmt(r.n)+' · '+fmt(100*r.n/tot,1)+' %</text><rect x="0" y="'+(y+24)+'" width="'+iw+'" height="20" rx="4" class="bar-track"/><rect x="0" y="'+(y+24)+'" width="'+bw+'" height="20" rx="4" class="'+r.cls+'"/>' : '<text x="'+(pad.l-8)+'" y="'+(y+21)+'" class="axis-lab" text-anchor="end">'+esc(r.lab)+'</text>' +
       '<rect x="'+pad.l+'" y="'+(y+4)+'" width="'+iw+'" height="'+(rowH-8)+'" rx="4" class="bar-track"/>' +
       '<rect x="'+pad.l+'" y="'+(y+4)+'" width="'+bw+'" height="'+(rowH-8)+'" rx="4" class="'+r.cls+'"/>' +
-      '<text x="'+(pad.l+iw+6)+'" y="'+(y+17)+'" class="bar-val">'+fmt(r.n)+' · '+fmt(100*r.n/tot,1)+' %</text>';
+      '<text x="'+(pad.l+iw+6)+'" y="'+(y+21)+'" class="bar-val">'+fmt(r.n)+' · '+fmt(100*r.n/tot,1)+' %</text>';
     bindTip(g, ()=> "<h5>"+esc(r.lab)+"</h5><p>"+fmt(r.n)+" atenciones de residentes de "+esc(d.nombre)+" ("+fmt(100*r.n/tot,1)+" %)</p>");
     s.appendChild(g);
   });
@@ -1434,18 +1555,18 @@ function balanceChart(){
   Object.keys(D.flujos).forEach(r=> Object.keys(D.flujos[r]).forEach(c=>{ colSum[c] = (colSum[c]||0) + D.flujos[r][c]; }));
   const list = DEP.map(d=>({ d:d, net:(colSum[d.cod]||0) - d.aten24, prest: colSum[d.cod]||0 })).sort((a,b)=> b.net-a.net);
   const show = list.slice(0,6).concat(list.slice(-6));
-  const w = 640, rowH = 24, pad = { l:150, r:20, t:8, b:8 }, h = pad.t + show.length*rowH + pad.b + 10;
+  const w = VW(760,400), rowH = VW(30,38), pad = { l:VW(160,158), r:VW(20,6), t:8, b:8 }, h = pad.t + show.length*rowH + pad.b + 10;
   const mx = Math.max(...show.map(x=>Math.abs(x.net)));
   const iw = w-pad.l-pad.r, cx = pad.l + iw/2;
   const s = svgEl(w, h, "", "Saldo neto de atenciones por departamento");
   s.innerHTML = '<line x1="'+cx+'" x2="'+cx+'" y1="'+pad.t+'" y2="'+(h-pad.b)+'" class="axis"/>';
   show.forEach((x,i)=>{
-    const y = pad.t + i*rowH + (i>=6?10:0), bw = (iw/2-50) * Math.abs(x.net)/mx;
+    const y = pad.t + i*rowH + (i>=6?10:0), bw = (iw/2-VW(70,70)) * Math.abs(x.net)/mx;
     const pos = x.net >= 0;
-    const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g");
-    g.innerHTML = '<text x="'+(pad.l-8)+'" y="'+(y+16)+'" class="axis-lab" text-anchor="end">'+esc(x.d.nombre)+'</text>' +
+    const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("data-cod", x.d.cod); g.setAttribute("class","bar-g rank-row"); g.addEventListener("click", ()=> selectDept(x.d.cod));
+    g.innerHTML = '<rect x="0" y="'+y+'" width="'+w+'" height="'+rowH+'" class="row-hit"/><text x="'+(pad.l-8)+'" y="'+(y+rowH/2+5)+'" class="axis-lab" text-anchor="end">'+esc(x.d.nombre)+'</text>' +
       '<rect x="'+(pos?cx:cx-bw)+'" y="'+(y+4)+'" width="'+Math.max(bw,1)+'" height="'+(rowH-8)+'" rx="3" class="'+(pos?"net-pos":"net-neg")+'"/>' +
-      '<text x="'+(pos?cx+bw+5:cx-bw-5)+'" y="'+(y+16)+'" class="bar-val" text-anchor="'+(pos?"start":"end")+'">'+(pos?"+":"")+fmt(x.net)+'</text>';
+      '<text x="'+(pos?cx+bw+5:cx-bw-5)+'" y="'+(y+rowH/2+5)+'" class="bar-val" text-anchor="'+(pos?"start":"end")+'">'+(pos?"+":"")+fmt(x.net)+'</text>';
     bindTip(g, ()=> "<h5>"+esc(x.d.nombre)+"</h5><p>Prestadas por sus IPS: "+fmt(x.prest)+"<br>Recibidas por sus residentes: "+fmt(x.d.aten24)+"<br>Saldo: <b>"+(pos?"+":"")+fmt(x.net)+"</b></p>");
     s.appendChild(g);
   });
@@ -1490,7 +1611,7 @@ function renderDesigualdad(){
   body.appendChild(lwrap);
   function at(L, x){ const p = L.pts; for(let i=1;i<p.length;i++){ if(p[i][0] >= x){ const t = (x-p[i-1][0])/(p[i][0]-p[i-1][0]); return p[i-1][1] + t*(p[i][1]-p[i-1][1]); } } return 1; }
   function drawL(){
-    const S = 380, pad = 44, iw = S - pad - 14, X = v => pad + iw*v, Y = v => 14 + iw - iw*v;
+    const S = VW(460,400), pad = VW(48,52), iw = S - pad - 26, X = v => pad + iw*v, Y = v => 14 + iw - iw*v;
     const s = svgEl(S, S, "lorenz-svg", "Curvas de Lorenz");
     let g = '';
     [0,.25,.5,.75,1].forEach(t=>{ g += '<line x1="'+X(t)+'" x2="'+X(t)+'" y1="14" y2="'+Y(0)+'" class="grid"/><line x1="'+X(0)+'" x2="'+X(1)+'" y1="'+Y(t)+'" y2="'+Y(t)+'" class="grid"/><text x="'+X(t)+'" y="'+(Y(0)+16)+'" class="axis-lab" text-anchor="middle">'+(t*100)+'%</text><text x="'+(pad-6)+'" y="'+(Y(t)+4)+'" class="axis-lab" text-anchor="end">'+(t*100)+'%</text>'; });
@@ -1524,18 +1645,18 @@ function renderDesigualdad(){
   const NAMES = { gini:"Gini", theil:"Theil T", ci:"índice de concentración" };
   function drawIdx(){
     const rows = C.indices, lo = mm === "ci" ? -0.4 : 0, hi = mm === "ci" ? 0.3 : 0.7;
-    const w = 640, rowH = 40, pad = { l:190, r:30, t:26, b:10 }, h = pad.t + rows.length*rowH + pad.b, iw = w-pad.l-pad.r;
+    const M = MOB(), w = VW(820,400), rowH = VW(50,68), pad = { l:VW(210,14), r:VW(30,14), t:VW(50,44), b:VW(18,24) }, h = pad.t + rows.length*rowH + pad.b, iw = w-pad.l-pad.r;
     const X = v => pad.l + iw*(v-lo)/(hi-lo);
     const s = svgEl(w, h, "", "Índices de desigualdad");
     let g = "";
-    for(let t=lo; t<=hi+1e-9; t+=0.1){ g += '<line x1="'+X(t)+'" x2="'+X(t)+'" y1="'+(pad.t-6)+'" y2="'+(h-pad.b)+'" class="grid'+(Math.abs(t)<1e-9?' zero':'')+'"/><text x="'+X(t)+'" y="'+(pad.t-10)+'" class="axis-lab" text-anchor="middle">'+fmt(t,1)+'</text>'; }
-    g += '<text x="'+(pad.l+iw/2)+'" y="9" class="axis-title" text-anchor="middle">Valor del índice (punto) e IC95 % (bigotes)</text>';
+    for(let t=lo; t<=hi+1e-9; t+=VW(0.1,0.2)){ g += '<line x1="'+X(t)+'" x2="'+X(t)+'" y1="'+(pad.t-6)+'" y2="'+(h-pad.b)+'" class="grid'+(Math.abs(t)<1e-9?' zero':'')+'"/><text x="'+X(t)+'" y="'+(pad.t-10)+'" class="axis-lab" text-anchor="middle">'+fmt(t,1)+'</text>'; }
+    g += '<text x="'+(pad.l+iw/2)+'" y="13" class="axis-title" text-anchor="middle">Valor del índice (punto) e IC95 % (bigotes)</text>';
     if(mm === "ci") g += '<text x="'+(X(lo)+4)+'" y="'+(h-2)+'" class="quad-lab">← en los más pobres</text><text x="'+(X(hi)-4)+'" y="'+(h-2)+'" class="quad-lab" text-anchor="end">en los menos pobres →</text>';
     s.innerHTML = g;
     rows.forEach((r,i)=>{
-      const v = r[mm], ic = r[mm+"IC"], y = pad.t + i*rowH + rowH/2;
+      const v = r[mm], ic = r[mm+"IC"], y = pad.t + i*rowH + rowH/2 + (M ? 8 : 0);
       const gg = document.createElementNS(SVGNS,"g"); gg.setAttribute("tabindex","0"); gg.setAttribute("class","bar-g");
-      gg.innerHTML = '<text x="'+(pad.l-10)+'" y="'+(y+4)+'" class="axis-lab" text-anchor="end">'+esc(r.indicador)+'</text><line x1="'+X(ic[0])+'" x2="'+X(ic[1])+'" y1="'+y+'" y2="'+y+'" class="ci-line"/><line x1="'+X(ic[0])+'" x2="'+X(ic[0])+'" y1="'+(y-6)+'" y2="'+(y+6)+'" class="ci-line"/><line x1="'+X(ic[1])+'" x2="'+X(ic[1])+'" y1="'+(y-6)+'" y2="'+(y+6)+'" class="ci-line"/><circle cx="'+X(v)+'" cy="'+y+'" r="6" class="pt'+(i===3?' pt-alt':'')+'"/>';
+      gg.innerHTML = '<rect x="0" y="'+(y-rowH/2)+'" width="'+w+'" height="'+rowH+'" class="row-hit"/><text x="'+(M ? 2 : pad.l-10)+'" y="'+(M ? y-18 : y+4)+'" class="axis-lab" text-anchor="'+(M ? 'start' : 'end')+'">'+esc(r.indicador)+'</text><line x1="'+X(ic[0])+'" x2="'+X(ic[1])+'" y1="'+y+'" y2="'+y+'" class="ci-line"/><line x1="'+X(ic[0])+'" x2="'+X(ic[0])+'" y1="'+(y-6)+'" y2="'+(y+6)+'" class="ci-line"/><line x1="'+X(ic[1])+'" x2="'+X(ic[1])+'" y1="'+(y-6)+'" y2="'+(y+6)+'" class="ci-line"/><circle cx="'+X(v)+'" cy="'+y+'" r="6" class="pt'+(i===3?' pt-alt':'')+'"/>';
       bindTip(gg, ()=> "<h5>"+esc(r.indicador)+"</h5><p>Gini "+fmt(r.gini,3)+" ("+fmt(r.giniIC[0],3)+" a "+fmt(r.giniIC[1],3)+")<br>Theil "+fmt(r.theil,3)+" ("+fmt(r.theilIC[0],3)+" a "+fmt(r.theilIC[1],3)+")<br>MLD "+(r.mld===null?"n.d.":fmt(r.mld,3))+"<br>Índice de concentración "+fmt(r.ci,3)+" ("+fmt(r.ciIC[0],3)+" a "+fmt(r.ciIC[1],3)+")</p>");
       s.appendChild(gg);
     });
@@ -1561,12 +1682,12 @@ function renderDesigualdad(){
   const tb = el("div",{class:"chart-box"});
   tb.appendChild(el("div",{class:"split-bar", role:"img", "aria-label":"Entre regiones 37,4 %, dentro de regiones 62,6 %"},[
     el("span",{class:"split-a", style:"width:"+T.pctEntre+"%"},["Entre regiones " + fmt(T.pctEntre,1) + " %"]), el("span",{class:"split-b", style:"width:"+(100-T.pctEntre)+"%"},["Dentro de las regiones " + fmt(100-T.pctEntre,1) + " %"]) ]));
-  const rw = 640, rr = T.regiones, rH = 30, rpad = { l:160, r:150, t:10 }, rh = rpad.t + rr.length*rH + 6, riw = rw - rpad.l - rpad.r;
+  const MR = MOB(), rw = VW(820,400), rr = T.regiones, rH = VW(38,60), rpad = { l:VW(170,0), r:VW(220,0), t:10 }, rh = rpad.t + rr.length*rH + 6, riw = rw - rpad.l - rpad.r;
   const rs = svgEl(rw, rh, "", "Tasa y sedes por región");
   rr.forEach((x,i)=>{
     const y = rpad.t + i*rH, bw = riw * x.tasa/150;
     const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g");
-    g.innerHTML = '<text x="'+(rpad.l-8)+'" y="'+(y+19)+'" class="axis-lab" text-anchor="end">'+esc(x.region)+'</text><rect x="'+rpad.l+'" y="'+(y+5)+'" width="'+bw+'" height="'+(rH-10)+'" rx="4" class="rg-bar '+REGION_CLASS[x.region]+'"/><text x="'+(rpad.l+bw+6)+'" y="'+(y+19)+'" class="bar-val">'+fmt(x.tasa,1)+' /100.000 · '+fmt(x.sedes100k,2)+' sedes</text>';
+    g.innerHTML = MR ? '<text x="0" y="'+(y+16)+'" class="axis-lab">'+esc(x.region)+'</text><text x="'+rw+'" y="'+(y+16)+'" text-anchor="end" class="bar-val">'+fmt(x.tasa,1)+' /100.000 · '+fmt(x.sedes100k,2)+' sedes</text><rect x="0" y="'+(y+24)+'" width="'+bw+'" height="22" rx="4" class="rg-bar '+REGION_CLASS[x.region]+'"/>' : '<text x="'+(rpad.l-8)+'" y="'+(y+24)+'" class="axis-lab" text-anchor="end">'+esc(x.region)+'</text><rect x="'+rpad.l+'" y="'+(y+5)+'" width="'+bw+'" height="'+(rH-10)+'" rx="4" class="rg-bar '+REGION_CLASS[x.region]+'"/><text x="'+(rpad.l+bw+6)+'" y="'+(y+24)+'" class="bar-val">'+fmt(x.tasa,1)+' /100.000 · '+fmt(x.sedes100k,2)+' sedes</text>';
     bindTip(g, ()=> "<h5>"+esc(x.region)+"</h5><p>Población "+fmt(x.pob)+"<br>Personas atendidas "+fmt(x.personas)+" ("+fmt(x.tasa,1)+" por 100.000)<br>Sedes "+fmt(x.sedes)+" ("+fmt(x.sedes100k,2)+" por 100.000)</p>");
     rs.appendChild(g);
   });
@@ -1577,7 +1698,7 @@ function renderDesigualdad(){
   sub(body, "desigualdad-tiempo", "¿Ha cambiado la desigualdad entre 2019 y 2025?");
   const idxBox = el("div",{class:"small-multiples"});
   [["gini","Gini",0.35],["theil","Theil T",0.2],["ci","Índice de concentración (IPM)",0.12]].forEach(m=>{
-    const w = 300, h = 170, pad = { l:40, r:12, t:12, b:26 }, iw = w-pad.l-pad.r, ih = h-pad.t-pad.b, ser = C.serieNacional;
+    const w = VW(340,400), h = VW(230,260), pad = { l:46, r:16, t:14, b:32 }, iw = w-pad.l-pad.r, ih = h-pad.t-pad.b, ser = C.serieNacional;
     const X = i => pad.l + iw*i/6, Y = v => pad.t + ih - ih*v/m[2];
     const s = svgEl(w, h, "", m[1] + " 2019-2025");
     let g = '<rect x="'+(X(5.5))+'" y="'+pad.t+'" width="'+(X(6)-X(5.5)+6)+'" height="'+ih+'" class="break-band"/>';
@@ -1586,7 +1707,7 @@ function renderDesigualdad(){
     g += '<path d="'+ser.map((v,i)=>(i?"L":"M")+X(i)+","+Y(v[m[0]])).join("")+'" class="nat-line thin"/>';
     s.innerHTML = g;
     ser.forEach((v,i)=>{
-      const c = document.createElementNS(SVGNS,"circle"); c.setAttribute("cx",X(i)); c.setAttribute("cy",Y(v[m[0]])); c.setAttribute("r","4.5"); c.setAttribute("class","pt" + (i===6?" pt-alt":"")); c.setAttribute("tabindex","0");
+      const c = document.createElementNS(SVGNS,"circle"); c.setAttribute("cx",X(i)); c.setAttribute("cy",Y(v[m[0]])); c.setAttribute("r","6"); c.setAttribute("class","pt" + (i===6?" pt-alt":"")); c.setAttribute("tabindex","0");
       bindTip(c, ()=> "<h5>"+m[1]+" · "+v.anio+"</h5><p><b>"+fmt(v[m[0]],3)+"</b></p>"+(i===6?"<p class='muted'>Leer con cautela: cambio de reporte.</p>":""));
       s.appendChild(c);
     });
@@ -1598,13 +1719,13 @@ function renderDesigualdad(){
 
   sub(body, "desigualdad-cruces", "Resumen de los cruces", "Correlaciones de Spearman entre departamentos (n = 33) de los cruces de la segunda parte. Haz clic en una barra para ir a su análisis.");
   const cr = C.correlaciones.map((c,i)=> Object.assign({ sec: ["ofertaatencion","intensidad","pobreza","pobreza","pobreza","intensidad","ofertaatencion"][i] }, c));
-  const cw = 640, cH = 28, cpad = { l:330, r:60, t:8 }, ch = cpad.t + cr.length*cH + 6, ciw = cw - cpad.l - cpad.r, cx0 = cpad.l + ciw/2;
+  const MC = MOB(), cw = VW(920,400), cH = VW(40,78), cpad = { l:VW(450,0), r:VW(50,0), t:8 }, ch = cpad.t + cr.length*cH + 6, ciw = cw - cpad.l - cpad.r, cx0 = cpad.l + ciw/2;
   const cs = svgEl(cw, ch, "", "Correlaciones de Spearman");
   cs.innerHTML = '<line x1="'+cx0+'" x2="'+cx0+'" y1="'+cpad.t+'" y2="'+ch+'" class="axis"/>';
   cr.forEach((c,i)=>{
-    const y = cpad.t + i*cH, bw = (ciw/2) * Math.abs(c.rho), pos = c.rho >= 0;
+    const y = cpad.t + i*cH, bw = (ciw/2) * Math.abs(c.rho) * 0.8, pos = c.rho >= 0;
     const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g rank-row"); g.setAttribute("role","button");
-    g.innerHTML = '<rect x="0" y="'+y+'" width="'+cw+'" height="'+cH+'" class="row-hit"/><text x="'+(cpad.l-10)+'" y="'+(y+18)+'" class="axis-lab" text-anchor="end">'+esc(c.par)+'</text><rect x="'+(pos?cx0:cx0-bw)+'" y="'+(y+6)+'" width="'+Math.max(bw,1)+'" height="'+(cH-12)+'" rx="3" class="'+(pos?"net-pos":"net-neg")+'"/><text x="'+(pos?cx0+bw+5:cx0-bw-5)+'" y="'+(y+18)+'" class="bar-val" text-anchor="'+(pos?"start":"end")+'">'+fmt(c.rho,2)+'</text>';
+    g.innerHTML = '<rect x="0" y="'+y+'" width="'+cw+'" height="'+cH+'" class="row-hit"/>'+(MC ? wrapText(c.par, 44).map((l,k)=> '<text x="0" y="'+(y+16+k*17)+'" class="axis-lab">'+esc(l)+'</text>').join('') : '<text x="'+(cpad.l-10)+'" y="'+(y+24)+'" class="axis-lab" text-anchor="end">'+esc(c.par)+'</text>')+'<rect x="'+(pos?cx0:cx0-bw)+'" y="'+(MC ? y+46 : y+9)+'" width="'+Math.max(bw,1)+'" height="'+(MC ? 20 : cH-18)+'" rx="3" class="'+(pos?"net-pos":"net-neg")+'"/><text x="'+(pos?cx0+bw+5:cx0-bw-5)+'" y="'+(MC ? y+61 : y+24)+'" class="bar-val" text-anchor="'+(pos?"start":"end")+'">'+fmt(c.rho,2)+'</text>';
     bindTip(g, ()=> "<h5>"+esc(c.par)+"</h5><p>ρ de Spearman "+fmt(c.rho,3)+" · p "+c.p+" · asociación "+strength(c.rho)+"</p><p class='muted'>Clic para ir al análisis</p>");
     const go = ()=>{ openSection(c.sec); scrollSoon("sec-"+c.sec); };
     g.addEventListener("click", go); g.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } });
@@ -1626,12 +1747,12 @@ function renderHuila(){
     ["Tasa de atención (por 100 atendidos)", h.tasaAten, NAC.tasaAten, 0, "tasaAten"], ["% atenciones fuera del dpto.", h.pctFuera, NAC.pctFuera, 1, "pctFuera"],
     ["% personas en municipios sin sede", h.pctSinSede, 19.9, 1, "pctSinSede"]
   ];
-  const w = 640, rowH = 48, pad = { l:230, r:70, t:8 }, hh = pad.t + comp.length*rowH, iw = w-pad.l-pad.r;
+  const M = MOB(), w = VW(820,400), rowH = VW(60,86), pad = { l:VW(320,0), r:VW(130,110), t:8 }, hh = pad.t + comp.length*rowH, iw = w-pad.l-pad.r;
   const s = svgEl(w, hh, "", "Huila frente al total nacional");
   comp.forEach((c,i)=>{
     const mx = Math.max(c[1], c[2]) * 1.15, y = pad.t + i*rowH;
     const g = document.createElementNS(SVGNS,"g"); g.setAttribute("tabindex","0"); g.setAttribute("class","bar-g");
-    g.innerHTML = '<text x="'+(pad.l-10)+'" y="'+(y+22)+'" class="axis-lab" text-anchor="end">'+esc(c[0])+'</text><rect x="'+pad.l+'" y="'+(y+4)+'" width="'+(iw*c[1]/mx)+'" height="15" rx="3" class="bar-fill"/><text x="'+(pad.l+iw*c[1]/mx+5)+'" y="'+(y+16)+'" class="bar-val">Huila '+fmt(c[1],c[3])+'</text><rect x="'+pad.l+'" y="'+(y+22)+'" width="'+(iw*c[2]/mx)+'" height="15" rx="3" class="bar-nat"/><text x="'+(pad.l+iw*c[2]/mx+5)+'" y="'+(y+34)+'" class="bar-val muted">Nacional '+fmt(c[2],c[3])+'</text>';
+    g.innerHTML = '<text x="'+(M ? 0 : pad.l-10)+'" y="'+(M ? y+14 : y+28)+'" class="axis-lab" text-anchor="'+(M ? 'start' : 'end')+'">'+esc(c[0])+'</text><rect x="'+pad.l+'" y="'+(y+(M?22:6))+'" width="'+(iw*c[1]/mx)+'" height="20" rx="3" class="bar-fill"/><text x="'+(pad.l+iw*c[1]/mx+5)+'" y="'+(y+(M?37:21))+'" class="bar-val">Huila '+fmt(c[1],c[3])+'</text><rect x="'+pad.l+'" y="'+(y+(M?46:28))+'" width="'+(iw*c[2]/mx)+'" height="20" rx="3" class="bar-nat"/><text x="'+(pad.l+iw*c[2]/mx+5)+'" y="'+(y+(M?61:43))+'" class="bar-val muted">Nacional '+fmt(c[2],c[3])+'</text>';
     bindTip(g, ()=> "<h5>"+esc(c[0])+"</h5><p>Huila: <b>"+fmt(c[1],c[3])+"</b> (puesto "+rankOf("41",c[4])+" de 33)<br>Colombia: "+fmt(c[2],c[3])+"</p>");
     s.appendChild(g);
   });
@@ -1710,8 +1831,10 @@ function initTerms(){
   document.addEventListener("keydown", e=>{ const t = e.target.closest && e.target.closest(".term"); if(t && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); go(t); } });
   // las lecturas se regeneran al filtrar: se decoran de nuevo
   const mo = new MutationObserver(muts=> muts.forEach(m=> m.target.closest && m.target.closest(".reading") && decorate(m.target.closest(".reading"))));
-  document.querySelectorAll(".reading").forEach(r=> mo.observe(r, { childList:true }));
+  readingObserver = mo; observeReadings();
 }
+let readingObserver = null;
+function observeReadings(){ if(readingObserver) document.querySelectorAll(".reading").forEach(r=> readingObserver.observe(r, { childList:true })); }
 
 /* ================================================================= 07 NORMATIVA */
 function addMonths(date, m){ const d = new Date(date.getTime()); d.setMonth(d.getMonth()+m); return d; }
@@ -1730,22 +1853,26 @@ function renderNormativa(){
     { t:"Atención integral", s:"Ruta pública", d:"Ley 2628, art. 13 y PNSM eje 3: ruta de atención médica clara y pública y atención integral de los problemas y trastornos mentales.", norma:"Ley 2628, art. 13 · PNSM" },
     { t:"Inclusión", s:"Educación, familia, trabajo", d:"Ley 2628, arts. 15 a 23 y PNSM eje 4: inclusión escolar, apoyo a cuidadores, inserción laboral, rehabilitación e inclusión social.", norma:"Ley 2628 · PNSM eje 4" }
   ];
-  const w = 760, h = 150, bw = 112, gap = (w - 20 - steps.length*bw)/(steps.length-1);
+  const w = 760, h = 290, bw = 220, gap = 40, rowH = 148;
   const s = svgEl(w, h, "flow-steps", "Ruta del tamizaje a la inclusión");
   s.innerHTML = '<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="arrow-head"/></marker></defs>';
   steps.forEach((st,i)=>{
-    const x = 10 + i*(bw+gap);
-    if(i < steps.length-1){ const l = document.createElementNS(SVGNS,"line"); l.setAttribute("x1",x+bw+2); l.setAttribute("x2",x+bw+gap-3); l.setAttribute("y1",60); l.setAttribute("y2",60); l.setAttribute("class","flow-arrow"); l.setAttribute("marker-end","url(#arr)"); s.appendChild(l); }
+    const col = i%3, row = Math.floor(i/3), x = 10 + col*(bw+gap), y = 10 + row*rowH;
+    if(i < steps.length-1){
+      const l = document.createElementNS(SVGNS,"path");
+      l.setAttribute("d", col < 2 ? "M"+(x+bw+2)+","+(y+44)+" L"+(x+bw+gap-3)+","+(y+44) : "M"+(x+bw/2)+","+(y+118)+" L"+(x+bw/2)+","+(y+130)+" L"+(10+bw/2)+","+(y+130)+" L"+(10+bw/2)+","+(y+rowH-3));
+      l.setAttribute("class","flow-arrow"); l.setAttribute("fill","none"); l.setAttribute("marker-end","url(#arr)"); s.appendChild(l);
+    }
     const g = document.createElementNS(SVGNS,"g"); g.setAttribute("class","node-box step-node"); g.setAttribute("tabindex","0");
-    g.innerHTML = '<rect x="'+x+'" y="26" width="'+bw+'" height="68" rx="10"/><text x="'+(x+bw/2)+'" y="52" text-anchor="middle" class="step-t">'+esc(st.t)+'</text><text x="'+(x+bw/2)+'" y="70" text-anchor="middle" class="actors">'+esc(st.s)+'</text><text x="'+(x+bw/2)+'" y="118" text-anchor="middle" class="step-norma">'+esc(st.norma)+'</text>';
+    g.innerHTML = '<rect x="'+x+'" y="'+y+'" width="'+bw+'" height="88" rx="10"/><text x="'+(x+bw/2)+'" y="'+(y+38)+'" text-anchor="middle" class="step-t">'+(i+1)+'. '+esc(st.t)+'</text><text x="'+(x+bw/2)+'" y="'+(y+62)+'" text-anchor="middle" class="actors">'+esc(st.s)+'</text><text x="'+(x+bw/2)+'" y="'+(y+108)+'" text-anchor="middle" class="step-norma">'+esc(st.norma)+'</text>';
     bindTip(g, ()=> "<h5>"+esc(st.t)+"</h5><p>"+esc(st.d)+"</p>");
     s.appendChild(g);
   });
-  body.appendChild(el("div",{class:"diagram-wrap"},[s]));
+  if(!MOB()) body.appendChild(el("div",{class:"diagram-wrap"},[s]));
   const lst = el("ul",{class:"a11y-list compact-list"});
   steps.forEach(st=> lst.appendChild(el("li",null,[ el("div",{class:"a11y-title"},[st.t + " · " + st.norma]), el("div",{class:"a11y-meta"},[st.d]) ])));
   const lt = el("button",{class:"btn a11y-list-toggle", type:"button", "aria-expanded":"false"},["Ver como lista"]);
-  lst.hidden = true;
+  lst.hidden = !MOB(); if(MOB()) lt.hidden = true;
   lt.addEventListener("click", ()=>{ lst.hidden = !lst.hidden; lt.setAttribute("aria-expanded", lst.hidden?"false":"true"); lt.textContent = lst.hidden ? "Ver como lista" : "Ocultar lista"; });
   body.appendChild(lt); body.appendChild(lst);
   body.appendChild(el("div",{class:"tag-row"},[confidenceTag("nota-autor")]));
@@ -1786,7 +1913,7 @@ function renderNormativa(){
   Object.keys(groups).forEach(m=>{
     const d = addMonths(sanc, +m), x = TX(d), arts = groups[m];
     const g = document.createElementNS(SVGNS,"g"); g.setAttribute("class","tl-mark"); g.setAttribute("tabindex","0");
-    const anc = x > tw*0.72 ? "end" : "middle", lx = anc === "end" ? x + 8 : x;
+    const anc = x > tw*0.3 ? "end" : "middle", lx = anc === "end" ? x + 8 : x;
     g.innerHTML = '<line x1="'+x+'" x2="'+x+'" y1="70" y2="128" class="tl-stem"/><circle cx="'+x+'" cy="70" r="8" class="tl-dot"/><text x="'+x+'" y="74" text-anchor="middle" class="tl-dot-lab">'+arts.length+'</text><text x="'+lx+'" y="144" text-anchor="'+anc+'" class="axis-lab strong">'+m+' meses · '+fdate(d)+'</text>' + arts.map((a,j)=>'<text x="'+lx+'" y="'+(160+j*14)+'" text-anchor="'+anc+'" class="axis-lab">'+esc(a.art+" · "+a.tema)+'</text>').join("");
     bindTip(g, ()=> "<h5>Plazo de "+m+" meses (≈ "+fdate(d)+")</h5>" + arts.map(a=>"<p><b>"+esc(a.art)+" · "+esc(a.tema)+".</b> "+esc(a.d)+"</p>").join(""));
     ts.appendChild(g);
@@ -1850,7 +1977,7 @@ function renderRevision(){
   const P = R.prisma;
   const w = 720, h = 330, s = svgEl(w, h, "prisma-svg", "Diagrama PRISMA preliminar");
   function box(x,y,bw,bh,title,lines,cls){
-    return '<g class="prisma-box '+(cls||"")+'"><rect x="'+x+'" y="'+y+'" width="'+bw+'" height="'+bh+'" rx="8"/><text x="'+(x+12)+'" y="'+(y+20)+'" class="prisma-title">'+esc(title)+'</text>' + lines.map((l,i)=>'<text x="'+(x+12)+'" y="'+(y+38+i*15)+'" class="prisma-label">'+esc(l)+'</text>').join("") + '</g>';
+    return '<g tabindex="0" data-prisma="'+esc(title)+'" class="prisma-box '+(cls||"")+'"><rect x="'+x+'" y="'+y+'" width="'+bw+'" height="'+bh+'" rx="8"/><text x="'+(x+12)+'" y="'+(y+20)+'" class="prisma-title">'+esc(title)+'</text>' + lines.map((l,i)=>'<text x="'+(x+12)+'" y="'+(y+38+i*15)+'" class="prisma-label">'+esc(l)+'</text>').join("") + '</g>';
   }
   let sv = '<defs><marker id="parr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="arrow-head"/></marker></defs>';
   sv += box(20,14,300,88,"Registros identificados: "+P.identificados, P.bases.map(b=> b.base+": "+b.n).reduce((a,c,i)=>{ if(i%2===0) a.push(c); else a[a.length-1] += " · " + c; return a; },[]));
@@ -1860,14 +1987,16 @@ function renderRevision(){
   sv += box(20,236,300,70,"Informes a texto completo: "+P.textoCompleto, ["Evaluación de elegibilidad en curso"], "prisma-included");
   sv += '<line x1="170" y1="102" x2="170" y2="126" class="prisma-arrow" marker-end="url(#parr)"/><line x1="320" y1="44" x2="398" y2="44" class="prisma-arrow" marker-end="url(#parr)"/><line x1="170" y1="188" x2="170" y2="234" class="prisma-arrow" marker-end="url(#parr)"/><line x1="320" y1="158" x2="398" y2="158" class="prisma-arrow" marker-end="url(#parr)"/>';
   s.innerHTML = sv;
+  const PT = { "Registros identificados": P.bases.map(b=> b.base + ": " + b.n).join("<br>"), "Duplicados retirados": "Repetidos entre bases, antes del tamizaje.", "Registros tamizados": "Por título y resumen.", "Registros excluidos": P.motivos.map(m=> m.n + " · " + esc(m.m)).join("<br>"), "Informes a texto completo": "Evaluación de elegibilidad en curso." };
+  s.querySelectorAll("[data-prisma]").forEach(g=>{ const t = g.getAttribute("data-prisma"); bindTip(g, ()=> "<h5>"+t+"</h5><p>"+(PT[t.split(":")[0]]||"")+"</p>"); });
   body.appendChild(el("div",{class:"diagram-wrap"},[s]));
   // motivos interactivos
-  const mw = 640, mH = 30, mpad = { l:330, r:50, t:6 }, mh = mpad.t + P.motivos.length*mH, miw = mw - mpad.l - mpad.r;
+  const M = MOB(), mw = VW(860,400), mH = VW(38,76), mpad = { l:VW(400,0), r:VW(50,50), t:6 }, mh = mpad.t + P.motivos.length*mH, miw = mw - mpad.l - mpad.r;
   const ms = svgEl(mw, mh, "", "Motivos de exclusión en el tamizaje");
   P.motivos.forEach((m,i)=>{
     const y = mpad.t + i*mH, bw = miw*m.n/100;
     const gg = document.createElementNS(SVGNS,"g"); gg.setAttribute("tabindex","0"); gg.setAttribute("class","bar-g");
-    gg.innerHTML = '<text x="'+(mpad.l-10)+'" y="'+(y+19)+'" class="axis-lab" text-anchor="end">'+esc(m.m.length>50?m.m.slice(0,48)+"…":m.m)+'</text><rect x="'+mpad.l+'" y="'+(y+6)+'" width="'+bw+'" height="'+(mH-12)+'" rx="4" class="bar-fill"/><text x="'+(mpad.l+bw+5)+'" y="'+(y+19)+'" class="bar-val">'+m.n+'</text>';
+    gg.innerHTML = M ? wrapText(m.m, 46).map((l,k)=> '<text x="0" y="'+(y+16+k*17)+'" class="axis-lab">'+esc(l)+'</text>').join('') + '<rect x="0" y="'+(y+42)+'" width="'+bw+'" height="22" rx="4" class="bar-fill"/><text x="'+(bw+6)+'" y="'+(y+58)+'" class="bar-val">'+m.n+'</text>' : '<text x="'+(mpad.l-10)+'" y="'+(y+24)+'" class="axis-lab" text-anchor="end">'+esc(m.m.length>50?m.m.slice(0,48)+"…":m.m)+'</text><rect x="'+mpad.l+'" y="'+(y+6)+'" width="'+bw+'" height="'+(mH-12)+'" rx="4" class="bar-fill"/><text x="'+(mpad.l+bw+5)+'" y="'+(y+24)+'" class="bar-val">'+m.n+'</text>';
     bindTip(gg, ()=> "<h5>"+esc(m.m)+"</h5><p>"+m.n+" de "+P.excluidos+" registros excluidos ("+fmt(100*m.n/P.excluidos,1)+" %)</p>");
     ms.appendChild(gg);
   });
@@ -2061,7 +2190,7 @@ function initShortcuts(search){
       const tsm = document.getElementById("text-size-menu");
       if(tsm && !tsm.hidden){ tsm.hidden = true; document.getElementById("text-size-btn").setAttribute("aria-expanded","false"); document.getElementById("text-size-btn").focus(); }
       else if(search.isOpen()) search.close(); else if(!help.hidden) toggleHelp(false); else closeSidebar();
-      hideTip(); return;
+      closeTip(); return;
     }
     if(typing) return;
     if(e.key === "+" || e.key === "="){ e.preventDefault(); stepTextSize(1); return; }
@@ -2091,29 +2220,9 @@ function renderFooter(){
 /* ---------------------------------------------------------------- arranque */
 function boot(){
   renderHero();
-  buildAccordion();
-  renderContexto();
-  renderCausal();
-  renderTerritorio();
-  renderIntensidad();
-  renderNacional();
-  renderOferta();
-  renderOfertaAtencion();
-  renderPobreza();
-  renderDesigualdad();
-  renderHuila();
-  renderInstrumentos();
-  renderNormativa();
-  renderNormativaExtras();
-  renderRevision();
-  renderMetodologia();
-  renderGlosario();
-  renderReferencias();
-  addSectionNav();
-  renderTOC();
+  renderSections();
   renderSources();
   renderFooter();
-  decorate(document.getElementById("accordion"));
   decorate(document.querySelector(".hero"));
   initTerms();
   document.querySelectorAll(".js-export-pdf").forEach(b=> b.addEventListener("click", ()=> window.print()));
@@ -2127,6 +2236,7 @@ function boot(){
   initTextSize();
   initScrollTop();
   initScrollspy();
+  watchBreakpoint();
 }
 if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
