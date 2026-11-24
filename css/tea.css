@@ -734,3 +734,4 @@ h4.chart-title{ font-size:1.08rem; margin:34px 0 14px; }
 @media (max-width: 640px){ .sd-wrap svg.sd-svg{ min-width:1080px !important; } .zoom-body svg.sd-svg{ min-width:1180px !important; } .sd-wrap:has(.sd-svg)::before{ content:"Desliza hacia los lados para ver todo el diagrama. Los botones de arriba recorren cada bucle paso a paso."; position:sticky; left:0; display:block; width:min(100%, 320px); margin-bottom:8px; font-size:.86rem; color: var(--text-muted); } .sd-form{ gap:14px; padding:14px; } }
 
 @media (min-width: 641px){ .zoom-body .sd-svg{ max-height:80vh; } }
+@media (min-width: 641px){ .zoom-body .sd-wrap svg.sd-svg{ min-width:0; } }
