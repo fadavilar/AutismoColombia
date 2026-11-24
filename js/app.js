@@ -174,8 +174,8 @@ const PARTS = [
 const SECTIONS = [
   { id:"contexto", part:null, toc:"Resumen", title:"Resumen", sub:"Introducción, métodos, resultados y conclusiones", open:true,
     subs:[{id:"resumen-introduccion",label:"Introducción"},{id:"resumen-metodos",label:"Métodos y códigos CIE-10"},{id:"resumen-resultados",label:"Resultados"},{id:"resumen-conclusiones",label:"Conclusiones"},{id:"contexto-relato",label:"Los resultados, paso a paso"},{id:"contexto-preguntas",label:"Recorrido del documento"}] },
-  { id:"causal", part:"I", toc:"¿Qué explica las atenciones?", title:"¿Qué explica el número de atenciones de un departamento?", sub:"Diagrama causal: oferta, pacientes, severidad, oportunidad del diagnóstico, equipos y registro", open:false,
-    subs:[{id:"causal-diagrama",label:"Diagrama causal"}] },
+  { id:"causal", part:"I", toc:"¿Qué mueve la oportunidad?", title:"¿Qué facilita y qué dificulta que una persona llegue a tiempo al diagnóstico?", sub:"Dinámica de sistemas: niveles, flujos, bucles, demoras, facilitadores y barreras", open:false,
+    subs:[{id:"causal-diagrama",label:"Diagrama de dinámica de sistemas"},{id:"causal-factores",label:"Facilitadores y barreras"},{id:"causal-formas",label:"Relaciones no lineales"}] },
   { id:"normativa", part:"I", toc:"Ley 2628 de 2026", title:"¿Qué ordena la Ley 2628 de 2026 y qué queda por reglamentar?", sub:"Ruta del tamizaje a la inclusión, primera infancia, artículos, plazos y retos de implementación", open:false,
     subs:[{id:"normativa-ruta",label:"Del tamizaje al diagnóstico"},{id:"normativa-infancia",label:"Tamizaje en primera infancia"},{id:"normativa-ley",label:"La ley y sus plazos"},{id:"normativa-vacios",label:"Retos de implementación"}] },
   { id:"paralelo", part:"I", toc:"Ley y Política de Salud Mental", title:"¿Cómo se relaciona la ley con la Política Nacional de Salud Mental?", sub:"Resumen comparativo, paralelo punto por punto y lo que dice la política sobre el neurodesarrollo", open:false,
@@ -976,79 +976,177 @@ function renderOfertaAtencion(){
 
 /* ================================================================= 02 DIAGRAMA CAUSAL */
 function renderCausal(){
-  const body = document.getElementById("body-causal");
-  body.appendChild(el("p",null,["Antes de mirar los datos, un mapa de lo que puede explicar el número de atenciones de un departamento. El número de atenciones resulta de cuántas personas se atienden y de cuánta atención recibe cada una; detrás de ambas están la oferta, la detección, la condición de cada persona, el aseguramiento y la forma de registrar. Este diagrama es la guía de la segunda parte: cada factor medido enlaza con la sección donde están sus datos."]));
-  sub(body, "causal-diagrama", "Diagrama causal del número de atenciones", "Modelo conceptual: qué factores pueden aumentar o reducir las atenciones de un departamento y cuáles se pueden medir con estos datos.");
-  causalDiagram(body);
+  const body = document.getElementById("body-causal"), G = window.TEA_DINAMICA;
+  body.appendChild(el("p",null,["Antes de mirar los datos, un mapa de lo que puede acercar o alejar el diagnóstico. En el centro están los pacientes con diagnóstico de TEA: un nivel que se llena a medida que las personas se detectan, esperan la evaluación y reciben la confirmación. A su alrededor, los factores se influyen en círculo: cada cambio vuelve, con demora, sobre su propia causa."]));
+  sub(body, "causal-diagrama", "Diagrama de dinámica de sistemas", "Elige un bucle para recorrerlo, o un factor para ver qué se sabe de él.");
+  sdDiagram(body);
+  sub(body, "causal-factores", "Facilitadores y barreras", "Factores externos que empujan o frenan el sistema, y sobre qué variable actúan.");
+  const two = el("div",{class:"sd-fb"});
+  [["f","Facilitadores"],["b","Barreras"]].forEach(k=>{
+    const col = el("div",{class:"sd-col sd-col-"+k[0]},[ el("h4",null,[(k[0]==="f" ? "▲ " : "▼ ") + k[1]]) ]), ul = el("ul");
+    G.factores.filter(f=> f.k === k[0]).forEach(f=>{
+      const tgt = G.nodos.find(n=> n.id === f.a), rf = f.ref ? G.refs[f.ref] : null;
+      ul.appendChild(el("li",null,[ el("strong",null,[f.t]), el("span",{class:"sd-on"},["Actúa sobre: " + lowFirst(tgt.t)]), el("p",null,[f.d]), el("span",{class:"sd-ev ev-"+f.ev},[G.evid[f.ev]]), rf ? el("a",{href:rf.u, target:"_blank", rel:"noopener", class:"small"},[rf.t]) : null ]));
+    });
+    col.appendChild(ul); two.appendChild(col);
+  });
+  body.appendChild(two);
+  sub(body, "causal-formas", "Relaciones no lineales", "La forma de cada relación, con un ejemplo del modelo. Son formas esperadas, no curvas estimadas.");
+  const fg = el("div",{class:"sd-forms"});
+  Object.keys(G.formas).forEach(k=>{
+    const ex = G.aristas.filter(e=> e.f === k); if(!ex.length) return;
+    const e0 = ex.find(e=> e.s === "+") || ex[0];
+    const nm = id=> G.nodos.find(n=> n.id === id).t;
+    fg.appendChild(el("article",{class:"sd-form"},[ sdForm(e0, 120, 70), el("div",null,[ el("h4",null,[G.formas[k].t]), el("p",null,[G.formas[k].d]), el("p",{class:"muted small"},["Ejemplo: " + lowFirst(nm(e0.de)) + " → " + lowFirst(nm(e0.a)) + "."]) ]) ]));
+  });
+  body.appendChild(fg);
+  body.appendChild(sourceLine(G.nota));
+  body.appendChild(el("div",{class:"tag-row"},[confidenceTag("nota-autor"), confidenceTag("preliminar")]));
+}
+/* Forma de una relación (minigráfico). Con signo negativo la curva baja. */
+function lowFirst(t){ return t.charAt(0).toLowerCase() + t.slice(1); }
+function sdForm(e, w, h){
+  const F = { s: x=> 1/(1+Math.exp(-11*(x-.5))), sat: x=> (1-Math.exp(-3.4*x))/(1-Math.exp(-3.4)), cong: x=> (1/(1.06-x)-1/1.06)/(1/.06-1/1.06), dec: x=> 1-Math.exp(-3.4*x), umb: x=> 1/(1+Math.exp(-26*(x-.58))), esc: x=> Math.min(1, Math.floor(x*4.2)/4), min: x=> Math.min(1, x/.55), prop: x=> x }[e.f];
+  let d = ""; const p = 6;
+  for(let i=0;i<=60;i++){ const x = i/60; let y = F(x); if(e.f === "dec") y = 1 - y; else if(e.s === "−") y = e.mx ? F(1-x) : 1 - y; d += (i ? "L" : "M") + (p + x*(w-2*p)).toFixed(1) + "," + (h - p - y*(h-2*p)).toFixed(1); }
+  const s = document.createElementNS(SVGNS,"svg"); s.setAttribute("viewBox","0 0 "+w+" "+h); s.setAttribute("width",w); s.setAttribute("height",h); s.setAttribute("class","sd-spark"); s.setAttribute("aria-hidden","true");
+  s.innerHTML = '<path d="M'+p+',2 V'+(h-p)+' H'+(w-2)+'" class="sd-spark-ax"/><path d="'+d+'" class="sd-spark-ln"/>';
+  return s;
+}
+function sdDiagram(body){
+  const G = window.TEA_DINAMICA, N = {}; G.nodos.forEach(n=> N[n.id] = n);
+  const W = 1420, H = 1000, CH = 9.4, Y0 = N.c.y;
+  // aristas de flujo (tuberías) tratadas también como relaciones del bucle
+  const PIPES = [["s1","v1"],["v1","s2"],["s2","v2"],["v2","c"]];
+  const isLoopEdge = (b, de, a)=> b.v.some((v,i)=> v === de && b.v[(i+1)%b.v.length] === a);
+  let loop = null, mode = "todo";
+  body.appendChild(howTo("los rectángulos son niveles: se llenan y se vacían. Las válvulas son flujos. Las flechas curvas son influencias: «+» significa que las dos variables cambian en el mismo sentido y «−», en sentido contrario. Las dos rayas sobre una flecha indican una demora. R es un bucle de refuerzo (se amplifica) y B, uno de balance (se frena o se regula). ▲ marca un facilitador y ▼ una barrera."));
+  const loopRow = el("div",{class:"filter-row sd-loops", role:"group", "aria-label":"Recorrer un bucle"});
+  const mkChip = (id, label, cls)=>{ const b = el("button",{type:"button", class:"filter-chip " + (cls||"") + (id === null ? " active" : ""), "aria-pressed": id === null ? "true":"false", "data-loop": id || ""},[label]); b.addEventListener("click", ()=> setLoop(id)); loopRow.appendChild(b); return b; };
+  mkChip(null, "Todo el sistema"); G.bucles.forEach(b=> mkChip(b.id, b.id + " · " + b.t, "sd-chip-" + b.tipo));
+  body.appendChild(loopRow);
+  body.appendChild(chips([{id:"todo",label:"Facilitadores y barreras"},{id:"f",label:"▲ Solo facilitadores"},{id:"b",label:"▼ Solo barreras"},{id:"no",label:"Ocultar ambos"}], mode, id=>{ mode = id; paint(); }, "Mostrar facilitadores y barreras"));
+  const s = svgEl(W, H, "sd-svg story-svg", "Diagrama de dinámica de sistemas de la oportunidad del diagnóstico de TEA");
+  let defs = "<defs>";
+  [["p","sd-mp"],["n","sd-mn"],["f","sd-mf"],["b","sd-mb"],["k","sd-mk"]].forEach(m=>{ defs += '<marker id="sd-'+m[0]+'" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="'+(m[0]==="k"?5:8)+'" markerHeight="'+(m[0]==="k"?5:8)+'" orient="auto" markerUnits="'+(m[0]==="k"?"strokeWidth":"userSpaceOnUse")+'"><path d="M0,0 L10,5 L0,10 z" class="'+m[1]+'"/></marker>'; });
+  s.innerHTML = defs.replace(/markerWidth="8" markerHeight="8"/g,'markerWidth="15" markerHeight="15"') + "</defs>";
+  const mk = (cls, html)=>{ const g = document.createElementNS(SVGNS,"g"); g.setAttribute("class",cls); g.innerHTML = html; s.appendChild(g); return g; };
+  const dims = n=>{ if(n.k === "flujo") return { hw:26, hh:26 }; if(n.h) return { hw:n.w/2, hh:n.h/2 }; n.L = wrapText(n.t, Math.floor((n.w-12)/CH)); return { hw:n.w/2, hh:(n.L.length*22+18)/2 }; };
+  G.nodos.forEach(n=>{ n.D = dims(n); });
+  const clip = (n, px, py, gap)=>{ const dx = px-n.x, dy = py-n.y, hw = n.D.hw + gap, hh = n.D.hh + gap, t = Math.min(hw/Math.max(1e-6,Math.abs(dx)), hh/Math.max(1e-6,Math.abs(dy))); return [n.x+dx*Math.min(t,1), n.y+dy*Math.min(t,1)]; };
+  const curve = (a, b, bend, g1, g2)=>{ const mx = (a.x+b.x)/2, my = (a.y+b.y)/2, L = Math.hypot(b.x-a.x,b.y-a.y), cx = mx - (b.y-a.y)/L*bend*2, cy = my + (b.x-a.x)/L*bend*2, p = clip(a,cx,cy,g1), q = clip(b,cx,cy,g2); return { p:p, q:q, c:[cx,cy], at:t=>[(1-t)*(1-t)*p[0]+2*t*(1-t)*cx+t*t*q[0],(1-t)*(1-t)*p[1]+2*t*(1-t)*cy+t*t*q[1]], tan:t=>{ const x = 2*(1-t)*(cx-p[0])+2*t*(q[0]-cx), y = 2*(1-t)*(cy-p[1])+2*t*(q[1]-cy), l = Math.hypot(x,y)||1; return [x/l,y/l]; }, d:"M"+p[0].toFixed(1)+","+p[1].toFixed(1)+" Q"+cx.toFixed(1)+","+cy.toFixed(1)+" "+q[0].toFixed(1)+","+q[1].toFixed(1) }; };
+  // nube y tuberías
+  mk("sd-cloud",'<path transform="translate(0,'+(Y0-500)+')" d="M14,512 a16,16 0 0 1 6,-30 a20,20 0 0 1 37,-4 a15,15 0 0 1 6,29 a13,13 0 0 1 -12,11 h-28 a12,12 0 0 1 -9,-6 z"/>');
+  const pipeEls = [];
+  const pipe = (x1,x2,de,a,last)=>{ const g = mk("sd-pipe",'<line x1="'+x1+'" x2="'+x2+'" y1="'+Y0+'" y2="'+Y0+'" class="sd-pipe-o"/><line x1="'+x1+'" x2="'+(x2-(last?6:0))+'" y1="'+Y0+'" y2="'+Y0+'" class="sd-pipe-i"/>' + (last ? '<path d="M'+(x2-15)+','+(Y0-14)+' L'+(x2-1)+','+Y0+' L'+(x2-15)+','+(Y0+14)+' z" class="sd-mk"/>' : '')); pipeEls.push({ g:g, de:de, a:a }); };
+  pipe(66, N.s1.x-N.s1.D.hw, "x", "s1", true); pipe(N.s1.x+N.s1.D.hw, N.v1.x, "s1","v1"); pipe(N.v1.x, N.s2.x-N.s2.D.hw, "v1","s2", true); pipe(N.s2.x+N.s2.D.hw, N.v2.x, "s2","v2"); pipe(N.v2.x, N.c.x-N.c.D.hw, "v2","c", true);
+  const detail = el("div",{class:"reading sd-detail", "aria-live":"polite"});
+  const evTag = (o)=> "<span class='sd-ev ev-"+o.ev+"'>"+G.evid[o.ev]+"</span>" + (o.ref ? " <span class='muted small'>"+esc(G.refs[o.ref].t)+"</span>" : "");
+  // influencias
+  const edgeEls = G.aristas.map(e=>{
+    const K = curve(N[e.de], N[e.a], e.b, 4, 10), sg = K.at(.84), tn = K.tan(.84), side = e.b >= 0 ? 1 : -1, m = K.at(.46), tm = K.tan(.46);
+    const ox = sg[0] - tn[1]*18*-side*-1, oy = sg[1] + tn[0]*18*-side*-1;
+    let h = '<path d="'+K.d+'" class="sd-hit"/><path d="'+K.d+'" class="sd-line" marker-end="url(#sd-'+(e.s === "+" ? "p" : "n")+')"/>';
+    if(e.dm) h += [-5,5].map(o=> '<line x1="'+(m[0]+tm[0]*o-tm[1]*12)+'" y1="'+(m[1]+tm[1]*o+tm[0]*12)+'" x2="'+(m[0]+tm[0]*o+tm[1]*12)+'" y2="'+(m[1]+tm[1]*o-tm[0]*12)+'" class="sd-delay"/>').join("");
+    h += '<circle cx="'+ox+'" cy="'+oy+'" r="12" class="sd-sign-bg"/><text x="'+ox+'" y="'+(oy+7)+'" text-anchor="middle" class="sd-sign">'+e.s+'</text>';
+    const g = mk("sd-edge " + (e.s === "+" ? "pos" : "neg"), h); g.setAttribute("tabindex","0"); g.setAttribute("role","img"); g.setAttribute("aria-label", N[e.de].t + " a " + N[e.a].t + ", signo " + (e.s === "+" ? "positivo" : "negativo"));
+    bindTip(g, ()=> "<h5>"+esc(N[e.de].t)+" → "+esc(N[e.a].t)+" ("+e.s+")</h5><p>"+esc(e.d)+"</p><p class='tip-ind'><b>"+G.formas[e.f].t+".</b> "+G.formas[e.f].d+(e.dm ? " Tiene una demora importante." : "")+"</p><p>"+evTag(e)+"</p>");
+    return { g:g, e:e };
+  });
+  // facilitadores y barreras
+  const facEls = G.factores.map(f=>{
+    const w = f.t.length*8.2 + 34, n = { x:f.x, y:f.y, D:{ hw:w/2, hh:17 } }, K = curve(n, N[f.a], 10, 2, 8);
+    const g = mk("sd-fac sd-fac-"+f.k,'<path d="'+K.d+'" class="sd-fline" marker-end="url(#sd-'+f.k+')"/><rect x="'+(f.x-w/2)+'" y="'+(f.y-17)+'" width="'+w+'" height="34" rx="17"/><text x="'+f.x+'" y="'+(f.y+6)+'" text-anchor="middle">'+(f.k==="f" ? "▲ " : "▼ ")+esc(f.t)+'</text>');
+    g.setAttribute("tabindex","0"); g.setAttribute("role","button");
+    const html = ()=> "<h5>"+(f.k==="f" ? "Facilitador: " : "Barrera: ")+esc(f.t)+"</h5><p>"+esc(f.d)+"</p><p class='tip-ind'>Actúa sobre: <b>"+esc(N[f.a].t)+"</b></p><p>"+evTag(f)+"</p>";
+    bindTip(g, html);
+    const pick = ()=>{ detail.innerHTML = '<span class="reading-k">'+(f.k==="f" ? "Facilitador" : "Barrera")+'</span><p class="lead">'+esc(f.t)+'</p><p>'+esc(f.d)+'</p><p>Actúa sobre: <strong>'+esc(N[f.a].t)+'</strong>. Participa así en: '+esc(G.bucles.filter(b=> b.v.includes(f.a)).map(b=> b.id + " " + b.t).join("; "))+'.</p><p>'+evTag(f)+(f.ref ? " · <a href='"+G.refs[f.ref].u+"' target='_blank' rel='noopener'>Ver la fuente</a>" : "")+'</p>'; };
+    g.addEventListener("click", pick); g.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); pick(); } });
+    return { g:g, f:f };
+  });
+  // niveles, flujos y variables
+  const nodeEls = G.nodos.map(n=>{
+    let h = "";
+    if(n.k === "flujo"){
+      const L = wrapText(n.t, 16);
+      h = '<circle cx="'+n.x+'" cy="'+n.y+'" r="27" class="sd-valve-bg"/><path d="M'+(n.x-17)+','+(n.y-14)+' L'+(n.x+17)+','+(n.y+14)+' V'+(n.y-14)+' L'+(n.x-17)+','+(n.y+14)+' z" class="sd-valve"/>' + L.map((t,i)=> '<text x="'+n.x+'" y="'+(n.up ? n.y-36-(L.length-1-i)*20 : n.y+50+i*20)+'" text-anchor="middle" class="sd-flow-t">'+esc(t)+'</text>').join("");
+    } else {
+      const L = n.L || wrapText(n.t, n.k === "centro" ? 19 : 17), fs = n.k === "centro" ? 27 : 22;
+      h = '<rect x="'+(n.x-n.D.hw)+'" y="'+(n.y-n.D.hh)+'" width="'+(2*n.D.hw)+'" height="'+(2*n.D.hh)+'" rx="'+(n.k === "var" || n.k === "clave" ? 12 : 5)+'"/>' + L.map((t,i)=> '<text x="'+n.x+'" y="'+(n.y - (L.length-1)*fs/2 + i*fs + (n.k === "centro" ? -2 : 6))+'" text-anchor="middle">'+esc(t)+'</text>').join("") + (n.k === "centro" ? '<text x="'+n.x+'" y="'+(n.y+46)+'" text-anchor="middle" class="sd-sub">54.367 atendidos en 2024</text>' : "");
+    }
+    const g = mk("sd-node sd-"+n.k, h); g.setAttribute("tabindex","0"); g.setAttribute("role","button"); g.setAttribute("aria-label", n.t);
+    bindTip(g, ()=> "<h5>"+esc(n.t)+"</h5><p>"+esc(n.d)+"</p><p>"+evTag(n)+"</p>");
+    const pick = ()=>{
+      const inn = G.aristas.filter(e=> e.a === n.id), out = G.aristas.filter(e=> e.de === n.id), fb = G.factores.filter(f=> f.a === n.id), bl = G.bucles.filter(b=> b.v.includes(n.id));
+      const li = a=> "<ul class='sd-list'>" + a.join("") + "</ul>";
+      detail.innerHTML = '<span class="reading-k">'+({ nivel:"Nivel", centro:"Nivel central", flujo:"Flujo", var:"Variable", clave:"Variable clave" }[n.k])+'</span><p class="lead">'+esc(n.t)+'</p><p>'+esc(n.d)+'</p>' +
+        (inn.length ? "<p><strong>Lo afectan</strong></p>" + li(inn.map(e=> "<li>"+esc(N[e.de].t)+" ("+e.s+"): "+esc(e.d)+"</li>")) : "") + (out.length ? "<p><strong>Afecta a</strong></p>" + li(out.map(e=> "<li>"+esc(N[e.a].t)+" ("+e.s+"): "+esc(e.d)+"</li>")) : "") +
+        (fb.length ? "<p><strong>Facilitadores y barreras</strong></p>" + li(fb.map(f=> "<li>"+(f.k==="f"?"▲ ":"▼ ")+esc(f.t)+"</li>")) : "") + "<p>Bucles: " + esc(bl.map(b=> b.id + " " + b.t).join("; ")) + ".</p><p>" + evTag(n) + "</p>";
+      if(n.sec){ const b = el("button",{class:"finding-link", type:"button"},["Ver los datos de este factor"]); b.addEventListener("click", ()=>{ openSection(n.sec); scrollSoon("sec-"+n.sec); }); detail.appendChild(b); }
+      decorate(detail);
+      nodeEls.forEach(x=> x.g.classList.toggle("on", x.n === n));
+    };
+    g.addEventListener("click", pick); g.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); pick(); } });
+    return { g:g, n:n };
+  });
+  // insignias de bucle
+  const badgeEls = G.bucles.map(b=>{
+    const L = wrapText(b.t, 15);
+    const g = mk("sd-badge sd-badge-"+b.tipo,'<circle cx="'+b.x+'" cy="'+b.y+'" r="25"/><path d="M'+(b.x-19)+','+(b.y-25)+' a31,31 0 1 1 -10,16" class="sd-turn" marker-end="url(#sd-'+(b.tipo==="R"?"p":"n")+')"/><text x="'+b.x+'" y="'+(b.y+7)+'" text-anchor="middle" class="sd-bid">'+b.id+'</text>' + L.map((t,i)=> '<text x="'+b.x+'" y="'+(b.y+53+i*18)+'" text-anchor="middle" class="sd-bt">'+esc(t)+'</text>').join(""));
+    g.setAttribute("tabindex","0"); g.setAttribute("role","button"); g.setAttribute("aria-label","Bucle " + b.id + ", " + b.t);
+    bindTip(g, ()=> "<h5>"+b.id+" · "+esc(b.t)+"</h5><p>"+(b.tipo==="R" ? "Bucle de refuerzo: el cambio se amplifica." : "Bucle de balance: el cambio se frena o se regula.")+"</p><p>"+esc(b.d)+"</p><p class='muted'>Clic para recorrerlo</p>");
+    g.addEventListener("click", ()=> setLoop(b.id)); g.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); setLoop(b.id); } });
+    return { g:g, b:b };
+  });
+  function paint(){
+    const b = loop ? G.bucles.find(x=> x.id === loop) : null;
+    s.classList.toggle("has-loop", !!b);
+    edgeEls.forEach(x=>{ const on = b && isLoopEdge(b, x.e.de, x.e.a); x.g.classList.toggle("on", !!on); x.g.classList.toggle("dim", !!b && !on); });
+    pipeEls.forEach(x=>{ const on = b && isLoopEdge(b, x.de, x.a); x.g.classList.toggle("on", !!on); x.g.classList.toggle("dim", !!b && !on); });
+    nodeEls.forEach(x=> x.g.classList.toggle("dim", !!b && !b.v.includes(x.n.id)));
+    badgeEls.forEach(x=> x.g.classList.toggle("dim", !!b && x.b !== b));
+    facEls.forEach(x=>{ const show = mode === "todo" || mode === x.f.k; x.g.style.display = show ? "" : "none"; x.g.classList.toggle("dim", !!b && !b.v.includes(x.f.a)); });
+  }
+  function setLoop(id){
+    loop = id === loop ? null : id;
+    loopRow.querySelectorAll(".filter-chip").forEach(c=>{ const on = (c.dataset.loop || null) === loop; c.classList.toggle("active", on); c.setAttribute("aria-pressed", on ? "true" : "false"); });
+    nodeEls.forEach(x=> x.g.classList.remove("on"));
+    paint();
+    if(!loop){ detail.innerHTML = '<span class="reading-k">Lectura del diagrama</span><p class="lead">' + G.lectura[0] + '</p><div class="reading-body">' + G.lectura.slice(1).map(p=> "<p>"+p+"</p>").join("") + "</div>"; return; }
+    const b = G.bucles.find(x=> x.id === loop);
+    detail.innerHTML = "";
+    detail.appendChild(el("span",{class:"reading-k"},["Bucle " + b.id + " · " + (b.tipo === "R" ? "de refuerzo: el cambio se amplifica" : "de balance: el cambio se frena o se regula")]));
+    detail.appendChild(el("p",{class:"lead"},[b.t + ". " + b.d]));
+    const ol = el("ol",{class:"sd-steps"});
+    b.v.forEach((v,i)=>{
+      const nx = b.v[(i+1)%b.v.length], e = G.aristas.find(x=> x.de === v && x.a === nx), sp = e ? sdForm(e, 72, 42) : null;
+      ol.appendChild(el("li",null,[ el("div",{class:"sd-step-v"},[N[v].t]), el("div",{class:"sd-step-e"},[ sp || el("span",{class:"sd-flowmark"},["flujo"]), el("span",null,[ el("strong",null,[(e ? e.s : "+") + " "]), e ? e.d : (N[v].k === "nivel" ? "De este nivel sale el flujo siguiente." : "El flujo llena el nivel siguiente.") , e ? el("em",{class:"muted"},[" " + G.formas[e.f].t + (e.dm ? ", con demora" : "") + ". " + G.evid[e.ev] + "."]) : null ]) ]) ]));
+    });
+    detail.appendChild(ol);
+    detail.appendChild(el("p",{class:"sd-back"},["↺ Y vuelve a empezar en «" + N[b.v[0]].t + "»."]));
+    const fs = G.factores.filter(f=> b.v.includes(f.a)), col = (k,t)=> el("p",null,[ el("strong",null,[t + ": "]), fs.filter(f=> f.k === k).map(f=> lowFirst(f.t)).join("; ") || "ninguno en el modelo", "." ]);
+    detail.appendChild(col("f","▲ Facilitadores que actúan aquí")); detail.appendChild(col("b","▼ Barreras que actúan aquí"));
+    detail.appendChild(el("p",{class:"sd-lever"},[ el("strong",null,["¿Dónde se puede actuar? "]), b.p ]));
+    decorate(detail);
+  }
+  body.appendChild(el("div",{class:"diagram-wrap sd-wrap"},[s]));
+  body.appendChild(legend([["sd-l-stock","Nivel"],["sd-l-flow","Flujo (válvula)"],["sd-l-pos","Mismo sentido (+)"],["sd-l-neg","Sentido contrario (−)"],["sd-l-delay","Demora (‖)"],["sd-l-f","Facilitador (▲)"],["sd-l-b","Barrera (▼)"]]));
+  body.appendChild(detail);
+  loop = "x"; setLoop(null);
+  const lt = el("button",{class:"btn a11y-list-toggle", type:"button", "aria-expanded":"false"},["Ver las relaciones como lista"]), lst = el("ul",{class:"a11y-list"}); lst.hidden = true;
+  G.aristas.forEach(e=> lst.appendChild(el("li",null,[ el("div",{class:"a11y-title"},[N[e.de].t + " → " + N[e.a].t + " (" + e.s + ")" + (e.dm ? " · con demora" : "")]), el("div",{class:"a11y-meta"},[e.d + " " + G.formas[e.f].t + ". " + G.evid[e.ev] + "."]) ])));
+  lt.addEventListener("click", ()=>{ lst.hidden = !lst.hidden; lt.setAttribute("aria-expanded", lst.hidden?"false":"true"); lt.textContent = lst.hidden ? "Ver las relaciones como lista" : "Ocultar la lista"; });
+  body.appendChild(lt); body.appendChild(lst);
 }
 
 /* ---------------------------------------------------------------- diagrama causal */
-function causalDiagram(body){
-  const K = C.causal;
-  body.appendChild(howTo("las flechas van de la causa al efecto; «+» indica que el factor tiende a aumentar lo que sigue y «−» que tiende a reducirlo. Los recuadros con borde continuo se miden en este análisis; los punteados, no. Pasa el cursor o haz clic en un factor para ver qué se sabe de él."));
-  const colX = [10, 200, 390, 580, 760], bw = 172, bh = 72, rowY = r=> 26 + r*92;
-  const w = 940, h = 26 + 5*92;
-  const s = svgEl(w, h, "causal-svg", "Diagrama causal del número de atenciones");
-  s.innerHTML = '<defs><marker id="carr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="arrow-head"/></marker></defs>';
-  const pos = {};
-  K.nodos.forEach(n=>{ const y = n.id === "atenciones" ? rowY(2) - 8 : rowY(n.row); pos[n.id] = { x: colX[n.col], y: y, w: n.id === "atenciones" ? 160 : bw, h: n.id === "atenciones" ? 88 : bh }; });
-  const edgeEls = [];
-  const cols = ["Contexto y determinantes", "Detección y oferta", "Personas y su condición", "Intensidad y registro", "Resultado"];
-  colX.forEach((x,i)=>{ const t = document.createElementNS(SVGNS,"text"); t.setAttribute("x", x); t.setAttribute("y", 12); t.setAttribute("class","causal-col"); t.textContent = cols[i]; s.appendChild(t); });
-  K.aristas.forEach(e=>{
-    const a = pos[e.de], b = pos[e.a];
-    const x1 = a.x + a.w, y1 = a.y + a.h/2, x2 = b.x - 3, y2 = b.y + b.h/2, mx = (x1+x2)/2;
-    const g = document.createElementNS(SVGNS,"g"); g.setAttribute("class","cedge " + (e.s === "−" ? "neg" : e.s === "+" ? "pos" : "mix")); g.setAttribute("tabindex","0");
-    g.innerHTML = '<path d="M'+x1+','+y1+' C'+mx+','+y1+' '+mx+','+y2+' '+x2+','+y2+'" marker-end="url(#carr)"/><text x="'+(mx)+'" y="'+((y1+y2)/2 - 3)+'" text-anchor="middle" class="cedge-sign">'+esc(e.s)+'</text>';
-    g.dataset.de = e.de; g.dataset.a = e.a;
-    bindTip(g, ()=> "<h5>"+esc(K.nodos.find(n=>n.id===e.de).t)+" → "+esc(K.nodos.find(n=>n.id===e.a).t)+"</h5><p>"+esc(e.d)+"</p>");
-    s.appendChild(g); edgeEls.push(g);
-  });
-  const nodeEls = {};
-  const detail = el("div",{class:"reading causal-detail", "aria-live":"polite"});
-  K.nodos.forEach(n=>{
-    const p = pos[n.id];
-    const g = document.createElementNS(SVGNS,"g"); g.setAttribute("class","cnode m-" + n.m + (n.id === "atenciones" ? " cnode-out" : "")); g.setAttribute("tabindex","0"); g.setAttribute("role","button");
-    const lines = wrapText(n.t, n.id === "atenciones" ? 18 : 25);
-    g.innerHTML = '<rect x="'+p.x+'" y="'+p.y+'" width="'+p.w+'" height="'+p.h+'" rx="9"/>' + lines.map((l,i)=>'<text x="'+(p.x+p.w/2)+'" y="'+(p.y + p.h/2 - (lines.length-1)*8 + i*16 + 11)+'" text-anchor="middle">'+esc(l)+'</text>').join("") +
-      '<text x="'+(p.x+p.w-6)+'" y="'+(p.y+14)+'" text-anchor="end" class="cnode-badge">'+(n.m==="si"?"medido":n.m==="parcial"?"en parte":"sin dato")+'</text>';
-    bindTip(g, ()=> "<h5>"+esc(n.t)+"</h5><p>"+esc(n.d)+"</p>");
-    const pick = ()=>{
-      Object.values(nodeEls).forEach(x=> x.classList.remove("on"));
-      g.classList.add("on");
-      edgeEls.forEach(e=> e.classList.toggle("dim", e.dataset.de !== n.id && e.dataset.a !== n.id));
-      const ins = K.aristas.filter(e=> e.a === n.id), outs = K.aristas.filter(e=> e.de === n.id);
-      detail.innerHTML = "";
-      detail.appendChild(el("h4",null,[n.t + " · " + (n.m==="si"?"medido en este análisis":n.m==="parcial"?"medido en parte":"sin dato en este análisis")]));
-      detail.appendChild(el("p",null,[n.d]));
-      if(ins.length) detail.appendChild(el("p",null,[ el("strong",null,["Lo afectan: "]), ins.map(e=> K.nodos.find(x=>x.id===e.de).t + " (" + e.s + ")").join("; ") + "." ]));
-      if(outs.length) detail.appendChild(el("p",null,[ el("strong",null,["Afecta a: "]), outs.map(e=> K.nodos.find(x=>x.id===e.a).t + " (" + e.s + ")").join("; ") + "." ]));
-      if(n.sec){ const b = el("button",{class:"finding-link", type:"button"},["Ver los datos de este factor →"]); b.addEventListener("click", ()=>{ openSection(n.sec); scrollSoon("sec-"+n.sec); }); detail.appendChild(b); }
-      decorate(detail);
-    };
-    g.addEventListener("click", pick);
-    g.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); pick(); } });
-    s.appendChild(g); nodeEls[n.id] = g;
-  });
-  body.appendChild(el("div",{class:"diagram-wrap causal-wrap"},[s]));
-  body.appendChild(legend([["cn-si","Medido en este análisis"],["cn-parcial","Medido en parte"],["cn-no","Sin dato (hipótesis)"],["ce-pos","Aumenta (+)"],["ce-neg","Reduce (−)"],["ce-mix","Depende (±)"]]));
-  body.appendChild(detail);
-  setReading(detail, "Haz clic en un factor para ver qué lo afecta, a qué afecta y qué datos hay. En resumen: el número de atenciones es el número de personas atendidas multiplicado por la tasa de atención (atenciones por cada 100 atendidos, dividida por 100). La oferta, a su vez, sigue en buena parte a la demanda esperada. Con estos datos se miden la oferta, la pobreza, la movilidad, las personas atendidas y la intensidad, pero no la severidad, la edad al diagnóstico, la composición de los equipos ni las autorizaciones de las EPS: por eso las diferencias entre departamentos no se pueden atribuir solo a la oferta.");
-  const lt = el("button",{class:"btn a11y-list-toggle", type:"button", "aria-expanded":"false"},["Ver el diagrama como lista"]);
-  const lst = el("ul",{class:"a11y-list"}); lst.hidden = true;
-  K.aristas.forEach(e=> lst.appendChild(el("li",null,[ el("div",{class:"a11y-title"},[K.nodos.find(n=>n.id===e.de).t + " → " + K.nodos.find(n=>n.id===e.a).t + " (" + e.s + ")"]), el("div",{class:"a11y-meta"},[e.d]) ])));
-  lt.addEventListener("click", ()=>{ lst.hidden = !lst.hidden; lt.setAttribute("aria-expanded", lst.hidden?"false":"true"); lt.textContent = lst.hidden ? "Ver el diagrama como lista" : "Ocultar la lista"; });
-  body.appendChild(lt); body.appendChild(lst);
-  body.appendChild(sourceLine(K.nota));
-  body.appendChild(el("div",{class:"tag-row"},[confidenceTag("nota-autor")]));
-}
 function wrapText(t, n){ const words = t.split(" "), out = []; let cur = ""; words.forEach(w=>{ if((cur + " " + w).trim().length > n && cur){ out.push(cur); cur = w; } else cur = (cur + " " + w).trim(); }); if(cur) out.push(cur); return out.slice(0,4); }
 
 
 
 /* ---------------------------------------------------------------- ideas clave por sección (titulares de lectura) */
 const CLAVES = {
-  causal: "El número de atenciones depende de cuántas personas se atienden y de cuánta atención recibe cada una; varios de sus determinantes aún no se miden en los registros públicos.",
+  causal: "Llegar a tiempo al diagnóstico depende de bucles que se refuerzan (reconocimiento, experiencia, oferta) y de otros que los frenan (espera, capacidad compartida); conviene que la detección y la capacidad para confirmar crezcan a la vez.",
   normativa: "La Ley 2628 crea derechos y fija plazos hasta agosto de 2027, y la Resolución 3280 ya define el tamizaje de la primera infancia; la reglamentación puede articularlos con metas e indicadores.",
   paralelo: "La ley y la Política de Salud Mental se complementan en detección, atención, formación, información e inclusión, y pueden articularse en diagnóstico y coordinación.",
   instrumentos: "La EAD-3 y el m-Chat son las herramientas de la primera infancia según la Resolución 3280; hay otras validadas para detectar y diagnosticar el autismo en las demás edades.",
@@ -2099,7 +2197,9 @@ function buildSearchIndex(){
   C.equipo.forEach(p=> idx.push({ type:"Equipo", label:p.nombre, detail:p.rol, sec:"metodologia", anchor:"sec-metodologia" }));
   C.instrumentos.items.forEach(it=> idx.push({ type:"Herramienta", label:it.nombre, detail:it.tipo + " · " + it.quien, sec:"instrumentos", anchor:"instrumentos-linea" }));
   C.vacios.forEach(v=> idx.push({ type:"Vacío de la ley", label:v.t, detail:v.d, sec:"normativa", anchor:"normativa-vacios" }));
-  C.causal.nodos.forEach(n=> idx.push({ type:"Diagrama causal", label:n.t, detail:n.d, sec:"causal", anchor:"causal-diagrama" }));
+  window.TEA_DINAMICA.nodos.forEach(n=> idx.push({ type:"Dinámica de sistemas", label:n.t, detail:n.d, sec:"causal", anchor:"causal-diagrama" }));
+  window.TEA_DINAMICA.bucles.forEach(n=> idx.push({ type:"Bucle", label:n.id + " · " + n.t, detail:n.d, sec:"causal", anchor:"causal-diagrama" }));
+  window.TEA_DINAMICA.factores.forEach(n=> idx.push({ type:n.k === "f" ? "Facilitador" : "Barrera", label:n.t, detail:n.d, sec:"causal", anchor:"causal-factores" }));
   STORY.forEach(st=> idx.push({ type:"Relato", label:st.t, detail:st.d, sec:"contexto", anchor:"contexto-relato" }));
   C.panorama.hipotesis.forEach(h=> idx.push({ type:"Hipótesis 2025", label:h.t, detail:h.d, sec:"nacional", anchor:"nacional-regimen" }));
   C.metodologia.definiciones.forEach(x=> idx.push({ type:"Definición", label:x.k, detail:x.f + ". " + x.d, sec:"metodologia", anchor:"metodologia-definiciones" }));
